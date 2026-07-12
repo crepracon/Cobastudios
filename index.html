@@ -1482,6 +1482,7 @@ const DEFAULT_PAPERS = [
   {name:"Padding board 12x18",       cost:0.25, supplier:"Spicer"},
   {name:"Padding board 13x19",       cost:0.53, supplier:"Spicer"},
   {name:"23x35 Lynx Sheets",         cost:0.16, supplier:"Spicer"},
+  {name:'Zodia OGT Synthetic 13x19 White 4.2mil (4-up from 28x40)',cost:0.50,supplier:"Spicers"},
 ];
 
 const DEFAULT_TONER = [
@@ -1514,6 +1515,7 @@ function invLoad(){
       if(!hasLam){ inventory.other.unshift({name:"Lamination roll 5mil (pair)",cost:80.00,unit:"25 x 200ft roll pair",supplier:"Pony Graphics",notes:"Both rolls needed. Covers ~417 sq ft. $40 ship usually bundled. $0.19/sq ft materials, $0.29/sq ft with ship"}); invSave(); }
       const hasEnv = inventory.other.some(o=>o.name.toLowerCase().includes('a2ww')||o.name.toLowerCase().includes('4-3/8'));
       if(!hasEnv){ inventory.other.splice(1,0,{name:"4-3/8x5-3/4 White Envelope A2WW",cost:0.06,unit:"per unit",supplier:"Spicers",notes:"Product code: A2WW - SKU: GENEA2WSF - gospicers.ca"}); invSave(); }
+      if(inventory.papers){ const zod = inventory.papers.find(p=>p.name.toLowerCase().includes('zodia')); if(!zod){ inventory.papers.push({name:'Zodia OGT Synthetic 13x19 White 4.2mil (4-up from 28x40)',cost:0.50,supplier:"Spicers"}); invSave(); } else if(zod.cost===2.00){ zod.cost=0.50; zod.name='Zodia OGT Synthetic 13x19 White 4.2mil (4-up from 28x40)'; invSave(); } }
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
