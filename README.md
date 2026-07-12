@@ -18,4 +18,4 @@ Paper Estimator · DTF Heat Transfer · Vinyl/Roland · Epson · Inventory
 - To use offline: save the page from the browser, or download `index.html` from this repo
 - Version history lives in Git — old versions recoverable via tags/commits
 
-Currently at: **v20** (v21–v22 changes pending re-import)
+Currently at: **v22**
