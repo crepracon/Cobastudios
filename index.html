@@ -1,0 +1,3136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coba Studios — Estimator Suite</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f0ed; color: #1a1a1a; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
+    .wrapper { max-width: 960px; margin: 0 auto; }
+
+    .app-header { background: #1a1a1a; border-radius: 12px 12px 0 0; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .app-header h1 { font-size: 16px; font-weight: 700; color: #fff; }
+    .app-header .sub { font-size: 11px; color: #777; margin-top: 1px; }
+
+    .customer-bar { background: #fff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 2px solid #e0e0e0; padding: 0.8rem 1.25rem; }
+    .customer-bar .cb-lbl { font-size: 10px; font-weight: 700; color: #aaa; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 5px; }
+    .customer-bar .cb-grid { display: grid; grid-template-columns: 2fr 1.2fr 1.5fr; gap: 10px; }
+    .customer-bar .cb-field label { display: block; font-size: 10px; color: #888; margin-bottom: 2px; }
+    .customer-bar input { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fafafa; }
+    .customer-bar input:focus { outline: none; border-color: #999; background: #fff; }
+
+    .tab-bar { display: flex; background: #252525; border-bottom: 1px solid #333; }
+    .tab-btn { padding: 12px 22px; font-size: 13px; font-family: inherit; font-weight: 500; color: #888; background: transparent; border: none; cursor: pointer; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s; display: flex; align-items: center; gap: 6px; }
+    .tab-btn:hover { color: #ccc; }
+    .tab-btn.active { color: #fff; border-bottom-color: #fff; }
+
+    .tab-panel { display: none; background: #fff; border-radius: 0 0 12px 12px; }
+    .tab-panel.active { display: block; }
+    .panel-body { padding: 1.25rem; }
+
+    .action-bar { background: #f5f5f2; border-top: 1px solid #e5e5e5; padding: .75rem 1.25rem; display: flex; gap: 8px; border-radius: 0 0 12px 12px; }
+    .btn-dark { display: inline-flex; align-items: center; gap: 6px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-dark:hover { background: #333; }
+    .btn-light { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #888; border: 1px solid #ccc; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-light:hover { background: #f0f0ed; color: #333; }
+    .btn-add { display: inline-flex; align-items: center; gap: 5px; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-family: inherit; cursor: pointer; margin-top: 6px; }
+    .btn-add:hover { background: #dbeafe; }
+    .btn-remove { background: transparent; color: #ccc; border: none; cursor: pointer; font-size: 15px; padding: 0 4px; line-height: 1; }
+    .btn-remove:hover { color: #dc2626; }
+
+    .field-label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; }
+    input[type=text], input[type=number], input[type=email], input[type=tel], select, textarea { width: 100%; padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #999; }
+    textarea { resize: vertical; line-height: 1.5; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .divider { border: none; border-top: 1px solid #e5e5e5; margin: 1.25rem 0; }
+    .sec-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: .6rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    th, td { border: 1px solid #e0e0e0; padding: 7px 8px; font-size: 13px; vertical-align: middle; }
+    th.ph  { background: #fef3c7; color: #92400e; font-weight: 600; text-align: center; font-size: 12px; }
+    th.prh { background: #dbeafe; color: #1e40af; font-weight: 600; text-align: center; font-size: 12px; }
+    th.dh  { background: #dbeafe; color: #1e40af; font-weight: 600; text-align: center; font-size: 12px; }
+    th.gh  { background: #dcfce7; color: #166534; font-weight: 600; text-align: center; font-size: 12px; }
+    th.ivh { background: #f3e8ff; color: #6b21a8; font-weight: 600; text-align: center; font-size: 12px; }
+    td.inp { background: #fef2f2; }
+    td.inp input, td.inp select { width: 100%; padding: 5px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; display: block; }
+    td.inp input:focus, td.inp select:focus { outline: 2px solid #999; }
+    td.res  { background: #f0fdf4; color: #166534; font-weight: 600; text-align: right; font-family: monospace; font-size: 13px; }
+    td.resg { background: #f0fdf4; color: #166534; font-weight: 600; text-align: right; font-family: monospace; font-size: 13px; }
+    td.dim  { color: #888 !important; font-weight: 400 !important; }
+    tr.sub-row { background: #f5f5f2; }
+    tr.sub-row td { font-weight: 600; }
+    tr.grand-row { background: #f5f5f2; }
+    tr.grand-row td { font-weight: 700; font-size: 14px; }
+    /* inventory editable rows */
+    td.iv-edit input { width: 100%; padding: 5px 6px; border: 1px solid #e5e5e5; border-radius: 4px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; display: block; }
+    td.iv-edit input:focus { outline: 2px solid #a855f7; border-color: #a855f7; }
+    td.iv-edit { background: #faf5ff; }
+
+    /* 4-card grid for paper estimator */
+    .cards4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
+    .cards3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1.5rem; }
+    .card  { border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e5e5e5; }
+    .card.yourCost { background: #f5f5f2; border-color: #d1d5db; }
+    .card.quote    { background: #f0fdf4; border-color: #bbf7d0; }
+    .card.profit   { background: #f5f5f2; }
+    .card.grand    { background: #fff; border: 2px solid #93c5fd; }
+    .card-lbl { font-size: 11px; margin-bottom: 4px; }
+    .card.yourCost .card-lbl { color: #666; }
+    .card.quote    .card-lbl { color: #166534; }
+    .card.profit   .card-lbl { color: #666; }
+    .card.grand    .card-lbl { color: #1e40af; }
+    .card-num { font-size: 20px; font-weight: 700; font-family: monospace; }
+    .card.yourCost .card-num { color: #1a1a1a; }
+    .card.quote    .card-num { color: #166534; }
+    .card.profit   .card-num { color: #1a1a1a; }
+    .card.grand    .card-num { font-size: 24px; color: #1a1a1a; }
+    .card-sub { font-size: 10px; margin-top: 4px; }
+    .card.yourCost .card-sub { color: #888; }
+    .card.quote    .card-sub { color: #166534; }
+    .card.profit   .card-sub { color: #666; }
+    .card.grand    .card-sub { color: #1e40af; }
+
+    .info-bar { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 1rem; }
+    .info-item { font-size: 12px; color: #666; }
+    .info-item strong { color: #1a1a1a; }
+    .rate-bar { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .rate-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
+    .rate-item input { width: 80px; }
+    .rate-div { width: 1px; height: 22px; background: #ddd; }
+    .profit-pill { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-left: 4px; }
+
+    .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; margin-left: 4px; vertical-align: middle; }
+    .badge-blue  { background: #dbeafe; color: #1e40af; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+
+    th.tier-hdr { background: #f5f5f2; font-size: 12px; font-weight: 600; text-align: center; color: #555; }
+    tr.tier-active td { background: #fef3c7 !important; }
+    tr.tier-active .tier-lbl-cell { font-weight: 700; color: #92400e; }
+    .tier-inp { width: 100%; background: transparent; border: none; font-size: 13px; font-family: inherit; color: #1a1a1a; text-align: center; padding: 2px 4px; }
+    .tier-inp:focus { outline: 1px solid #999; border-radius: 3px; background: #fff; }
+    .tier-name-inp { width: 100%; background: transparent; border: none; font-size: 13px; font-family: inherit; color: #1a1a1a; padding: 2px 4px; }
+    .tier-name-inp:focus { outline: 1px solid #999; border-radius: 3px; background: #fff; }
+    .active-pill { display: inline-flex; align-items: center; background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+
+    .toggle-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer; border: 1px solid #ddd; transition: all .15s; }
+    .toggle-btn.on  { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .toggle-btn.off { background: #f5f5f2; color: #888; }
+    .min-bar { border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 14px; margin-bottom: 1rem; font-size: 12px; font-weight: 500; }
+    .ship-note { font-size: 11px; margin-top: 3px; }
+    .scroll-x { overflow-x: auto; }
+
+    /* coil binding */
+    #p-coil-row td { vertical-align: top; padding-top: 9px; }
+
+    /* lamination section */
+    .lam-section { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .lam-section-title { font-size: 13px; font-weight: 700; color: #c2410c; margin-bottom: .6rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .lam-toggle { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; font-weight: 500; color: #c2410c; user-select: none; }
+    .lam-toggle input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #ea580c; }
+    th.lh { background: #fed7aa; color: #c2410c; font-weight: 600; text-align: center; font-size: 12px; }
+    td.lam-res { background: #fff7ed; color: #c2410c; font-weight: 600; text-align: right; font-family: monospace; font-size: 13px; }
+
+    /* inventory section cards */
+    .inv-section { background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .inv-section-title { font-size: 13px; font-weight: 700; color: #6b21a8; margin-bottom: .75rem; display: flex; align-items: center; gap: 8px; }
+    .inv-save-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+    .inv-save-badge.saved   { background: #f0fdf4; color: #166534; }
+    .inv-save-badge.saving  { background: #fef3c7; color: #92400e; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .tab-bar, .action-bar, .no-print { display: none !important; }
+      .tab-panel { display: block !important; border-radius: 0; }
+      .tab-panel:not(.active) { display: none !important; }
+      .app-header { background: #fff; border-radius: 0; }
+      .app-header h1 { color: #1a1a1a; }
+      td.inp, td.iv-edit { background: #fff; }
+      td.res, td.resg { background: #fff; }
+      tr.sub-row, tr.grand-row { background: #f5f5f2; }
+      input, select, textarea { border: none; padding: 0; background: transparent; }
+      .customer-bar { border: none; border-bottom: 1px solid #ddd; }
+    }
+    @media (max-width: 680px) {
+      .two-col { grid-template-columns: 1fr; }
+      .cards4  { grid-template-columns: 1fr 1fr; }
+      .cards3  { grid-template-columns: 1fr; }
+      .tab-btn { padding: 10px 12px; font-size: 12px; }
+      .customer-bar .cb-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- APP HEADER -->
+  <div class="app-header">
+    <div>
+      <h1>Coba Studios — Estimator Suite</h1>
+      <div class="sub">Paper printing &amp; DTF heat transfer · All prices in CAD · Works offline</div>
+    </div>
+  </div>
+
+  <!-- PERSISTENT CUSTOMER BAR -->
+  <div class="customer-bar">
+    <div class="cb-lbl">Customer</div>
+    <div class="cb-grid">
+      <div class="cb-field"><label>Name</label><input type="text" id="cb-name" placeholder="Full name…"></div>
+      <div class="cb-field"><label>Phone</label><input type="tel" id="cb-phone" placeholder="613-555-0100"></div>
+      <div class="cb-field"><label>Email</label><input type="email" id="cb-email" placeholder="customer@email.com"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('paper',this)">📄 Paper Estimator</button>
+    <button class="tab-btn" onclick="switchTab('dtf',this)">🔥 DTF Heat Transfer</button>
+    <button class="tab-btn" onclick="switchTab('vinyl',this)">🎨 Vinyl / Roland</button>
+    <button class="tab-btn" onclick="switchTab('epson',this)">🖼 Epson</button>
+    <button class="tab-btn" onclick="switchTab('inventory',this)">📦 Inventory</button>
+  </div>
+
+  <!-- ═══════════════ PAPER ESTIMATOR ═══════════════ -->
+  <div class="tab-panel active" id="panel-paper">
+    <div class="panel-body">
+
+      <table>
+        <thead><tr>
+          <th class="ph" style="width:35%">Paper stock</th>
+          <th class="ph" style="width:14%">Sheets</th>
+          <th class="ph" style="width:15%">Cost / sheet</th>
+          <th class="ph" style="width:14%">Cost</th>
+          <th class="ph" style="width:14%">Retail (×3)</th>
+        </tr></thead>
+        <tbody id="p-paper-body"></tbody>
+      </table>
+
+      <table>
+        <thead><tr>
+          <th class="prh" style="width:35%">Print type</th>
+          <th class="prh" style="width:14%">Clicks</th>
+          <th class="prh" style="width:15%">Cost / click</th>
+          <th class="prh" style="width:14%">Cost</th>
+          <th class="prh" style="width:14%">Retail (×5)</th>
+        </tr></thead>
+        <tbody id="p-print-body"></tbody>
+      </table>
+
+      <!-- LAMINATION SECTION — above cost summary -->
+      <div class="lam-section" style="margin-bottom:1.25rem">
+        <div class="lam-section-title">
+          <label class="lam-toggle">
+            <input type="checkbox" id="lam-enabled" onchange="lamToggle()">
+            🧴 Lamination
+          </label>
+          <span style="font-size:11px;font-weight:400;color:#9a3412;margin-left:4px">check to include lamination in this estimate</span>
+        </div>
+        <div id="lam-body" style="display:none">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:1rem;padding:8px 12px;background:#fff;border:1px solid #fed7aa;border-radius:6px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Roll width: <input type="number" id="lam-roll" value="25" min="1" step="1" oninput="lamCalc()" style="width:60px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px"> in
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Lead/trail margin: <input type="number" id="lam-margin" value="2" min="0" step="0.5" oninput="lamCalc()" style="width:50px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px"> in each end
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Your cost: $<input type="number" id="lam-cost-sqft" value="0.19" min="0" step="0.01" oninput="lamCalc()" style="width:65px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px">/sq ft
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Markup: <input type="number" id="lam-markup" value="690" min="0" step="5" oninput="lamCalc()" style="width:60px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px"> %
+            </div>
+          </div>
+          <div class="scroll-x">
+            <table style="min-width:760px;margin-bottom:6px">
+              <thead><tr>
+                <th class="lh" style="width:18%">Item description</th>
+                <th class="lh" style="width:8%">W (in)</th>
+                <th class="lh" style="width:8%">H (in)</th>
+                <th class="lh" style="width:7%">Qty</th>
+                <th class="lh" style="width:9%">Per pass</th>
+                <th class="lh" style="width:8%">Passes</th>
+                <th class="lh" style="width:10%">Film used</th>
+                <th class="lh" style="width:9%">Waste %</th>
+                <th class="lh" style="width:10%">Your cost</th>
+                <th class="lh" style="width:10%">Retail total</th>
+                <th class="lh" style="width:9%">Per piece</th>
+                <th class="lh" style="width:4%"></th>
+              </tr></thead>
+              <tbody id="lam-items-body"></tbody>
+              <tfoot>
+                <tr style="background:#fff7ed">
+                  <td colspan="4" style="text-align:right;font-size:12px;color:#9a3412;font-weight:600">Totals</td>
+                  <td class="lam-res" id="lam-tot-ppass">—</td>
+                  <td class="lam-res" id="lam-tot-passes">—</td>
+                  <td class="lam-res" id="lam-tot-sqft">—</td>
+                  <td class="lam-res" id="lam-tot-waste">—</td>
+                  <td class="lam-res" id="lam-tot-cost">$0.00</td>
+                  <td class="lam-res" id="lam-tot-retail">$0.00</td>
+                  <td class="lam-res" id="lam-tot-per">—</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="lamAddRow()" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa">+ Add laminated item</button>
+          <div style="background:#fff;border:1px solid #fed7aa;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#9a3412;line-height:1.7">
+            <strong>Gang-running:</strong> The app fits as many items side-by-side as possible per pass (e.g. 3× 5×7" fit across 25"). <strong>Film per pass</strong> = 25" × (feed dimension + <span id="lam-margin-disp">2</span>" + <span id="lam-margin-disp2">2</span>" margins). Cost split equally across all items in that pass. Max item width = 24" (laminator throat). Cost = $0.19/sq ft materials only — use $0.29/sq ft if ordering standalone with $40 shipping.
+          </div>
+        </div>
+      </div>
+
+      <table style="margin-bottom:1.25rem">
+        <colgroup><col style="width:35%"><col style="width:29%"><col style="width:18%"><col style="width:18%"></colgroup>
+        <tbody>
+          <tr class="sub-row">
+            <td style="color:#666;font-size:12px">Cost per unit</td><td></td>
+            <td class="res" id="p-cpu-c">$0.00</td>
+            <td class="res" id="p-cpu-r">$0.00</td>
+          </tr>
+          <tr>
+            <td class="inp">
+              Press sets / run qty
+              <div style="font-size:10px;color:#888;margin-top:2px">sheets &amp; clicks you enter above are per set</div>
+            </td>
+            <td class="inp"><input type="number" id="p-qty" value="1" min="1" step="1" oninput="pCalc()"></td>
+            <td class="res" id="p-qt-c">$0.00</td>
+            <td class="res" id="p-qt-r">$0.00</td>
+          </tr>
+          <tr>
+            <td class="inp">
+              Finished pieces <span style="font-size:10px;color:#888">(for pricing tier only)</span>
+              <div style="font-size:10px;color:#888;margin-top:2px">e.g. 2-up = double your press qty</div>
+            </td>
+            <td class="inp"><input type="number" id="p-finished-qty" value="1" min="1" step="1" oninput="pCalc()" style="background:#fef9c3"></td>
+            <td class="res">—</td>
+            <td class="res" style="color:#666;font-size:11px" id="p-tier-note">used for tier only</td>
+          </tr>
+          <tr>
+            <td class="inp">Finishing / labour <span class="badge badge-blue">flat fee</span></td>
+            <td class="inp">
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="p-hrs" value="0" min="0" step="0.25" oninput="pCalc()" style="width:65px">
+                <span style="font-size:12px;color:#666;white-space:nowrap">hrs × $</span>
+                <input type="number" id="p-rate" value="45" min="0" step="5" oninput="pCalc()" style="width:60px">
+                <span style="font-size:12px;color:#666">/hr</span>
+              </div>
+            </td>
+            <td class="res">—</td>
+            <td class="res" id="p-fin-r">$0.00</td>
+          </tr>
+          <tr id="p-coil-row">
+            <td class="inp">
+              🌀 Coil binding
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+                <label style="font-size:11px;color:#666;cursor:pointer;display:flex;align-items:center;gap:4px">
+                  <input type="checkbox" id="coil-enabled" onchange="coilCalc()" style="width:14px;height:14px">
+                  Include coils
+                </label>
+              </div>
+            </td>
+            <td class="inp" id="coil-inputs-cell">
+              <div id="coil-inputs" style="display:none">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <select id="coil-size" onchange="coilCalc()" style="width:120px;font-size:12px;padding:4px 6px">
+                    <option value="">— size —</option>
+                  </select>
+                  <span style="font-size:12px;color:#666;white-space:nowrap">× qty</span>
+                  <input type="number" id="coil-qty" value="1" min="1" step="1" oninput="coilCalc()" style="width:60px">
+                  <span style="font-size:11px;color:#888" id="coil-cost-hint"></span>
+                </div>
+              </div>
+            </td>
+            <td class="res" id="p-coil-c">—</td>
+            <td class="res" id="p-coil-r">—</td>
+          </tr>
+          <tr id="p-lam-row" style="display:none">
+            <td style="font-size:13px">🧴 Lamination <span style="font-size:10px;color:#c2410c;font-weight:600;background:#fff7ed;padding:2px 6px;border-radius:10px;margin-left:4px">flat total</span></td>
+            <td style="font-size:12px;color:#c2410c" id="p-lam-row-lbl">—</td>
+            <td class="res" id="p-lam-c" style="color:#c2410c">—</td>
+            <td class="res" id="p-lam-r" style="color:#c2410c">$0.00</td>
+          </tr>
+          <tr>
+            <td style="font-size:13px">
+              Qty tier adjustment
+              <div style="margin-top:4px">
+                <label style="font-size:11px;color:#666;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+                  <input type="checkbox" id="p-binding-job" onchange="pCalc()" style="width:13px;height:13px;accent-color:#1e40af">
+                  <span>Binding / finishing job</span>
+                </label>
+                <div style="font-size:10px;color:#aaa;margin-top:2px">tier applies to print cost only — labour &amp; coils unaffected</div>
+              </div>
+            </td>
+            <td style="font-size:11px;color:#666" id="p-tier-lbl">—</td>
+            <td class="res">—</td>
+            <td class="res" id="p-tier-adj">$0.00</td>
+          </tr>
+          <tr class="sub-row">
+            <td style="font-weight:700">Adjusted quote</td><td></td>
+            <td class="res" id="p-adj-c">$0.00</td>
+            <td class="res" id="p-adj-r" style="font-size:14px">$0.00</td>
+          </tr>
+          <tr id="p-min-row">
+            <td class="inp" style="font-size:13px">
+              Minimum job charge
+              <div style="font-size:10px;color:#888;margin-top:2px">kicks in if quote falls below this — great upsell tool</div>
+            </td>
+            <td class="inp">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:13px;color:#666">$</span>
+                <input type="number" id="p-min-charge" value="20" min="0" step="1" oninput="pCalc()" style="width:80px">
+                <span style="font-size:11px;color:#888" id="p-min-status"></span>
+              </div>
+            </td>
+            <td class="res">—</td>
+            <td class="res" id="p-min-r" style="font-size:12px">—</td>
+          </tr>
+          <tr id="p-min-upsell-row" style="display:none">
+            <td colspan="4" style="background:#fef9c3;font-size:12px;color:#92400e;padding:6px 12px;font-style:italic" id="p-min-upsell"></td>
+          </tr>
+          <tr>
+            <td class="inp">
+              Tax rate
+              <select id="p-tax-type" onchange="pSyncTax()" style="width:auto;display:inline-block;font-size:12px;margin-left:4px">
+                <option value="0.13">HST (13%)</option>
+                <option value="0.05">GST (5%)</option>
+                <option value="0.15">HST 15%</option>
+                <option value="0">Tax exempt</option>
+                <option value="custom">Custom…</option>
+              </select>
+            </td>
+            <td class="inp">
+              <input type="number" id="p-tax-pct" value="13" min="0" max="100" step="0.1" oninput="pCalc()" style="width:70px">
+              <span style="font-size:12px;color:#666">%</span>
+            </td>
+            <td class="res">—</td>
+            <td class="res" id="p-tax">$0.00</td>
+          </tr>
+          <tr class="grand-row">
+            <td colspan="2">Total incl. tax</td>
+            <td class="res" id="p-total-c">$0.00</td>
+            <td class="res" id="p-total-r" style="font-size:15px">$0.00</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 4 CARDS: Your cost | Quote | Profit | Grand total -->
+      <div class="cards4">
+        <div class="card yourCost">
+          <div class="card-lbl">Your cost</div>
+          <div class="card-num" id="p-yourcost">$0.00</div>
+          <div class="card-sub" id="p-yourcost-sub">paper + toner + labour</div>
+        </div>
+        <div class="card quote">
+          <div class="card-lbl">Quote (before tax)</div>
+          <div class="card-num" id="p-quote-total">$0.00</div>
+          <div class="card-sub" id="p-quote-per">$0.00 / unit</div>
+        </div>
+        <div class="card profit">
+          <div class="card-lbl">Profit</div>
+          <div class="card-num" id="p-profit">$0.00</div>
+          <div class="card-sub" id="p-margin">0.0% margin</div>
+        </div>
+        <div class="card grand">
+          <div class="card-lbl">Grand total (incl. tax)</div>
+          <div class="card-num" id="p-grand">$0.00</div>
+          <div class="card-sub" id="p-tax-line">Tax: $0.00</div>
+        </div>
+      </div>
+
+      </div>
+
+      <!-- MARKET REFERENCE CHECK -->
+      <div id="p-market-bar" style="border-radius:8px;padding:10px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f5f5f2;border:1px solid #e5e5e5">
+        <div style="font-size:12px;font-weight:600;color:#555;white-space:nowrap">Market check:</div>
+        <select id="p-job-type" onchange="pMarketCheck()" style="font-size:12px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#1a1a1a;min-width:200px">
+          <option value="">— select job type —</option>
+          <optgroup label="Copies &amp; Documents">
+            <option value="bw-copies"       data-unit="per page"    data-low="0.07" data-high="0.12">B&amp;W copies</option>
+            <option value="colour-copies"   data-unit="per page"    data-low="0.25" data-high="0.45">Colour copies</option>
+            <option value="bw-flyers"       data-unit="per sheet"   data-low="0.08" data-high="0.15">B&amp;W flyers</option>
+            <option value="colour-flyers"   data-unit="per sheet"   data-low="0.30" data-high="0.60">Colour flyers</option>
+          </optgroup>
+          <optgroup label="Bound Books">
+            <option value="spiral-bw"       data-unit="per book"    data-low="18"   data-high="25">Spiral bound — B&amp;W inside</option>
+            <option value="spiral-colour"   data-unit="per book"    data-low="28"   data-high="45">Spiral bound — colour inside</option>
+            <option value="stapled-booklet" data-unit="per booklet" data-low="4"    data-high="8" >Staple-bound booklet</option>
+          </optgroup>
+          <optgroup label="Cards &amp; Stationery">
+            <option value="business-cards"  data-unit="per 250"     data-low="25"   data-high="50">Business cards (250)</option>
+            <option value="postcards"       data-unit="per 100"     data-low="20"   data-high="40">Postcards (100)</option>
+            <option value="ncr-2part"       data-unit="per 50-set"  data-low="35"   data-high="60">NCR 2-part forms (50)</option>
+            <option value="ncr-3part"       data-unit="per 50-set"  data-low="50"   data-high="80">NCR 3-part forms (50)</option>
+          </optgroup>
+          <optgroup label="Large Format (paper)">
+            <option value="plan-bw-24x36"   data-unit="per sheet"   data-low="4.50" data-high="6.50">Construction plan B&amp;W 24×36"</option>
+            <option value="plan-bw-36x48"   data-unit="per sheet"   data-low="8.00" data-high="11.00">Construction plan B&amp;W 36×48"</option>
+            <option value="poster-colour"   data-unit="per sheet"   data-low="12"   data-high="22">Colour poster (bond)</option>
+          </optgroup>
+        </select>
+        <span id="p-market-status" style="font-size:12px;color:#888">Pick a job type to see market rates</span>
+      </div>
+
+      <hr class="divider">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="sec-title" style="margin-bottom:0">Quantity pricing tiers</div>
+        <button onclick="toggleTierTable()" id="tier-toggle-btn" class="btn-light no-print" style="padding:4px 12px;font-size:12px">▼ Show tiers</button>
+      </div>
+      <div style="background:#f5f5f2;border:1px solid #e5e5e5;border-radius:6px;padding:10px 14px;margin:0.6rem 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#666">Applying:</span>
+        <span id="p-active-pill" class="active-pill">—</span>
+        <span style="font-size:12px;color:#666">Grand total: <strong id="p-active-quote">$0.00</strong></span>
+      </div>
+      <div id="p-tier-table-wrap" style="display:none">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">Click any value to edit · + % surcharge · − % discount</div>
+        <table>
+          <thead><tr>
+            <th class="tier-hdr" style="width:14%">Qty from</th>
+            <th class="tier-hdr" style="width:14%">To</th>
+            <th class="tier-hdr" style="width:24%">Label</th>
+            <th class="tier-hdr" style="width:14%">Adjust %</th>
+            <th class="tier-hdr" style="width:17%">Adj. quote</th>
+            <th class="tier-hdr" style="width:17%">Per unit</th>
+          </tr></thead>
+          <tbody id="p-tier-body"></tbody>
+        </table>
+      </div>
+
+      <hr class="divider">
+      <div class="sec-title">Notes</div>
+      <textarea id="p-notes" rows="3" placeholder="Job notes, special instructions, customer requests…"></textarea>
+
+    </div>
+    <div class="action-bar no-print">
+      <button class="btn-light" onclick="resetPaper()">↺ New estimate</button>
+      <button class="btn-dark" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ DTF ESTIMATOR ═══════════════ -->
+  <div class="tab-panel" id="panel-dtf">
+    <div class="panel-body">
+
+      <!-- GARMENTS -->
+      <div class="sec-title">Garments</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
+        <span style="font-size:12px;color:#666">Supply:</span>
+        <button class="toggle-btn on"  id="d-btn-supply"   onclick="setGarmentMode('supply')">✓ I'm supplying garments</button>
+        <button class="toggle-btn off" id="d-btn-customer" onclick="setGarmentMode('customer')">Customer bringing own</button>
+      </div>
+
+      <div id="d-garment-section">
+        <div style="font-size:11px;color:#888;margin-bottom:6px">One row per garment type + colour. Add a separate row for each size with a different cost (e.g. 2XL costs more).</div>
+        <div class="scroll-x">
+          <table style="min-width:740px">
+            <thead><tr>
+              <th class="gh" style="width:25%">Garment &amp; Colour</th>
+              <th class="gh" style="width:11%">Size</th>
+              <th class="gh" style="width:7%">Qty</th>
+              <th class="gh" style="width:12%">Cost each ($)</th>
+              <th class="gh" style="width:10%">Markup %</th>
+              <th class="gh" style="width:10%">Your cost</th>
+              <th class="gh" style="width:11%">Retail each</th>
+              <th class="gh" style="width:10%">Retail total</th>
+              <th class="gh" style="width:4%"></th>
+            </tr></thead>
+            <tbody id="d-garment-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="addGarmentRow()">+ Add garment</button>
+        <div class="info-bar" style="margin-top:10px">
+          <div class="info-item">Garment cost: <strong id="d-g-cost">$0.00</strong></div>
+          <div class="info-item">Garment retail: <strong id="d-g-retail">$0.00</strong></div>
+          <div class="info-item">Total garments: <strong id="d-g-qty">0</strong></div>
+        </div>
+      </div>
+      <div id="d-customer-own-msg" style="display:none;background:#f5f5f2;border:1px solid #e5e5e5;border-radius:6px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#666">
+        ✓ Customer supplying own garments — no garment charge added.
+      </div>
+
+      <hr class="divider">
+
+      <!-- IMPRINTS -->
+      <div class="sec-title">
+        Imprint locations
+        <span class="badge badge-blue">W × H in inches · one row per print location</span>
+        <span class="badge badge-amber">minimum per garment — not per row</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;padding:10px 14px;background:#f5f5f2;border:1px solid #e5e5e5;border-radius:6px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#666">Garments being pressed:</span>
+        <input type="number" id="d-num-garments" value="1" min="1" step="1" oninput="dCalc()" style="width:80px">
+        <span style="font-size:11px;color:#888">— minimum applies once per garment, not per print location</span>
+      </div>
+
+      <div class="scroll-x">
+        <table style="margin-bottom:4px;min-width:600px">
+          <thead><tr>
+            <th class="dh" style="width:22%">Location / label</th>
+            <th class="dh" style="width:9%">W (in)</th>
+            <th class="dh" style="width:9%">H (in)</th>
+            <th class="dh" style="width:8%">Qty</th>
+            <th class="dh" style="width:10%">Sq in</th>
+            <th class="dh" style="width:11%">Falcon cost</th>
+            <th class="dh" style="width:11%">Sq in charge</th>
+            <th class="dh" style="width:10%">/ piece</th>
+            <th class="dh" style="width:10%"></th>
+          </tr></thead>
+          <tbody id="d-imprint-body"></tbody>
+        </table>
+      </div>
+      <button class="btn-add no-print" onclick="addImprintRow()">+ Add imprint location</button>
+
+      <div id="d-min-bar" class="min-bar" style="background:#f5f5f2;color:#666;margin-top:10px">
+        <span id="d-min-label">Enter imprint dimensions to see transfer charge</span>
+      </div>
+
+      <div class="info-bar">
+        <div class="info-item">Total sq in: <strong id="d-ib-sqin">0</strong></div>
+        <div class="info-item">Falcon cost: <strong id="d-ib-falcon">$0.00</strong></div>
+        <div class="info-item">Garments: <strong id="d-ib-garments">1</strong></div>
+        <div class="info-item">Active tier: <strong id="d-ib-tier">—</strong></div>
+        <div class="info-item">Transfer charge: <strong id="d-ib-charge">$0.00</strong></div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- DTF TIERS -->
+      <div class="sec-title">
+        Quantity tiers — minimum per garment
+        <span style="font-size:11px;font-weight:400;color:#888;margin-left:4px">click any value to edit</span>
+      </div>
+      <div style="background:#f5f5f2;border:1px solid #e5e5e5;border-radius:6px;padding:10px 14px;margin-bottom:.75rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#666">Applying:</span>
+        <span id="d-active-pill" class="active-pill">—</span>
+        <span style="font-size:12px;color:#666">Applied to total job — not each location.</span>
+      </div>
+      <div class="scroll-x">
+        <table style="margin-bottom:1.25rem;min-width:460px">
+          <thead><tr>
+            <th class="tier-hdr" style="width:14%">Garments from</th>
+            <th class="tier-hdr" style="width:14%">To</th>
+            <th class="tier-hdr" style="width:28%">Label</th>
+            <th class="tier-hdr" style="width:20%">Min / garment ($)</th>
+            <th class="tier-hdr" style="width:24%">Min total</th>
+          </tr></thead>
+          <tbody id="d-tier-body"></tbody>
+        </table>
+      </div>
+
+      <hr class="divider">
+
+      <!-- COSTS -->
+      <div class="sec-title">Additional costs</div>
+      <table style="margin-bottom:1.25rem">
+        <colgroup><col style="width:35%"><col style="width:35%"><col style="width:15%"><col style="width:15%"></colgroup>
+        <tbody>
+          <tr>
+            <td class="inp">
+              Shipping from Falcon
+              <div class="ship-note" id="d-ship-note" style="color:#2563eb">Orders over $99 ship free</div>
+            </td>
+            <td class="inp">
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="d-ship-override" onchange="dCalc()" style="width:16px;height:16px;flex-shrink:0">
+                <label for="d-ship-override" style="font-size:12px;color:#666;cursor:pointer;white-space:nowrap">Override</label>
+                <input type="number" id="d-shipping" value="15" min="0" step="0.50" oninput="dCalc()" style="width:80px">
+              </div>
+            </td>
+            <td class="res dim" style="text-align:center;font-size:11px">your cost</td>
+            <td class="res" id="d-s-ship">$0.00</td>
+          </tr>
+          <tr>
+            <td class="inp">Labour / application <span class="badge badge-blue">flat fee</span></td>
+            <td class="inp">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <input type="number" id="d-labour-hrs" value="0" min="0" step="0.25" oninput="dCalc()" style="width:70px">
+                <span style="font-size:12px;color:#666;white-space:nowrap">hrs × $</span>
+                <input type="number" id="d-labour-rate" value="45" min="0" step="5" oninput="dCalc()" style="width:65px">
+                <span style="font-size:12px;color:#666">/hr</span>
+              </div>
+            </td>
+            <td class="res dim" style="text-align:center;font-size:11px">your cost</td>
+            <td class="res" id="d-s-labour">$0.00</td>
+          </tr>
+          <tr class="sub-row">
+            <td colspan="2" style="text-align:right;font-size:12px;color:#666">Total to quote customer</td>
+            <td colspan="2" class="res" id="d-s-quote">$0.00</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="cards3">
+        <div class="card yourCost">
+          <div class="card-lbl">Your total cost</div>
+          <div class="card-num" id="d-tt-cost">$0.00</div>
+          <div class="card-sub" id="d-tt-cost-sub">transfers + garments + labour</div>
+        </div>
+        <div class="card quote">
+          <div class="card-lbl">Quote (before tax)</div>
+          <div class="card-num" id="d-tt-quote">$0.00</div>
+          <div class="card-sub" id="d-tt-profit">$0.00 profit · 0.0%</div>
+        </div>
+        <div class="card grand">
+          <div class="card-lbl">Grand total (incl. 13% HST)</div>
+          <div class="card-num" id="d-tt-grand">$0.00</div>
+          <div class="card-sub" id="d-tt-tax">HST: $0.00</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- DTF SETTINGS -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div class="sec-title" style="margin-bottom:0">DTF settings</div>
+        <button onclick="toggleDTFSettings()" id="d-settings-btn" class="btn-light no-print" style="padding:4px 12px;font-size:12px">▼ Show settings</button>
+      </div>
+      <div id="d-settings-wrap" style="display:none">
+        <div class="rate-bar" style="margin-bottom:0.75rem">
+          <div class="rate-item">Falcon cost: $<input type="number" id="d-falcon" value="0.020" min="0.001" step="0.001" oninput="dCalc()" style="width:65px">/sq in</div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Customer charge: $<input type="number" id="d-retail" value="0.060" min="0.001" step="0.001" oninput="dCalc()" style="width:65px">/sq in</div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Profit/sq in: <span id="d-profit-pill" class="profit-pill">$0.040</span></div>
+          <div style="margin-left:auto;font-size:11px;color:#888">Market: $0.06–$0.08/sq in</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap">
+          <span style="font-size:12px;color:#666">Minimum job charge: $</span>
+          <input type="number" id="d-min-charge" value="20" min="0" step="1" oninput="dCalc()" style="width:80px">
+          <span style="font-size:11px;color:#888" id="d-min-status"></span>
+        </div>
+      </div>
+
+      <div class="sec-title">Notes</div>
+      <textarea id="d-proj" rows="3" placeholder="e.g. 40 hoodies mixed sizes — left chest + full back. Rush order. Customer contact details…"></textarea>
+
+    </div>
+    <div class="action-bar no-print">
+      <button class="btn-light" onclick="resetDTF()">↺ New estimate</button>
+      <button class="btn-dark" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ VINYL / ROLAND ═══════════════ -->
+  <div class="tab-panel" id="panel-vinyl">
+    <div class="panel-body">
+
+      <!-- ── STICKERS ── -->
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#1e40af;cursor:pointer">
+              <input type="checkbox" id="r-stk-on" onchange="rToggle('stk')" style="width:16px;height:16px;accent-color:#1e40af"> 🏷 Stickers
+            </label>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div class="rate-item" style="font-size:12px">
+                Vinyl: <select id="r-stk-vinyl" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:180px"></select>
+              </div>
+              <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="checkbox" id="r-stk-lam" onchange="rCalc()" style="accent-color:#1e40af"> Laminate:
+              </label>
+              <select id="r-stk-lam-type" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:160px"></select>
+            </div>
+          </div>
+        </div>
+        <div id="r-stk-section" style="display:none">
+          <div class="scroll-x">
+            <table style="min-width:600px;margin-bottom:6px">
+              <thead><tr>
+                <th class="dh" style="width:22%">Label / description</th>
+                <th class="dh" style="width:9%">W (in)</th>
+                <th class="dh" style="width:9%">H (in)</th>
+                <th class="dh" style="width:8%">Qty</th>
+                <th class="dh" style="width:9%">Passes</th>
+                <th class="dh" style="width:12%">Material sqft</th>
+                <th class="dh" style="width:11%">Your cost</th>
+                <th class="dh" style="width:11%">Retail total</th>
+                <th class="dh" style="width:9%">/ sticker</th>
+              </tr></thead>
+              <tbody id="r-stk-body"></tbody>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="rAddRow('stk')" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">+ Add sticker size</button>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;background:#fff;border:1px solid #bfdbfe;border-radius:6px">
+            <div class="info-item">Material used: <strong id="r-stk-sqft">0 sq ft</strong></div>
+            <div class="info-item">Your material cost: <strong id="r-stk-cost">$0.00</strong></div>
+            <div class="info-item">Sticker retail: <strong id="r-stk-retail">$0.00</strong></div>
+            <div class="info-item">Avg per sticker: <strong id="r-stk-per">—</strong></div>
+            <div class="info-item">Pricing tier: <strong id="r-stk-tier" style="color:#1e40af">—</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BANNERS ── -->
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.75rem">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#c2410c;cursor:pointer">
+            <input type="checkbox" id="r-ban-on" onchange="rToggle('ban')" style="width:16px;height:16px;accent-color:#ea580c"> 🚩 Banners
+          </label>
+          <div class="rate-item" style="font-size:12px">
+            Media: <select id="r-ban-media" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:200px"></select>
+          </div>
+          <span style="font-size:11px;color:#9a3412;background:#fff7ed;padding:3px 8px;border-radius:20px;border:1px solid #fed7aa">$6/sqft includes print + hems + grommets</span>
+        </div>
+        <div id="r-ban-section" style="display:none">
+          <div class="scroll-x">
+            <table style="min-width:620px;margin-bottom:6px">
+              <thead><tr>
+                <th class="hdr" style="width:22%">Banner description</th>
+                <th class="hdr" style="width:10%">W (in)</th>
+                <th class="hdr" style="width:10%">H (in)</th>
+                <th class="hdr" style="width:8%">Qty</th>
+                <th class="hdr" style="width:12%">Sq ft each</th>
+                <th class="hdr" style="width:12%">Your cost</th>
+                <th class="hdr" style="width:13%">Retail total</th>
+                <th class="hdr" style="width:10%">/ banner</th>
+                <th class="hdr" style="width:3%"></th>
+              </tr></thead>
+              <tbody id="r-ban-body"></tbody>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="rAddRow('ban')" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa">+ Add banner</button>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;background:#fff;border:1px solid #fed7aa;border-radius:6px">
+            <div class="info-item">Total banner area: <strong id="r-ban-sqft">0 sq ft</strong></div>
+            <div class="info-item">Your cost: <strong id="r-ban-cost">$0.00</strong></div>
+            <div class="info-item">Banner retail: <strong id="r-ban-retail">$0.00</strong></div>
+          </div>
+          <div id="r-ban-market-bar" style="margin-top:6px;border-radius:6px;padding:8px 12px;background:#f5f5f2;border:1px solid #e5e5e5;font-size:12px;color:#888">
+            Market check — VistaPrint comparable: enter a banner to see
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SIGNAGE ── -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.75rem">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#166534;cursor:pointer">
+            <input type="checkbox" id="r-sgn-on" onchange="rToggle('sgn')" style="width:16px;height:16px;accent-color:#16a34a"> 🪧 Signage
+          </label>
+          <div class="rate-item" style="font-size:12px">
+            Vinyl/media: <select id="r-sgn-vinyl" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:180px"></select>
+          </div>
+          <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="checkbox" id="r-sgn-sub-on" onchange="rCalc()" style="accent-color:#16a34a"> Substrate:
+          </label>
+          <select id="r-sgn-sub" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:180px"></select>
+        </div>
+        <div id="r-sgn-section" style="display:none">
+          <div class="scroll-x">
+            <table style="min-width:660px;margin-bottom:6px">
+              <thead><tr>
+                <th class="gh" style="width:22%">Sign description</th>
+                <th class="gh" style="width:10%">W (in)</th>
+                <th class="gh" style="width:10%">H (in)</th>
+                <th class="gh" style="width:8%">Qty</th>
+                <th class="gh" style="width:12%">Sq ft each</th>
+                <th class="gh" style="width:12%">Your cost</th>
+                <th class="gh" style="width:13%">Retail total</th>
+                <th class="gh" style="width:10%">/ sign</th>
+                <th class="gh" style="width:3%"></th>
+              </tr></thead>
+              <tbody id="r-sgn-body"></tbody>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="rAddRow('sgn')" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">+ Add sign</button>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;background:#fff;border:1px solid #bbf7d0;border-radius:6px">
+            <div class="info-item">Total sign area: <strong id="r-sgn-sqft">0 sq ft</strong></div>
+            <div class="info-item">Your cost: <strong id="r-sgn-cost">$0.00</strong></div>
+            <div class="info-item">Signage retail: <strong id="r-sgn-retail">$0.00</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CANVAS (Roland) ── -->
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.75rem">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#92400e;cursor:pointer">
+            <input type="checkbox" id="r-can-on" onchange="rToggle('can')" style="width:16px;height:16px;accent-color:#d97706"> 🖼 Canvas Prints
+          </label>
+          <div style="font-size:12px;color:#666;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            Media:
+            <select id="r-can-media" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:200px"></select>
+          </div>
+          <span style="font-size:11px;color:#92400e;background:#fef3c7;padding:3px 8px;border-radius:20px;border:1px solid #fde68a">Roland eco-solvent · waterproof · gang-run on 54" roll</span>
+        </div>
+        <div id="r-can-section" style="display:none">
+          <div class="scroll-x">
+            <table style="min-width:620px;margin-bottom:6px">
+              <thead><tr>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:20%">Artwork / description</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:9%">W (in)</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:9%">H (in)</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:7%">Qty</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:8%">Passes</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:11%">Material sqft</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:10%">Your cost</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:12%">Retail total</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:10%">/ piece</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:4%"></th>
+              </tr></thead>
+              <tbody id="r-can-body"></tbody>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="rAddRow('can')" style="background:#fef3c7;color:#92400e;border-color:#fde68a">+ Add canvas print</button>
+          <div style="background:#fff;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#92400e;line-height:1.7">
+            <strong>Gang-running on 54" roll:</strong> fits as many canvases side-by-side per pass as possible. Cost = Vision Canvas $0.75/sqft + Roland ink $0.50/sqft = $1.25/sqft. Minimum $25/print for small sizes. Retail at $15/sqft (adjustable in settings).
+          </div>
+          <div class="info-bar" style="margin-top:8px;border-color:#fde68a">
+            <div class="info-item">Material used: <strong id="r-can-sqft">0 sq ft</strong></div>
+            <div class="info-item">Your cost: <strong id="r-can-cost">$0.00</strong></div>
+            <div class="info-item">Canvas retail: <strong id="r-can-retail">$0.00</strong></div>
+            <div class="info-item">Avg per print: <strong id="r-can-per">—</strong></div>
+          </div>
+        </div>
+      </div>
+      <hr class="divider">
+
+      <!-- Settings — collapsed by default -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div class="sec-title" style="margin-bottom:0">Roland settings</div>
+        <button onclick="toggleRolandSettings()" id="r-settings-btn" class="btn-light no-print" style="padding:4px 12px;font-size:12px">▼ Show settings</button>
+      </div>
+      <div id="r-settings-wrap" style="display:none">
+        <div class="rate-bar" style="flex-wrap:wrap;gap:10px;margin-bottom:0.75rem">
+          <div class="rate-item">Roll usable width: <input type="number" id="r-roll-w" value="50" min="1" step="1" oninput="rCalc()" style="width:55px"> in</div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Registry / cut overhead: <input type="number" id="r-reg-overhead" value="8" min="0" step="1" oninput="rCalc()" style="width:50px"> in <span style="font-size:10px;color:#888">(extra feed per sticker row for cut marks)</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Ink cost: $<input type="number" id="r-ink" value="0.50" min="0" step="0.05" oninput="rCalc()" style="width:60px">/sq ft</div>
+          <div class="rate-div"></div>
+          <div class="rate-item" style="font-size:11px;color:#888;max-width:260px">Sticker retail: auto — markup tiers on material cost (StickerYou-matched: 3.5x small qty → 1.3x volume)</div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Banner retail: $<input type="number" id="r-ban-rate" value="6.00" min="0" step="0.50" oninput="rCalc()" style="width:65px">/sq ft <span style="font-size:10px;color:#888">(incl. print+hems+grommets)</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Signage retail: $<input type="number" id="r-sgn-rate" value="12.00" min="0" step="0.50" oninput="rCalc()" style="width:65px">/sq ft <span style="font-size:10px;color:#888">(print+cut+install)</span></div>
+          <div class="rate-item">Canvas retail: $<input type="number" id="r-can-rate" value="15.00" min="0" step="0.50" oninput="rCalc()" style="width:65px">/sq ft <span style="font-size:10px;color:#888">(print area · $25 min)</span></div>
+          <div class="rate-div"></div>
+          <div style="margin-left:auto;font-size:11px;color:#888">Roland SG3-540 · stickers $10–15 · banners $6–8 · signs $8–15 · canvas $15–20/sqft</div>
+        </div>
+      </div>
+
+      <div class="sec-title">
+        Labour / finishing <span class="badge badge-blue">flat fee</span>
+        <span style="font-size:11px;font-weight:400;color:#888;margin-left:4px">for design time, installation, or special finishing only — sqft rates already include standard print + hems + grommets</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
+        <input type="number" id="r-hrs" value="0" min="0" step="0.25" oninput="rCalc()" style="width:70px">
+        <span style="font-size:13px;color:#666">hrs × $</span>
+        <input type="number" id="r-rate" value="45" min="0" step="5" oninput="rCalc()" style="width:65px">
+        <span style="font-size:13px;color:#666">/hr =</span>
+        <span style="font-size:15px;font-weight:700;font-family:monospace;color:#1a1a1a" id="r-labour-total">$0.00</span>
+      </div>
+
+      <div class="cards3">
+        <div class="card cost">
+          <div class="card-lbl">Your total cost</div>
+          <div class="card-num" id="r-tt-cost">$0.00</div>
+          <div class="card-sub" id="r-tt-cost-sub">materials + labour</div>
+        </div>
+        <div class="card quote">
+          <div class="card-lbl">Quote to customer (before tax)</div>
+          <div class="card-num" id="r-tt-quote">$0.00</div>
+          <div class="card-sub" id="r-tt-profit">$0.00 profit · 0.0%</div>
+        </div>
+        <div class="card grand">
+          <div class="card-lbl">Grand total (incl. 13% HST)</div>
+          <div class="card-num" id="r-tt-grand">$0.00</div>
+          <div class="card-sub" id="r-tt-tax">HST: $0.00</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="sec-title">Notes</div>
+      <textarea id="r-proj" rows="3" placeholder="Job details — stickers, banners, signage, customer info…"></textarea>
+
+    </div>
+    <div class="action-bar no-print">
+      <button class="btn-light" onclick="resetRoland()">↺ New estimate</button>
+      <button class="btn-dark" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ EPSON ═══════════════ -->
+  <div class="tab-panel" id="panel-epson">
+    <div class="panel-body">
+
+      <!-- ── CONSTRUCTION PLANS ── -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.75rem">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#166534;cursor:pointer">
+            <input type="checkbox" id="e-plan-on" onchange="eToggle('plan')" style="width:16px;height:16px;accent-color:#16a34a"> 📐 Construction Plans
+          </label>
+          <span style="font-size:11px;color:#166534;background:#f0fdf4;padding:3px 8px;border-radius:20px;border:1px solid #bbf7d0">20# bond · B&amp;W plans $0.90/sqft · Colour draft posters $3.50/sqft · for photo-quality colour use Art Reproduction</span>
+        </div>
+        <div id="e-plan-section" style="display:none">
+          <div class="scroll-x">
+            <table style="min-width:680px;margin-bottom:6px">
+              <thead><tr>
+                <th class="gh" style="width:18%">Description / job name</th>
+                <th class="gh" style="width:9%">B&amp;W / Colour</th>
+                <th class="gh" style="width:8%">W (in)</th>
+                <th class="gh" style="width:8%">H (in)</th>
+                <th class="gh" style="width:7%">Qty</th>
+                <th class="gh" style="width:9%">Sq ft ea.</th>
+                <th class="gh" style="width:11%">Your cost ea.</th>
+                <th class="gh" style="width:11%">Retail ea.</th>
+                <th class="gh" style="width:11%">Retail total</th>
+                <th class="gh" style="width:10%">Your cost</th>
+                <th class="gh" style="width:4%"></th>
+              </tr></thead>
+              <tbody id="e-plan-body"></tbody>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="eAddPlan()" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">+ Add plan</button>
+          <div style="font-size:11px;color:#888;margin-top:6px">Retail auto-calculated at $0.90/sqft (Staples rate). Edit the retail field per row if needed. Staples reference: 18×24" $2.69 · 24×36" $5.39 · 30×42" $7.99 · 36×48" $10.99</div>
+          <div class="info-bar" style="margin-top:8px">
+            <div class="info-item">Your cost: <strong id="e-plan-cost">$0.00</strong></div>
+            <div class="info-item">Plans retail: <strong id="e-plan-retail">$0.00</strong></div>
+            <div class="info-item">Sheets: <strong id="e-plan-qty">0</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ART REPRODUCTION ── -->
+      <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.75rem">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#7e22ce;cursor:pointer">
+            <input type="checkbox" id="e-art-on" onchange="eToggle('art')" style="width:16px;height:16px;accent-color:#9333ea"> 🎨 Art Reproduction
+          </label>
+          <div style="font-size:12px;color:#666;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            Media:
+            <select id="e-art-media" onchange="eCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:220px">
+              <option value="0.59">Enhanced Matte ($0.59/sqft)</option>
+              <option value="0.74">Luster ($0.74/sqft)</option>
+              <option value="0.74">Glossy ($0.74/sqft)</option>
+              <option value="0.13">Bond / draft ($0.13/sqft)</option>
+            </select>
+          </div>
+          <span style="font-size:11px;color:#7e22ce;background:#fdf4ff;padding:3px 8px;border-radius:20px;border:1px solid #e9d5ff">Reference: Posterjack fine art $15–27/sqft</span>
+        </div>
+        <div id="e-art-section" style="display:none">
+          <div class="scroll-x">
+            <table style="min-width:620px;margin-bottom:6px">
+              <thead><tr>
+                <th class="ivh" style="width:20%">Artwork / description</th>
+                <th class="ivh" style="width:11%">B&amp;W / Colour</th>
+                <th class="ivh" style="width:9%">W (in)</th>
+                <th class="ivh" style="width:9%">H (in)</th>
+                <th class="ivh" style="width:7%">Qty</th>
+                <th class="ivh" style="width:10%">Sq ft</th>
+                <th class="ivh" style="width:11%">Your cost</th>
+                <th class="ivh" style="width:12%">Retail total</th>
+                <th class="ivh" style="width:9%">/ piece</th>
+                <th class="ivh" style="width:3%"></th>
+              </tr></thead>
+              <tbody id="e-art-body"></tbody>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="eAddArt()" style="background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff">+ Add artwork</button>
+          <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#7e22ce;line-height:1.7">
+            <strong>Pricing logic:</strong> Cost based on actual 36" roll material used (gang-runs same image to share passes). Retail = $14/sqft on print area, with minimums: <strong>≤ 12×18" → $25/print · ≤ 18×24" → $35/print</strong> · larger prints at $14/sqft. Hover the / piece cell to see which applies.<br>
+            <strong>Posterjack reference (Hahnemuehle rag):</strong> 8×10" $12 · 11×14" $23 · 12×18" $33 · 16×24" $50 · 18×24" $56 · 24×36" $100 · 36×48" $187
+          </div>
+          <div class="info-bar" style="margin-top:8px">
+            <div class="info-item">Your cost: <strong id="e-art-cost">$0.00</strong></div>
+            <div class="info-item">Art retail: <strong id="e-art-retail">$0.00</strong></div>
+          </div>
+          <div id="e-art-market-bar" style="margin-top:6px;border-radius:6px;padding:8px 12px;background:#f5f5f2;border:1px solid #e5e5e5;font-size:12px;color:#888">
+            Market check — Posterjack comparable: enter a print to see
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LAMINATION ── -->
+      <div class="lam-section" style="margin-bottom:1.25rem">
+        <div class="lam-section-title">
+          <label class="lam-toggle">
+            <input type="checkbox" id="e-lam-enabled" onchange="eLamToggle()">
+            🧴 Lamination
+          </label>
+          <span style="font-size:11px;font-weight:400;color:#9a3412;margin-left:4px">check to include lamination in this estimate</span>
+        </div>
+        <div id="e-lam-body" style="display:none">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:1rem;padding:8px 12px;background:#fff;border:1px solid #fed7aa;border-radius:6px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Roll width: <input type="number" id="e-lam-roll" value="25" min="1" step="1" oninput="eLamCalc()" style="width:60px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px"> in
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Lead/trail margin: <input type="number" id="e-lam-margin" value="2" min="0" step="0.5" oninput="eLamCalc()" style="width:50px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px"> in each end
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Your cost: $<input type="number" id="e-lam-cost-sqft" value="0.19" min="0" step="0.01" oninput="eLamCalc()" style="width:65px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px">/sq ft
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666">
+              Markup: <input type="number" id="e-lam-markup" value="690" min="0" step="5" oninput="eLamCalc()" style="width:60px;padding:5px 6px;font-size:12px;border:1px solid #ddd;border-radius:4px"> %
+            </div>
+          </div>
+          <div class="scroll-x">
+            <table style="min-width:760px;margin-bottom:6px">
+              <thead><tr>
+                <th class="lh" style="width:18%">Item description</th>
+                <th class="lh" style="width:8%">W (in)</th>
+                <th class="lh" style="width:8%">H (in)</th>
+                <th class="lh" style="width:7%">Qty</th>
+                <th class="lh" style="width:9%">Per pass</th>
+                <th class="lh" style="width:8%">Passes</th>
+                <th class="lh" style="width:10%">Film used</th>
+                <th class="lh" style="width:9%">Waste %</th>
+                <th class="lh" style="width:10%">Your cost</th>
+                <th class="lh" style="width:10%">Retail total</th>
+                <th class="lh" style="width:9%">Per piece</th>
+                <th class="lh" style="width:4%"></th>
+              </tr></thead>
+              <tbody id="e-lam-items-body"></tbody>
+              <tfoot>
+                <tr style="background:#fff7ed">
+                  <td colspan="4" style="text-align:right;font-size:12px;color:#9a3412;font-weight:600">Totals</td>
+                  <td class="lam-res" id="e-lam-tot-ppass">—</td>
+                  <td class="lam-res" id="e-lam-tot-passes">—</td>
+                  <td class="lam-res" id="e-lam-tot-sqft">—</td>
+                  <td class="lam-res" id="e-lam-tot-waste">—</td>
+                  <td class="lam-res" id="e-lam-tot-cost">$0.00</td>
+                  <td class="lam-res" id="e-lam-tot-retail">$0.00</td>
+                  <td class="lam-res" id="e-lam-tot-per">—</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="eLamAddRow()" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa">+ Add laminated item</button>
+          <div style="background:#fff;border:1px solid #fed7aa;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#9a3412;line-height:1.7">
+            <strong>Gang-running:</strong> fits items side-by-side per pass. Cost = $0.19/sq ft materials only — use $0.29/sq ft if ordering standalone with $40 shipping. Trimming goes into labour below.
+          </div>
+        </div>
+      </div>
+
+      <!-- LABOUR + TOTALS -->
+      <hr class="divider">
+      <div class="sec-title">Labour / finishing <span class="badge badge-blue">flat fee</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
+        <input type="number" id="e-hrs" value="0" min="0" step="0.25" oninput="eCalc()" style="width:70px">
+        <span style="font-size:13px;color:#666">hrs × $</span>
+        <input type="number" id="e-rate" value="45" min="0" step="5" oninput="eCalc()" style="width:65px">
+        <span style="font-size:13px;color:#666">/hr =</span>
+        <strong id="e-labour-total" style="font-family:monospace;font-size:15px">$0.00</strong>
+      </div>
+
+      <div class="cards3">
+        <div class="card yourCost">
+          <div class="card-lbl">Your total cost</div>
+          <div class="card-num" id="e-tt-cost">$0.00</div>
+          <div class="card-sub" id="e-tt-cost-sub">materials + labour</div>
+        </div>
+        <div class="card quote">
+          <div class="card-lbl">Quote to customer (before tax)</div>
+          <div class="card-num" id="e-tt-quote">$0.00</div>
+          <div class="card-sub" id="e-tt-profit">$0.00 profit · 0.0%</div>
+        </div>
+        <div class="card grand">
+          <div class="card-lbl">Grand total (incl. 13% HST)</div>
+          <div class="card-num" id="e-tt-grand">$0.00</div>
+          <div class="card-sub" id="e-tt-tax">HST: $0.00</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Settings -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div class="sec-title" style="margin-bottom:0">Epson settings</div>
+        <button onclick="toggleEpsonSettings()" id="e-settings-btn" class="btn-light no-print" style="padding:4px 12px;font-size:12px">▼ Show settings</button>
+      </div>
+      <div id="e-settings-wrap" style="display:none">
+        <div class="rate-bar" style="flex-wrap:wrap;gap:10px;margin-bottom:.75rem">
+          <div class="rate-item">Plans retail B&amp;W: $<input type="number" id="e-plan-bw-rate" value="0.90" min="0" step="0.05" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(Staples rate)</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Plans/poster retail Colour: $<input type="number" id="e-plan-col-rate" value="3.50" min="0" step="0.25" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(bond/draft · Staples ~$2.50–4/sqft)</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Print margin: <input type="number" id="e-art-margin" value="1" min="0" step="0.5" oninput="eCalc()" style="width:45px"> in</div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Ink (B&amp;W plans): $<input type="number" id="e-ink" value="0.04" min="0" step="0.005" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">validated: 0.07ml/sqft measured</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Ink (colour/art): $<input type="number" id="e-ink-colour" value="0.41" min="0" step="0.01" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">validated: 0.70ml/sqft avg measured</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Bond paper cost: $<input type="number" id="e-bond-cost" value="0.13" min="0" step="0.01" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">($32/300sqft roll)</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Art retail rate: $<input type="number" id="e-art-rate" value="14.00" min="0" step="0.50" oninput="eCalc()" style="width:65px">/sq ft <span style="font-size:10px;color:#888">(Posterjack: $15–27/sqft)</span></div>
+          <div style="margin-left:auto;font-size:11px;color:#888">Staples: 18×24" $2.69 · 24×36" $5.39 · 30×42" $7.99 · 36×48" $10.99</div>
+        </div>
+      </div>
+
+      <div class="sec-title">Notes</div>
+      <textarea id="e-proj" rows="3" placeholder="Job details — plan set pages, artwork titles, customer info, turnaround…"></textarea>
+
+    </div>
+    <div class="action-bar no-print">
+      <button class="btn-light" onclick="resetEpson()">↺ New estimate</button>
+      <button class="btn-dark" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ INVENTORY ═══════════════ -->
+  <div class="tab-panel" id="panel-inventory">
+    <div class="panel-body">
+
+      <div style="background:#f3e8ff;border:1px solid #e9d5ff;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:flex-start;gap:12px">
+        <div style="font-size:22px;flex-shrink:0">📦</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#6b21a8;margin-bottom:4px">Inventory Manager</div>
+          <div style="font-size:12px;color:#7e22ce;line-height:1.6">Manage all your back-end costs here. Changes save automatically to this browser and instantly update the dropdowns in both estimators. You can add, edit, or remove any item. This replaces your Google Sheets — everything lives in the app.</div>
+        </div>
+        <span id="inv-save-status" class="inv-save-badge saved" style="flex-shrink:0;margin-left:auto">✓ Saved</span>
+      </div>
+
+      <!-- ROLAND INKS + EPSON INKS -->
+      <div class="inv-section">
+        <div class="inv-section-title">🖨 Inks — Roland &amp; Epson <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">Roland: Vision TrueVis TR2 · Epson: UltraChrome HDX SC-P9000</span></div>
+        <div style="font-size:11px;color:#9333ea;margin-bottom:8px">Roland set: 4 × $114.95 = $459.80 (~$0.50/sqft avg) · Epson set: 11 × $185 + 1 × $110 = $2,145 (~$0.47/sqft B&amp;W plans, ~$1.77/sqft colour, ~$3.24/sqft fine art)</div>
+        <div class="scroll-x">
+          <table style="min-width:720px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:14%">Colour</th>
+              <th class="ivh" style="width:18%">Printer</th>
+              <th class="ivh" style="width:16%">Brand</th>
+              <th class="ivh" style="width:9%">Cost ($)</th>
+              <th class="ivh" style="width:7%">Size</th>
+              <th class="ivh" style="width:11%">Code</th>
+              <th class="ivh" style="width:11%">Supplier</th>
+              <th class="ivh" style="width:10%">Notes</th>
+              <th class="ivh" style="width:4%"></th>
+            </tr></thead>
+            <tbody id="inv-ink-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddInk()">+ Add ink colour</button>
+      </div>
+
+      <!-- EPSON PAPERS -->
+      <div class="inv-section">
+        <div class="inv-section-title">🖼 Epson Papers &amp; Media <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">Epson SC-P9000 · cost per sq ft</span></div>
+        <div class="scroll-x">
+          <table style="min-width:580px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:24%">Media name</th>
+              <th class="ivh" style="width:12%">Cost/sq ft ($)</th>
+              <th class="ivh" style="width:14%">Roll size</th>
+              <th class="ivh" style="width:14%">Supplier</th>
+              <th class="ivh" style="width:29%">Notes / roll price</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-epson-paper-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddEpsonPaper()">+ Add Epson media</button>
+      </div>
+
+      <!-- VINYL MATERIALS -->
+      <div class="inv-section">
+        <div class="inv-section-title">🎨 Vinyl &amp; Media <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds Roland/Vinyl estimator dropdowns · cost per sq ft</span></div>
+        <div class="scroll-x">
+          <table style="min-width:620px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:28%">Material name</th>
+              <th class="ivh" style="width:12%">Cost/sq ft ($)</th>
+              <th class="ivh" style="width:18%">Product code</th>
+              <th class="ivh" style="width:14%">Supplier</th>
+              <th class="ivh" style="width:21%">Notes / roll size</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-vinyl-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddVinyl()">+ Add vinyl / media</button>
+      </div>
+
+      <!-- SUBSTRATES -->
+      <div class="inv-section">
+        <div class="inv-section-title">🪵 Substrates <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds Roland/Vinyl signage substrate dropdown · cost per sq ft</span></div>
+        <div class="scroll-x">
+          <table style="min-width:560px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:28%">Substrate name</th>
+              <th class="ivh" style="width:12%">Cost/sq ft ($)</th>
+              <th class="ivh" style="width:14%">Sheet size</th>
+              <th class="ivh" style="width:16%">Supplier</th>
+              <th class="ivh" style="width:23%">Notes</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-substrate-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddSubstrate()">+ Add substrate</button>
+      </div>
+
+      <!-- COILS -->
+      <div class="inv-section">
+        <div class="inv-section-title">🌀 Coils &amp; Binding <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds the coil binding selector in the Paper Estimator</span></div>
+        <div class="scroll-x">
+          <table style="min-width:560px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:12%">Size</th>
+              <th class="ivh" style="width:14%">Colour</th>
+              <th class="ivh" style="width:18%">Cost each ($)</th>
+              <th class="ivh" style="width:22%">Product code</th>
+              <th class="ivh" style="width:27%">Notes</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-coil-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddCoil()">+ Add coil size</button>
+      </div>
+
+      <!-- PAPER STOCKS -->
+      <div class="inv-section">
+        <div class="inv-section-title">📄 Paper Stocks <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds the Paper Estimator dropdown</span></div>
+        <div class="scroll-x">
+          <table style="min-width:520px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:45%">Paper name</th>
+              <th class="ivh" style="width:18%">Cost / sheet ($)</th>
+              <th class="ivh" style="width:30%">Supplier / notes</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-paper-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddPaper()">+ Add paper stock</button>
+      </div>
+
+      <!-- PRINT / TONER TYPES -->
+      <div class="inv-section">
+        <div class="inv-section-title">🖨 Print / Toner Types <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds the Print Type dropdown</span></div>
+        <div class="scroll-x">
+          <table style="min-width:400px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:45%">Type name</th>
+              <th class="ivh" style="width:25%">Cost / click ($)</th>
+              <th class="ivh" style="width:23%">Notes</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-toner-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddToner()">+ Add print type</button>
+      </div>
+
+      <!-- OTHER INVENTORY (free-form) -->
+      <div class="inv-section">
+        <div class="inv-section-title">🗂 Other Inventory &amp; Supplies <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">reference only — for your records</span></div>
+        <div style="font-size:11px;color:#9333ea;margin-bottom:8px">Record any other supplies, materials, or costs here for reference. These don't feed a dropdown but are saved with your inventory.</div>
+        <div class="scroll-x">
+          <table style="min-width:520px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:30%">Item name</th>
+              <th class="ivh" style="width:18%">Unit cost ($)</th>
+              <th class="ivh" style="width:15%">Unit type</th>
+              <th class="ivh" style="width:15%">Supplier</th>
+              <th class="ivh" style="width:15%">Notes</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-other-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddOther()">+ Add item</button>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:0.5rem">
+        <button class="btn-dark no-print" onclick="invExport()">⬇ Export inventory backup (JSON)</button>
+        <label class="btn-light no-print" style="cursor:pointer">⬆ Import inventory (JSON)<input type="file" id="inv-import-file" accept=".json" style="display:none" onchange="invImport(this)"></label>
+        <button class="btn-light no-print" style="color:#dc2626;border-color:#fca5a5" onclick="invReset()">↺ Reset to defaults</button>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<script>
+// ══════════════════════════════════════════════
+//  TAB SWITCHING
+// ══════════════════════════════════════════════
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+//  INVENTORY MODULE
+// ══════════════════════════════════════════════
+const DEFAULT_COILS = [
+  {size:"6mm",  color:"Black", cost:0.09, code:"PKBK6MMX124"},
+  {size:"6mm",  color:"White", cost:0.12, code:"PKCL6MMX124"},
+  {size:"6mm",  color:"Navy",  cost:0.12, code:"PKNA6MMX124"},
+  {size:"8mm",  color:"Black", cost:0.12, code:"PKBK8MMX124"},
+  {size:"10mm", color:"Black", cost:0.10, code:"PKBK10MMX124"},
+  {size:"12mm", color:"Black", cost:0.20, code:"PKBK12MMX124"},
+  {size:"14mm", color:"Black", cost:0.25, code:"PKBK14MMX124"},
+  {size:"14mm", color:"White", cost:0.32, code:"PKCL14MMX124"},
+  {size:"15mm", color:"Black", cost:0.27, code:"PKBK15MMX124"},
+  {size:"16mm", color:"Black", cost:0.29, code:"PKBK16MMX124"},
+  {size:"18mm", color:"Black", cost:0.35, code:"PKBK18MMX124"},
+  {size:"30mm", color:"Black", cost:0.58, code:"PKBK30MMX124"},
+];
+
+const DEFAULT_INKS = [
+  // Roland SG3-540 — Vision TrueVis TR2 compatible
+  {name:"Cyan",              printer:"Roland SG3-540", brand:"Vision TrueVis TR2", cost:114.95, size:"500ml", code:"VMTR2-CY", supplier:"Pony Graphics", notes:"Roland compatible - $0.50/sqft avg"},
+  {name:"Magenta",           printer:"Roland SG3-540", brand:"Vision TrueVis TR2", cost:114.95, size:"500ml", code:"VMTR2-MG", supplier:"Pony Graphics", notes:"Roland compatible"},
+  {name:"Yellow",            printer:"Roland SG3-540", brand:"Vision TrueVis TR2", cost:114.95, size:"500ml", code:"VMTR2-YE", supplier:"Pony Graphics", notes:"Roland compatible"},
+  {name:"Black",             printer:"Roland SG3-540", brand:"Vision TrueVis TR2", cost:114.95, size:"500ml", code:"VMTR2-BK", supplier:"Pony Graphics", notes:"Roland compatible"},
+  // Epson SC-P9000 — UltraChrome HDX
+  {name:"Photo Black",       printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9000", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Matte Black",       printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9001", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Cyan",              printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9002", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Vivid Magenta",     printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9003", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Yellow",            printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9004", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Light Cyan",        printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9005", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Vivid Light Magenta",printer:"Epson SC-P9000",brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9006", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Light Black",       printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9007", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Light Light Black", printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9008", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Orange",            printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9009", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Green",             printer:"Epson SC-P9000", brand:"UltraChrome HDX", cost:185.00, size:"350ml", code:"SP9010", supplier:"NHS", notes:"nhsmedia@gmail.com"},
+  {name:"Light Light Black 2",printer:"Epson SC-P9000",brand:"UltraChrome HDX", cost:110.00, size:"150ml", code:"SP9011", supplier:"NHS", notes:"nhsmedia@gmail.com - 150ml only"},
+];
+
+const DEFAULT_EPSON_PAPERS = [
+  {name:"36in 24# Bond Text",  cost:0.13, size:"36x100ft", supplier:"Spicers",       notes:"$32/roll - 300sqft - nhsmedia@gmail.com - B&W plans/line art"},
+  {name:"Enhanced Matte",      cost:0.59, size:"36x100ft", supplier:"NHS",           notes:"$150/roll - 300sqft - nhsmedia@gmail.com - colour prints"},
+  {name:"Luster",              cost:0.74, size:"24x100ft", supplier:"NHS",           notes:"$125/roll - 200sqft - nhsmedia@gmail.com - photo prints"},
+  {name:"Glossy",              cost:0.74, size:"36x100ft", supplier:"NHS",           notes:"nhsmedia@gmail.com - price not confirmed - estimate similar to Luster"},
+];
+
+const DEFAULT_VINYL = [
+  {name:"Matte Vinyl",               cost:0.56, code:"MAC-GV528P-W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Gloss Vinyl",               cost:0.56, code:"MAC-GV529P-W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Matte Laminate",            cost:0.56, code:"MAC-LUV8254W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Gloss Laminate",            cost:0.63, code:"MAC-LUV80554-W54L150",  supplier:"Pony Graphics", notes:"54x150ft  - $360/roll  - calc: $360/675sqft x1.18"},
+  {name:"Heat Press Vinyl",          cost:2.69, code:"BFLEX",                 supplier:"Pony Graphics", notes:"20x81ft  - $308.31/roll"},
+  {name:"Perforated Vinyl 60/40",    cost:0.80, code:"VMOWV-UV",              supplier:"Pony Graphics", notes:"54x164ft  - $500/roll"},
+  {name:"Poly Banner",               cost:0.43, code:"VMSMPB",                supplier:"Pony Graphics", notes:"54x100ft  - $163/roll"},
+  {name:"15oz Banner Premium 54in",  cost:0.64, code:"VMPETBO",               supplier:"Pony Graphics", notes:"54x164ft  - $398.50/roll"},
+  {name:"Ultraflex Superprint Plus Matte 13oz 38in", cost:0.35, code:"VMJFM0965050",          supplier:"Pony Graphics", notes:"38x164ft  - $155.21/roll - 519 sqft"},
+  {name:"Vision CANVAS matte/satin", cost:0.75, code:"VMACCF",                supplier:"Pony Graphics", notes:"54x100ft  - $285/roll"},
+  {name:"Mactac M-Dot Removable",    cost:0.66, code:"MAC-MD228",             supplier:"Pony Graphics", notes:"54x150ft  - $380/roll"},
+  {name:"Holographic",               cost:2.01, code:"RESM-HOLO",             supplier:"Pony Graphics", notes:"15x75ft  - $160/roll"},
+  {name:"180gsm Photo Paper",        cost:2.01, code:"VMSMPP",                supplier:"Pony Graphics", notes:"15x75ft  - $160/roll - NOTE: same cost as holographic"},
+  {name:"Strip Mesh Pro LTX 9oz",    cost:0.59, code:"VMSMPLLTX",             supplier:"Pony Graphics", notes:"54x164ft - price not on record"},
+  {name:"MACTAC Frosted Printable",  cost:1.84, code:"MAC-JJ-5796",           supplier:"Pony Graphics", notes:"54x75ft  - $525/roll"},
+  {name:"Removable Interior",        cost:1.00, code:"MAC-RO628",             supplier:"Pony Graphics", notes:"54x100ft  - $380.79/roll"},
+  {name:"Dry Erase Laminate",        cost:0.65, code:"",                      supplier:"",              notes:"No roll price on record - estimate"},
+  {name:"Razor Optically Clear Gloss",cost:0.96,code:"MAC-LF3648G",           supplier:"Pony Graphics", notes:"54x150ft  - $546.38/roll"},
+  {name:"Static Cling",              cost:0.60, code:"MAC-WVC-109",           supplier:"Pony Graphics", notes:"54x150ft  - $344.30/roll"},
+  {name:"Reflective White 24x30",    cost:2.75, code:"Nikkalite Eng. grade",  supplier:"Spicers",       notes:"24x30ft  - $140/roll - lynne.sauve@spicers.ca"},
+  {name:"Reflective White 24x150",   cost:2.01, code:"Nikkalite Eng. grade",  supplier:"Spicers",       notes:"24x150ft  - $510.20/roll"},
+  {name:"Magnetic 30mil 24x50",      cost:1.65, code:"30 mil",                supplier:"Spicers",       notes:"24x50ft  - $140/roll"},
+  {name:"Gold Leaf",                 cost:6.00, code:"",                      supplier:"SignSupply",     notes:"No roll size on record - estimate"},
+  {name:"Wrap Vinyl",                cost:1.05, code:"MAC_GV1029SW5",         supplier:"Pony Graphics", notes:"54x150ft  - $600/roll"},
+  {name:"Wrap Laminate",             cost:1.05, code:"MAC-LF36485415",        supplier:"Pony Graphics", notes:"54x150ft  - $600/roll"},
+  {name:"Eco Matte Laminate",        cost:0.22, code:"Vision",                supplier:"Pony Graphics", notes:"54x150ft  - $125/roll - Vision brand"},
+  {name:"Eco Glossy Laminate",       cost:0.22, code:"Vision",                supplier:"Pony Graphics", notes:"54x150ft  - $125/roll - Vision brand"},
+  {name:"White Backed Opaque",       cost:0.51, code:"Mactac",                supplier:"Pony Graphics", notes:"54x150ft  - $290/roll"},
+  {name:"White Backed Opaque 4mil (Vision)",cost:0.31, code:"VMPVM4P54150",          supplier:"Pony Graphics", notes:"54x150ft  - $175.95/roll - Vision Media Print Vinyl 4mil Matt Permanent"},
+  {name:"Anti Graffiti Laminate",    cost:0.79, code:"MAC-SAG38",             supplier:"Pony Graphics", notes:"54x150ft  - $450/roll"},
+];
+
+const DEFAULT_SUBSTRATES = [
+  {name:"3mm Aluminum",          cost:2.03, size:"4x8ft", supplier:"Spicers", notes:"$55/sheet  - 32sqft  - lynne.sauve@spicers.ca"},
+  {name:"6mm Aluminum",          cost:5.57, size:"4x8ft", supplier:"Spicers", notes:"$151/sheet  - 32sqft"},
+  {name:"4mm Coroplast",         cost:0.52, size:"4x8ft", supplier:"Spicers", notes:"$350/box of 25  - $14/sheet  - 32sqft"},
+  {name:"10mm Coroplast",        cost:1.84, size:"4x8ft", supplier:"Spicers", notes:"$50/sheet  - 32sqft"},
+  {name:"Foam 4mm (3/16th)",     cost:0.62, size:"4x8ft", supplier:"Spicers", notes:"$420/box of 25  - $16.80/sheet  - 32sqft"},
+  {name:"Styrene 0.020",         cost:0.55, size:"4x8ft", supplier:"Spicers", notes:"$15/sheet  - 32sqft"},
+  {name:"Sintra (foamlux)",      cost:1.60, size:"4x8ft", supplier:"Spicers", notes:"$433/10 sheets  - $43.30/sheet  - 32sqft"},
+  {name:"Aluminum Black 2-side", cost:5.53, size:"4x8ft", supplier:"Spicers", notes:"$150/sheet  - 32sqft"},
+];
+
+const DEFAULT_PAPERS = [
+  {name:"2-part NCR (11.5x17)",       cost:0.21, supplier:"Spicer"},
+  {name:"3-Part NCR+Perf (11.5x17)",  cost:0.25, supplier:"Spicer"},
+  {name:"Tango 14pt CS2 Cover (13x19)",cost:0.24,supplier:"Spicer"},
+  {name:"Tango 14pt CS1 (12x18)",     cost:0.18, supplier:"Spicer"},
+  {name:"2-part NCR (11x17)",         cost:0.21, supplier:"Spicer"},
+  {name:"Astro Bright 11x17",         cost:0.15, supplier:"Spicer"},
+  {name:"Mohawk 18x12 100# eggshell", cost:0.90, supplier:"Spicer"},
+  {name:"Hammermill 100# cover 13x19",cost:0.28, supplier:"Spicer"},
+  {name:"80# Hammermill Cover",       cost:0.19, supplier:"Spicer"},
+  {name:"Hammermill 32#",             cost:0.11, supplier:"Spicer"},
+  {name:"12pt CS1 12x18",             cost:0.15, supplier:"Spicer"},
+  {name:"Lynx 24# 12x18",            cost:0.07, supplier:"Spicer"},
+  {name:"Springhill cream 11x17 bristol 67#",cost:0.06,supplier:"Spicer"},
+  {name:"Supreme 100# gloss text 13x19",cost:0.16,supplier:"Spicer"},
+  {name:"Pacesetter 60# adhesive 13x19",cost:0.83,supplier:"Spicer"},
+  {name:"Mohawk Felt 110# 18x12",    cost:0.74, supplier:"Spicer"},
+  {name:"Sustana 24#",               cost:0.05, supplier:"Spicer"},
+  {name:"Sustana 28#",               cost:0.07, supplier:"Spicer"},
+  {name:"100# gloss text (Creator)", cost:0.12, supplier:"Spicer"},
+  {name:"80# gloss (Creator)",       cost:0.12, supplier:"Spicer"},
+  {name:'70# Gloss Text (Creator) 24x36"',cost:0.08,supplier:"Spicer"},
+  {name:'Sundance Fiber 80# cover 8.5x11"',cost:0.17,supplier:"Spicer"},
+  {name:"13x19 11pt Gloss Cover Invercote",cost:0.45,supplier:"Spicer"},
+  {name:"Sustana 100# Cover 100% recycled",cost:0.21,supplier:"Spicer"},
+  {name:"80# Rolland Cover",         cost:0.07, supplier:"Spicer"},
+  {name:"TEAR RESISTANT 12x18 5 mil",cost:0.71, supplier:"Spicer"},
+  {name:"TEAR RESISTANT 12x18 8 mil",cost:1.05, supplier:"Spicer"},
+  {name:"TEAR RESISTANT 12x18 10 mil",cost:1.36,supplier:"Spicer"},
+  {name:"Cougar 100# text 12x18",    cost:0.16, supplier:"Spicer"},
+  {name:'8.5x11 12up 2.5" circles',  cost:0.35, supplier:"Spicer"},
+  {name:"Padding board 12x18",       cost:0.25, supplier:"Spicer"},
+  {name:"Padding board 13x19",       cost:0.53, supplier:"Spicer"},
+  {name:"23x35 Lynx Sheets",         cost:0.16, supplier:"Spicer"},
+];
+
+const DEFAULT_TONER = [
+  {name:"B&W",    cost:0.03, notes:"per click"},
+  {name:"Colour", cost:0.11, notes:"per click"},
+];
+
+const DEFAULT_OTHER = [
+  {name:"Lamination roll 5mil (pair)",          cost:80.00, unit:"25 x 200ft roll pair",   supplier:"Pony Graphics", notes:"Both rolls needed per job. Covers ~417 sq ft. $40 ship usually bundled. $0.19/sq ft materials, $0.29/sq ft with ship"},
+  {name:"4-3/8x5-3/4 White Envelope A2WW",      cost:0.06,  unit:"per unit",            supplier:"Spicers",       notes:"Product code: A2WW  - SKU: GENEA2WSF  - gospicers.ca"},
+  {name:"Staples / binding",                     cost:0.25,  unit:"per booklet",         supplier:"",              notes:""},
+  {name:"Laminating pouch",                      cost:0.50,  unit:"per sheet",           supplier:"",              notes:""},
+];
+
+let inventory = { coils: [], papers: [], toner: [], other: [] };
+let invSaveTimer = null;
+
+function invLoad(){
+  try {
+    const s = localStorage.getItem('coba-inventory-v2');
+    if(s){
+      inventory = JSON.parse(s);
+      if(!inventory.inks       || inventory.inks.length===0)       inventory.inks       = JSON.parse(JSON.stringify(DEFAULT_INKS));
+      if(!inventory.epsonPapers|| inventory.epsonPapers.length===0) inventory.epsonPapers= JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS));
+      if(!inventory.coils      || inventory.coils.length===0)      inventory.coils      = JSON.parse(JSON.stringify(DEFAULT_COILS));
+      if(!inventory.vinyl      || inventory.vinyl.length===0)       inventory.vinyl      = JSON.parse(JSON.stringify(DEFAULT_VINYL));
+      if(!inventory.substrates || inventory.substrates.length===0)  inventory.substrates = JSON.parse(JSON.stringify(DEFAULT_SUBSTRATES));
+      if(!inventory.other) inventory.other = [];
+      const hasLam = inventory.other.some(o=>o.name.toLowerCase().includes('lamination roll'));
+      if(!hasLam){ inventory.other.unshift({name:"Lamination roll 5mil (pair)",cost:80.00,unit:"25 x 200ft roll pair",supplier:"Pony Graphics",notes:"Both rolls needed. Covers ~417 sq ft. $40 ship usually bundled. $0.19/sq ft materials, $0.29/sq ft with ship"}); invSave(); }
+      const hasEnv = inventory.other.some(o=>o.name.toLowerCase().includes('a2ww')||o.name.toLowerCase().includes('4-3/8'));
+      if(!hasEnv){ inventory.other.splice(1,0,{name:"4-3/8x5-3/4 White Envelope A2WW",cost:0.06,unit:"per unit",supplier:"Spicers",notes:"Product code: A2WW - SKU: GENEA2WSF - gospicers.ca"}); invSave(); }
+    }
+    else { invSetDefaults(); }
+  } catch(e){ invSetDefaults(); }
+}
+function invSetDefaults(){
+  inventory = {
+    inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
+    epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
+    coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),
+    vinyl:        JSON.parse(JSON.stringify(DEFAULT_VINYL)),
+    substrates:   JSON.parse(JSON.stringify(DEFAULT_SUBSTRATES)),
+    papers:       JSON.parse(JSON.stringify(DEFAULT_PAPERS)),
+    toner:        JSON.parse(JSON.stringify(DEFAULT_TONER)),
+    other:        JSON.parse(JSON.stringify(DEFAULT_OTHER)),
+  };
+}
+function invSave(){
+  localStorage.setItem('coba-inventory-v2', JSON.stringify(inventory));
+  const s = document.getElementById('inv-save-status');
+  if(s){ s.textContent='✓ Saved'; s.className='inv-save-badge saved'; }
+}
+function invDebounceSave(){
+  const s = document.getElementById('inv-save-status');
+  if(s){ s.textContent='Saving…'; s.className='inv-save-badge saving'; }
+  clearTimeout(invSaveTimer);
+  invSaveTimer = setTimeout(()=>{ invSave(); rebuildDropdowns(); }, 600);
+}
+
+/* ── RENDER INVENTORY TABLES ── */
+function invRenderAll(){
+  invRenderInks(); invRenderEpsonPapers(); invRenderCoils(); invRenderVinyl(); invRenderSubstrates(); invRenderPapers(); invRenderToner(); invRenderOther();
+}
+
+function invRenderEpsonPapers(){
+  const tb=document.getElementById('inv-epson-paper-body');
+  if(!tb) return;
+  tb.innerHTML='';
+  if(!inventory.epsonPapers) inventory.epsonPapers=JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS));
+  inventory.epsonPapers.forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(p.name)}" oninput="inventory.epsonPapers[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="number" value="${p.cost}" min="0" step="0.01" oninput="inventory.epsonPapers[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(p.size||'')}" oninput="inventory.epsonPapers[${i}].size=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(p.supplier||'')}" oninput="inventory.epsonPapers[${i}].supplier=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(p.notes||'')}" oninput="inventory.epsonPapers[${i}].notes=this.value;invDebounceSave()"></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveEpsonPaper(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function invAddEpsonPaper(){ inventory.epsonPapers.push({name:'',cost:0,size:'',supplier:'NHS',notes:''}); invRenderEpsonPapers(); invDebounceSave(); }
+function invRemoveEpsonPaper(i){ if(!confirm('Remove?')) return; inventory.epsonPapers.splice(i,1); invRenderEpsonPapers(); invDebounceSave(); }
+
+function invRenderInks(){
+  const tb = document.getElementById('inv-ink-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  if(!inventory.inks) inventory.inks = JSON.parse(JSON.stringify(DEFAULT_INKS));
+  inventory.inks.forEach((ink, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(ink.name)}" oninput="inventory.inks[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(ink.printer||'')}" oninput="inventory.inks[${i}].printer=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(ink.brand||'')}" oninput="inventory.inks[${i}].brand=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="number" value="${ink.cost}" min="0" step="0.01" oninput="inventory.inks[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(ink.size||'')}" oninput="inventory.inks[${i}].size=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(ink.code||'')}" oninput="inventory.inks[${i}].code=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(ink.supplier||'')}" oninput="inventory.inks[${i}].supplier=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(ink.notes||'')}" oninput="inventory.inks[${i}].notes=this.value;invDebounceSave()"></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveInk(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function invAddInk(){ inventory.inks.push({name:'',brand:'',cost:0,size:'500ml',code:'',supplier:'',notes:''}); invRenderInks(); invDebounceSave(); }
+function invRemoveInk(i){ if(!confirm('Remove this ink?')) return; inventory.inks.splice(i,1); invRenderInks(); invDebounceSave(); }
+
+function invRenderVinyl(){
+  const tb = document.getElementById('inv-vinyl-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  if(!inventory.vinyl) inventory.vinyl = JSON.parse(JSON.stringify(DEFAULT_VINYL));
+  inventory.vinyl.forEach((v, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(v.name)}" oninput="inventory.vinyl[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="number" value="${v.cost}" min="0" step="0.01" oninput="inventory.vinyl[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(v.code||'')}" oninput="inventory.vinyl[${i}].code=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(v.supplier||'')}" oninput="inventory.vinyl[${i}].supplier=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(v.notes||'')}" oninput="inventory.vinyl[${i}].notes=this.value;invDebounceSave()" placeholder="roll size, etc."></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveVinyl(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function invRenderSubstrates(){
+  const tb = document.getElementById('inv-substrate-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  if(!inventory.substrates) inventory.substrates = JSON.parse(JSON.stringify(DEFAULT_SUBSTRATES));
+  inventory.substrates.forEach((s, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(s.name)}" oninput="inventory.substrates[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="number" value="${s.cost}" min="0" step="0.01" oninput="inventory.substrates[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(s.size||'')}" oninput="inventory.substrates[${i}].size=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(s.supplier||'')}" oninput="inventory.substrates[${i}].supplier=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(s.notes||'')}" oninput="inventory.substrates[${i}].notes=this.value;invDebounceSave()"></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveSubstrate(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function invAddVinyl(){ inventory.vinyl.push({name:'New vinyl',cost:0,code:'',supplier:'',notes:''}); invRenderVinyl(); invDebounceSave(); }
+function invAddSubstrate(){ inventory.substrates.push({name:'New substrate',cost:0,size:'',supplier:'',notes:''}); invRenderSubstrates(); invDebounceSave(); }
+function invRemoveVinyl(i){ if(!confirm('Remove this vinyl?')) return; inventory.vinyl.splice(i,1); invRenderVinyl(); invDebounceSave(); }
+function invRemoveSubstrate(i){ if(!confirm('Remove this substrate?')) return; inventory.substrates.splice(i,1); invRenderSubstrates(); invDebounceSave(); }
+
+function invRenderCoils(){
+  const tb = document.getElementById('inv-coil-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  if(!inventory.coils) inventory.coils = JSON.parse(JSON.stringify(DEFAULT_COILS));
+  inventory.coils.forEach((c, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(c.size)}" oninput="inventory.coils[${i}].size=this.value;invDebounceSave()" placeholder="14mm"></td>
+      <td class="iv-edit"><input type="text" value="${esc(c.color||'')}" oninput="inventory.coils[${i}].color=this.value;invDebounceSave()" placeholder="Black"></td>
+      <td class="iv-edit"><input type="number" value="${c.cost}" min="0" step="0.01" oninput="inventory.coils[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(c.code||'')}" oninput="inventory.coils[${i}].code=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(c.notes||'')}" oninput="inventory.coils[${i}].notes=this.value;invDebounceSave()" placeholder="notes"></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveCoil(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function invAddCoil(){ inventory.coils.push({size:'',color:'Black',cost:0,code:'',notes:''}); invRenderCoils(); invDebounceSave(); }
+function invRemoveCoil(i){ if(!confirm('Remove this coil?')) return; inventory.coils.splice(i,1); invRenderCoils(); invDebounceSave(); }
+
+function invRenderPapers(){
+  const tb = document.getElementById('inv-paper-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  inventory.papers.forEach((p, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(p.name)}" oninput="inventory.papers[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="number" value="${p.cost}" min="0" step="0.005" oninput="inventory.papers[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(p.supplier||'')}" oninput="inventory.papers[${i}].supplier=this.value;invDebounceSave()" placeholder="Spicer, etc."></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemovePaper(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function invRenderToner(){
+  const tb = document.getElementById('inv-toner-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  inventory.toner.forEach((t, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(t.name)}" oninput="inventory.toner[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="number" value="${t.cost}" min="0" step="0.005" oninput="inventory.toner[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(t.notes||'')}" oninput="inventory.toner[${i}].notes=this.value;invDebounceSave()" placeholder="notes"></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveToner(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function invRenderOther(){
+  const tb = document.getElementById('inv-other-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  inventory.other.forEach((o, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="iv-edit"><input type="text" value="${esc(o.name)}" oninput="inventory.other[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="number" value="${o.cost}" min="0" step="0.01" oninput="inventory.other[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
+      <td class="iv-edit"><input type="text" value="${esc(o.unit||'')}" oninput="inventory.other[${i}].unit=this.value;invDebounceSave()" placeholder="per sheet"></td>
+      <td class="iv-edit"><input type="text" value="${esc(o.supplier||'')}" oninput="inventory.other[${i}].supplier=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(o.notes||'')}" oninput="inventory.other[${i}].notes=this.value;invDebounceSave()"></td>
+      <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveOther(${i})" title="Remove">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function invAddPaper(){ inventory.papers.push({name:'New paper stock',cost:0.00,supplier:''}); invRenderPapers(); invDebounceSave(); }
+function invAddToner(){ inventory.toner.push({name:'New type',cost:0.00,notes:''}); invRenderToner(); invDebounceSave(); }
+function invAddOther(){ inventory.other.push({name:'New item',cost:0.00,unit:'',supplier:'',notes:''}); invRenderOther(); invDebounceSave(); }
+
+function invRemovePaper(i){ if(!confirm('Remove "'+inventory.papers[i].name+'"?')) return; inventory.papers.splice(i,1); invRenderPapers(); invDebounceSave(); }
+function invRemoveToner(i){ if(!confirm('Remove "'+inventory.toner[i].name+'"?')) return; inventory.toner.splice(i,1); invRenderToner(); invDebounceSave(); }
+function invRemoveOther(i){ inventory.other.splice(i,1); invRenderOther(); invDebounceSave(); }
+
+function invReset(){ if(!confirm('Reset all inventory to defaults? This cannot be undone.')) return; invSetDefaults(); invRenderAll(); invSave(); rebuildDropdowns(); }
+
+function invExport(){
+  const blob = new Blob([JSON.stringify(inventory, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'CobaStudios_Inventory_'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+function invImport(input){
+  const file = input.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.papers && data.toner){ inventory = data; invRenderAll(); invSave(); rebuildDropdowns(); alert('Inventory imported successfully!'); }
+      else { alert('Invalid inventory file.'); }
+    } catch(ex){ alert('Could not read file: '+ex.message); }
+  };
+  r.readAsText(file);
+  input.value = '';
+}
+
+function esc(s){ return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+/* ── REBUILD DROPDOWNS FROM INVENTORY ── */
+function rebuildDropdowns(){
+  for(let i=0;i<4;i++){
+    const sel = document.getElementById('pp-s'+i);
+    if(!sel) continue;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— select paper —</option>';
+    inventory.papers.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.cost; opt.textContent = p.name;
+      if(String(p.cost)===cur) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  for(let i=0;i<4;i++){
+    const sel = document.getElementById('pt-s'+i);
+    if(!sel) continue;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— select type —</option>';
+    inventory.toner.forEach(t=>{
+      const opt = document.createElement('option');
+      opt.value = t.cost; opt.textContent = t.name;
+      if(String(t.cost)===cur) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  rebuildCoilDropdown();
+  rebuildRolandDropdowns();
+  pCalc();
+}
+
+function rebuildCoilDropdown(){
+  const sel = document.getElementById('coil-size');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— size —</option>';
+  if(!inventory.coils) return;
+  inventory.coils.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c.cost;
+    opt.textContent = c.size + (c.color ? ' ' + c.color : '');
+    opt.dataset.label = c.size + (c.color ? ' ' + c.color : '');
+    if(String(c.cost)===cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+// ── COIL BINDING ──
+function coilCalc(){
+  const enabled = document.getElementById('coil-enabled').checked;
+  const inputs  = document.getElementById('coil-inputs');
+  if(inputs) inputs.style.display = enabled ? '' : 'none';
+  pCalc();
+}
+
+function coilGetTotal(){
+  if(!document.getElementById('coil-enabled').checked) return {cost:0, retail:0};
+  const costEach = parseFloat(document.getElementById('coil-size').value) || 0;
+  const qty      = parseFloat(document.getElementById('coil-qty').value)  || 0;
+  const hint     = document.getElementById('coil-cost-hint');
+  if(hint) hint.textContent = costEach>0 ? '($'+costEach.toFixed(2)+' each)' : '';
+  return { cost: costEach*qty, retail: costEach*qty }; // pass-through — coil cost added at cost, no markup
+}
+
+// ══════════════════════════════════════════════
+//  LAMINATION MODULE
+// ══════════════════════════════════════════════
+let lamRows = [];
+let lamId = 0;
+
+function lamToggle(){
+  const enabled = document.getElementById('lam-enabled').checked;
+  document.getElementById('lam-body').style.display = enabled ? '' : 'none';
+  document.getElementById('p-lam-row').style.display = enabled ? '' : 'none';
+  if(enabled && lamRows.length === 0){ lamAddRow(); }
+  pCalc();
+}
+
+function lamAddRow(){
+  const id = 'lam'+lamId++;
+  lamRows.push(id);
+  const tb = document.getElementById('lam-items-body');
+  const tr = document.createElement('tr'); tr.id = 'lrow-'+id;
+  tr.innerHTML = `
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. 5x7 menu card"></td>
+    <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="lamCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="lamCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="lamCalc()"></td>
+    <td class="lam-res" id="${id}-pp">—</td>
+    <td class="lam-res" id="${id}-ps">—</td>
+    <td class="lam-res" id="${id}-sf">—</td>
+    <td class="lam-res" id="${id}-ws">—</td>
+    <td class="lam-res" id="${id}-co">—</td>
+    <td class="lam-res" id="${id}-rt">—</td>
+    <td class="lam-res" id="${id}-pe">—</td>
+    <td style="text-align:center;background:#fff7ed"><button class="btn-remove no-print" onclick="lamRemoveRow('${id}')" title="Remove">✕</button></td>`;
+  tb.appendChild(tr);
+  lamCalc();
+}
+
+function lamRemoveRow(id){
+  const el = document.getElementById('lrow-'+id); if(el) el.remove();
+  lamRows = lamRows.filter(r=>r!==id);
+  lamCalc();
+}
+
+function lamCalc(){
+  const rollW  = parseFloat(document.getElementById('lam-roll').value)     || 25;
+  const margin = parseFloat(document.getElementById('lam-margin').value)    || 2;
+  const costSF = parseFloat(document.getElementById('lam-cost-sqft').value) || 0;
+  const markup = parseFloat(document.getElementById('lam-markup').value)    || 0;
+  const maxW   = 24; // physical laminator throat
+  ['lam-margin-disp','lam-margin-disp2'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent=margin; });
+
+  let totFilmSqFt=0, totCost=0, totRetail=0, totPieces=0, totPasses=0;
+
+  lamRows.forEach(id=>{
+    const w=parseFloat(document.getElementById(id+'-w').value)||0;
+    const h=parseFloat(document.getElementById(id+'-h').value)||0;
+    const q=parseFloat(document.getElementById(id+'-q').value)||0;
+    const ppEl=document.getElementById(id+'-pp'), psEl=document.getElementById(id+'-ps');
+    const sfEl=document.getElementById(id+'-sf'), wsEl=document.getElementById(id+'-ws');
+    const coEl=document.getElementById(id+'-co'), rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+    const allEls=[ppEl,psEl,sfEl,wsEl,coEl,rtEl,peEl];
+
+    if(w>0 && h>0 && q>0){
+      if(Math.min(w,h) > maxW){ allEls.forEach(e=>{ if(e){ e.textContent='⚠ too wide'; e.style.color='#dc2626'; } }); return; }
+      allEls.forEach(e=>{ if(e) e.style.color=''; });
+
+      // Orient: larger dim across roll, smaller feeds through
+      const bigger=Math.max(w,h), smaller=Math.min(w,h);
+      const across = bigger<=rollW ? bigger : smaller;
+      const feed   = bigger<=rollW ? smaller : bigger;
+
+      // Gang-run: how many fit side-by-side across the roll?
+      const itemsPerPass = Math.max(1, Math.floor(rollW / across));
+      const passes       = Math.ceil(q / itemsPerPass);
+
+      // Film for all passes
+      const filmPerPass_sqin = rollW * (feed + 2*margin);
+      const totalFilm_sqin   = passes * filmPerPass_sqin;
+      const totalFilm_sqft   = totalFilm_sqin / 144;
+
+      const itemAreaTotal_sqin = w * h * q;
+      const wastePercent       = (totalFilm_sqin - itemAreaTotal_sqin) / totalFilm_sqin * 100;
+      const cost               = totalFilm_sqft * costSF;
+      const retail             = cost * (1 + markup/100);
+      const perPiece           = retail / q;
+
+      if(ppEl) ppEl.textContent = itemsPerPass+(itemsPerPass>1?' items':' item');
+      if(psEl) psEl.textContent = passes+(passes>1?' passes':' pass');
+      if(sfEl) sfEl.textContent = totalFilm_sqft.toFixed(3)+' sq ft';
+      if(wsEl) wsEl.textContent = wastePercent.toFixed(1)+'%';
+      if(coEl) coEl.textContent = '$'+cost.toFixed(2);
+      if(rtEl) rtEl.textContent = '$'+retail.toFixed(2);
+      if(peEl) peEl.textContent = '$'+perPiece.toFixed(2);
+
+      totFilmSqFt+=totalFilm_sqft; totCost+=cost; totRetail+=retail; totPieces+=q; totPasses+=passes;
+    } else {
+      allEls.forEach(e=>{ if(e){ e.textContent='—'; e.style.color=''; } });
+    }
+  });
+
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('lam-tot-ppass',  '—');
+  set('lam-tot-passes', totPasses>0 ? totPasses+' passes' : '—');
+  set('lam-tot-sqft',   totFilmSqFt>0 ? totFilmSqFt.toFixed(3)+' sq ft' : '—');
+  set('lam-tot-waste',  '—');
+  set('lam-tot-cost',   '$'+totCost.toFixed(2));
+  set('lam-tot-retail', '$'+totRetail.toFixed(2));
+  set('lam-tot-per',    totPieces>0 ? '$'+(totRetail/totPieces).toFixed(2) : '—');
+
+  const enabled = document.getElementById('lam-enabled').checked;
+  if(enabled){
+    set('p-lam-row-lbl', totFilmSqFt>0 ? totFilmSqFt.toFixed(2)+' sq ft  - cost $'+totCost.toFixed(2) : 'no items entered');
+    set('p-lam-c', totCost>0 ? '$'+totCost.toFixed(2) : '—');
+    set('p-lam-r', '$'+totRetail.toFixed(2));
+  }
+  pCalc();
+}
+
+function lamGetRetailTotal(){
+  if(!document.getElementById('lam-enabled').checked) return {cost:0, retail:0};
+  const rollW  = parseFloat(document.getElementById('lam-roll').value)     || 25;
+  const margin = parseFloat(document.getElementById('lam-margin').value)    || 2;
+  const costSF = parseFloat(document.getElementById('lam-cost-sqft').value) || 0;
+  const markup = parseFloat(document.getElementById('lam-markup').value)    || 0;
+  let totCost=0, totRetail=0;
+  lamRows.forEach(id=>{
+    const w=parseFloat(document.getElementById(id+'-w').value)||0;
+    const h=parseFloat(document.getElementById(id+'-h').value)||0;
+    const q=parseFloat(document.getElementById(id+'-q').value)||0;
+    if(w>0&&h>0&&q>0){
+      const bigger=Math.max(w,h), smaller=Math.min(w,h);
+      const across=bigger<=rollW?bigger:smaller;
+      const feed  =bigger<=rollW?smaller:bigger;
+      const ipp  = Math.max(1, Math.floor(rollW/across));
+      const passes= Math.ceil(q/ipp);
+      const film  = passes * rollW * (feed+2*margin) / 144;
+      const c=film*costSF, r=c*(1+markup/100);
+      totCost+=c; totRetail+=r;
+    }
+  });
+  return {cost:totCost, retail:totRetail};
+}
+
+// ══════════════════════════════════════════════
+//  ROLAND / VINYL ESTIMATOR
+// ══════════════════════════════════════════════
+const R_HST = 0.13;
+let rStkRows=[], rBanRows=[], rSgnRows=[], rCanRows=[];
+let rSId=0, rBId=0, rGId=0, rCId=0;
+
+// ── BANNER MARKET CHECK (VistaPrint comparable) ──
+// VistaPrint CA: 2.5x10ft = $154.35 = $6.17/sqft
+// General range: small banners $7-10/sqft, large $5-7/sqft
+// Your target: $6/sqft puts you slightly below VP, competitive + local advantage
+function rBannerMarketCheck(areaSqft, retail){
+  const bar = document.getElementById('r-ban-market-bar');
+  if(!bar) return;
+  if(areaSqft<=0||retail<=0){
+    bar.style.background='#f5f5f2'; bar.style.borderColor='#e5e5e5';
+    bar.style.color='#888'; bar.textContent='Market check — VistaPrint comparable: enter a banner to see';
+    return;
+  }
+  const perSqft = retail/areaSqft;
+  // VistaPrint rates by size (per sqft, CAD)
+  const vpLow  = areaSqft < 10 ? 7.50 : areaSqft < 20 ? 6.00 : 5.00;
+  const vpHigh = areaSqft < 10 ? 11.00: areaSqft < 20 ? 8.00 : 7.00;
+  const vpNote = areaSqft < 10 ? 'small banner' : areaSqft < 20 ? 'medium banner' : 'large banner';
+  const pctOfVP = ((perSqft / ((vpLow+vpHigh)/2))*100).toFixed(0);
+
+  let bg, bc, color, icon, msg;
+  if(perSqft < vpLow*0.75){
+    bg='#fef2f2'; bc='#fca5a5'; color='#dc2626'; icon='🔴';
+    msg=`$${perSqft.toFixed(2)}/sqft — below cost risk. VistaPrint charges $${vpLow}–$${vpHigh}/sqft for ${vpNote}. You should be charging more.`;
+  } else if(perSqft < vpLow){
+    bg='#fff7ed'; bc='#fed7aa'; color='#c2410c'; icon='🟡';
+    msg=`$${perSqft.toFixed(2)}/sqft — slightly below VistaPrint ($${vpLow}–$${vpHigh}/sqft). Fine if quick job with no design work.`;
+  } else if(perSqft <= vpHigh*1.10){
+    bg='#f0fdf4'; bc='#bbf7d0'; color='#166534'; icon='✅';
+    msg=`$${perSqft.toFixed(2)}/sqft — competitive with VistaPrint ($${vpLow}–$${vpHigh}/sqft). You're local with better material — strong position.`;
+  } else {
+    bg='#fff7ed'; bc='#fed7aa'; color='#c2410c'; icon='🟡';
+    msg=`$${perSqft.toFixed(2)}/sqft — above VistaPrint ($${vpLow}–$${vpHigh}/sqft). Justified if complex job or rush — just be transparent with customer.`;
+  }
+  bar.style.background=bg; bar.style.borderColor=bc; bar.style.color=color;
+  bar.innerHTML=`${icon} <strong>VistaPrint comparable:</strong> ${msg}`;
+}
+
+// ── ART REPRODUCTION MARKET CHECK (Posterjack comparable) ──
+// Posterjack Hahnemuehle Photo Rag rates (premium paper):
+// 8x10=$12, 11x14=$23, 12x18=$33, 16x24=$50, 18x24=$56, 24x36=$100, 30x40=$136, 36x48=$187
+// Per sqft on print area: consistently $15-20/sqft
+// Your Enhanced Matte at $14/sqft = 75-90% of Posterjack — correct positioning
+function eArtMarketCheck(artRetail, artPieces, avgSqft){
+  const bar = document.getElementById('e-art-market-bar');
+  if(!bar) return;
+  if(artRetail<=0||artPieces<=0){
+    bar.style.background='#f5f5f2'; bar.style.borderColor='#e5e5e5';
+    bar.style.color='#888'; bar.textContent='Market check — Posterjack comparable: enter a print to see';
+    return;
+  }
+  const perPiece  = artRetail / artPieces;
+  const perSqft   = avgSqft>0 ? perPiece/avgSqft : 0;
+  // Posterjack ranges ~$15-20/sqft on print area (Hahnemuehle premium paper)
+  const pjLow  = 15, pjHigh = 20;
+  const pjPerPiece = avgSqft>0 ? ((pjLow+pjHigh)/2)*avgSqft : null;
+
+  let bg, bc, color, icon, msg;
+  if(perSqft<=0){
+    bg='#f5f5f2'; bc='#e5e5e5'; color='#888'; icon='—';
+    msg=`Posterjack charges $${pjLow}–$${pjHigh}/sqft on print area (Hahnemuehle Photo Rag). Your Enhanced Matte at $14/sqft is correct positioning.`;
+  } else if(perSqft < pjLow*0.60){
+    bg='#fef2f2'; bc='#fca5a5'; color='#dc2626'; icon='🔴';
+    msg=`$${perSqft.toFixed(2)}/sqft — well below Posterjack ($${pjLow}–$${pjHigh}/sqft). Check if $25 minimum is applying. You should be charging more.`;
+  } else if(perSqft < pjLow*0.80){
+    bg='#fff7ed'; bc='#fed7aa'; color='#c2410c'; icon='🟡';
+    msg=`$${perSqft.toFixed(2)}/sqft — below Posterjack ($${pjLow}–$${pjHigh}/sqft). Their paper is premium archival rag — your positioning should be 75–90% of theirs.`;
+  } else if(perSqft <= pjHigh){
+    bg='#f0fdf4'; bc='#bbf7d0'; color='#166534'; icon='✅';
+    msg=`$${perSqft.toFixed(2)}/sqft — competitive with Posterjack ($${pjLow}–$${pjHigh}/sqft). You offer same-day local service vs their shipping wait. Strong position.`;
+  } else {
+    bg='#fff7ed'; bc='#fed7aa'; color='#c2410c'; icon='🟡';
+    msg=`$${perSqft.toFixed(2)}/sqft — above Posterjack ($${pjLow}–$${pjHigh}/sqft). Note: their paper (Hahnemuehle rag) is premium archival. Consider if that justifies the premium.`;
+  }
+  bar.style.background=bg; bar.style.borderColor=bc; bar.style.color=color;
+  bar.innerHTML=`${icon} <strong>Posterjack comparable:</strong> ${msg}`;
+}
+
+function toggleRolandSettings(){
+  const btn  = document.getElementById('r-settings-btn');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? '' : 'none';
+  btn.textContent = open ? '▲ Hide settings' : '▼ Show settings';
+}
+
+function rToggle(type){
+  const on = document.getElementById('r-'+type+'-on').checked;
+  document.getElementById('r-'+type+'-section').style.display = on ? '' : 'none';
+  if(on && (type==='stk' ? rStkRows : type==='ban' ? rBanRows : type==='can' ? rCanRows : rSgnRows).length===0) rAddRow(type);
+  rCalc();
+}
+
+function rAddRow(type){
+  const id = type==='stk'?'s'+rSId++:type==='ban'?'b'+rBId++:type==='can'?'c'+rCId++:'g'+rGId++;
+  if(type==='stk')      rStkRows.push(id);
+  else if(type==='ban') rBanRows.push(id);
+  else if(type==='can') rCanRows.push(id);
+  else                  rSgnRows.push(id);
+
+  const tb = document.getElementById('r-'+type+'-body');
+  const tr = document.createElement('tr'); tr.id='rrow-'+id;
+
+  if(type==='stk'){
+    tr.innerHTML=`
+      <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. 4x4 logo sticker"></td>
+      <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="rCalc()"></td>
+      <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="rCalc()"></td>
+      <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>
+      <td class="res dim" id="${id}-ps">—</td>
+      <td class="res" id="${id}-sf">—</td>
+      <td class="res dim" id="${id}-co">—</td>
+      <td class="res" id="${id}-rt">—</td>
+      <td class="res" id="${id}-pe">—</td>`;
+  } else if(type==='can'){
+    tr.innerHTML=`
+      <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. 16x20 gallery canvas"></td>
+      <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
+      <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
+      <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>
+      <td class="res dim" id="${id}-ps">—</td>
+      <td class="res" id="${id}-sf">—</td>
+      <td class="res dim" id="${id}-co">—</td>
+      <td class="res" id="${id}-rt">—</td>
+      <td class="res" id="${id}-pe">—</td>
+      <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="rRemoveRow('${id}','can')" title="Remove">✕</button></td>`;
+  } else {
+    tr.innerHTML=`
+      <td class="inp"><input type="text" id="${id}-n" placeholder="${type==='ban'?'e.g. 3x6ft banner':'e.g. 24x36 coroplast sign'}"></td>
+      <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
+      <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
+      <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>
+      <td class="res dim" id="${id}-sf">—</td>
+      <td class="res dim" id="${id}-co">—</td>
+      <td class="res" id="${id}-rt">—</td>
+      <td class="res" id="${id}-pe">—</td>
+      <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="rRemoveRow('${id}','${type}')" title="Remove">✕</button></td>`;
+  }
+  tb.appendChild(tr); rCalc();
+}
+
+function rRemoveRow(id, type){
+  const el=document.getElementById('rrow-'+id); if(el) el.remove();
+  if(type==='stk')      rStkRows=rStkRows.filter(r=>r!==id);
+  else if(type==='ban') rBanRows=rBanRows.filter(r=>r!==id);
+  else if(type==='can') rCanRows=rCanRows.filter(r=>r!==id);
+  else                  rSgnRows=rSgnRows.filter(r=>r!==id);
+  rCalc();
+}
+
+function rGetV(id){ const e=document.getElementById(id); return e?parseFloat(e.value)||0:0; }
+const rfmt = n=>'$'+n.toFixed(2);
+const rsfmt = n=>n.toFixed(3)+' sq ft';
+
+function rBuildVinylOpts(selId, filterFn){
+  const sel=document.getElementById(selId); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— select —</option>';
+  if(!inventory.vinyl) return;
+  inventory.vinyl.filter(filterFn||(_=>true)).forEach(v=>{
+    const o=document.createElement('option');
+    o.value=v.cost; o.textContent=v.name+(v.cost?' ($'+v.cost+'/sqft)':'');
+    if(String(v.cost)===cur) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+function rBuildSubstrateOpts(selId){
+  const sel=document.getElementById(selId); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— select substrate —</option>';
+  if(!inventory.substrates) return;
+  inventory.substrates.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.cost; o.textContent=s.name+(s.cost?' ($'+s.cost+'/sqft)':'');
+    if(String(s.cost)===cur) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+function rebuildRolandDropdowns(){
+  rBuildVinylOpts('r-stk-vinyl');
+  rBuildVinylOpts('r-stk-lam-type', v=>v.name.toLowerCase().includes('lam'));
+  rBuildVinylOpts('r-ban-media', v=>v.name.toLowerCase().includes('banner')||v.name.toLowerCase().includes('canvas')||v.name.toLowerCase().includes('mesh')||v.name.toLowerCase().includes('poly'));
+  rBuildVinylOpts('r-sgn-vinyl');
+  rBuildVinylOpts('r-can-media', v=>v.name.toLowerCase().includes('canvas'));
+  rBuildSubstrateOpts('r-sgn-sub');
+}
+
+function rCalc(){
+  const rollW  = rGetV('r-roll-w') || 50;
+  const inkSF  = rGetV('r-ink');
+  const stkRate= rGetV('r-stk-rate');
+  const banRate= rGetV('r-ban-rate');
+  const sgnRate= rGetV('r-sgn-rate');
+
+  // ── STICKERS ──
+  const rSet=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  let stkFilm=0, stkCost=0, stkRetail=0, stkPieces=0;
+  if(document.getElementById('r-stk-on').checked){
+    const vinylCost  = rGetV('r-stk-vinyl');
+    const lamOn      = document.getElementById('r-stk-lam').checked;
+    const lamCost    = lamOn ? rGetV('r-stk-lam-type') : 0;
+    const matCost    = vinylCost + inkSF + lamCost;
+    const regOverhead = rGetV('r-reg-overhead') || 8;
+
+    rStkRows.forEach(id=>{
+      const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
+      const psEl=document.getElementById(id+'-ps');
+      const sfEl=document.getElementById(id+'-sf'), coEl=document.getElementById(id+'-co');
+      const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+      const all=[psEl,sfEl,coEl,rtEl,peEl];
+      if(w>0&&h>0&&q>0){
+        const bigger=Math.max(w,h), smaller=Math.min(w,h);
+        const across=bigger<=rollW?bigger:smaller;
+        const feed=bigger<=rollW?smaller:bigger;
+        const ipp=Math.max(1,Math.floor(rollW/across));
+        const passes=Math.ceil(q/ipp);
+        const filmSqFt=passes*(rollW*(feed+regOverhead))/144;
+        const cost=filmSqFt*matCost;
+        const tier=getStickerTier(q);
+        const retailCalc=cost*tier.markup;
+        const retailFloor=q*tier.minEach;
+        const retail=Math.max(retailCalc, retailFloor);
+        const per=q>0?retail/q:0;
+        const mkLabel=tier.label+' ('+tier.markup+'x'+(retailFloor>retailCalc?' · $'+tier.minEach+'/ea min':'')+')';
+        if(psEl) psEl.textContent=passes+(passes>1?' passes':' pass');
+        if(sfEl) sfEl.textContent=rsfmt(filmSqFt);
+        if(coEl) coEl.textContent=rfmt(cost);
+        if(rtEl){ rtEl.textContent=rfmt(retail); rtEl.title=mkLabel; }
+        if(peEl){ peEl.textContent=rfmt(per); peEl.title=mkLabel; }
+        all.forEach(e=>{if(e) e.style.color='';});
+        stkFilm+=filmSqFt; stkCost+=cost; stkRetail+=retail; stkPieces+=q;
+      } else { all.forEach(e=>{if(e){e.textContent='—';e.style.color='';}}); }
+    });
+    rSet('r-stk-sqft',   stkFilm>0?rsfmt(stkFilm):'0 sq ft');
+    rSet('r-stk-cost',   rfmt(stkCost));
+    rSet('r-stk-retail', rfmt(stkRetail));
+    rSet('r-stk-per',    stkPieces>0?rfmt(stkRetail/stkPieces)+' avg':'—');
+    if(stkPieces>0){
+      const firstRowQty=rStkRows.reduce((acc,id)=>{const v=rGetV(id+'-q');return acc>0?acc:v;},0);
+      const t=getStickerTier(firstRowQty||stkPieces);
+      rSet('r-stk-tier', t.label+' — '+t.markup+'x markup · $'+t.minEach+'/sticker min per row');
+    } else { rSet('r-stk-tier','—'); }
+  }
+
+  // ── BANNERS ──
+  let banArea=0, banCost=0, banRetail=0;
+  if(document.getElementById('r-ban-on').checked){
+    const mediaCost = rGetV('r-ban-media');
+    const matCost   = mediaCost + inkSF;
+    rBanRows.forEach(id=>{
+      const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
+      const sfEl=document.getElementById(id+'-sf'), coEl=document.getElementById(id+'-co');
+      const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+      if(w>0&&h>0&&q>0){
+        const sqft=(w*h/144)*q;
+        const cost=sqft*matCost, retail=sqft*banRate, per=retail/q;
+        if(sfEl) sfEl.textContent=rsfmt(w*h/144);
+        if(coEl) coEl.textContent=rfmt(cost);
+        if(rtEl) rtEl.textContent=rfmt(retail);
+        if(peEl) peEl.textContent=rfmt(per);
+        banArea+=sqft; banCost+=cost; banRetail+=retail;
+      } else { [sfEl,coEl,rtEl,peEl].forEach(e=>{if(e) e.textContent='—';}); }
+    });
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    set('r-ban-sqft', banArea>0?rsfmt(banArea):'0 sq ft');
+    set('r-ban-cost', rfmt(banCost));
+    set('r-ban-retail', rfmt(banRetail));
+    rBannerMarketCheck(banArea, banRetail);
+  }
+
+  // ── SIGNAGE ──
+  let sgnArea=0, sgnCost=0, sgnRetail=0;
+  if(document.getElementById('r-sgn-on').checked){
+    const vinylCost = rGetV('r-sgn-vinyl');
+    const subOn     = document.getElementById('r-sgn-sub-on').checked;
+    const subCost   = subOn ? rGetV('r-sgn-sub') : 0;
+    const matCost   = vinylCost + inkSF + subCost;
+    rSgnRows.forEach(id=>{
+      const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
+      const sfEl=document.getElementById(id+'-sf'), coEl=document.getElementById(id+'-co');
+      const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+      if(w>0&&h>0&&q>0){
+        const sqft=(w*h/144)*q;
+        const cost=sqft*matCost, retail=sqft*sgnRate, per=retail/q;
+        if(sfEl) sfEl.textContent=rsfmt(w*h/144);
+        if(coEl) coEl.textContent=rfmt(cost);
+        if(rtEl) rtEl.textContent=rfmt(retail);
+        if(peEl) peEl.textContent=rfmt(per);
+        sgnArea+=sqft; sgnCost+=cost; sgnRetail+=retail;
+      } else { [sfEl,coEl,rtEl,peEl].forEach(e=>{if(e) e.textContent='—';}); }
+    });
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    set('r-sgn-sqft', sgnArea>0?rsfmt(sgnArea):'0 sq ft');
+    set('r-sgn-cost', rfmt(sgnCost));
+    set('r-sgn-retail', rfmt(sgnRetail));
+  }
+
+  // ── CANVAS ──
+  let canArea=0, canCost=0, canRetail=0, canPieces=0;
+  if(document.getElementById('r-can-on').checked){
+    const mediaCost = rGetV('r-can-media');
+    const matCost   = mediaCost + inkSF;
+    const canRate   = rGetV('r-can-rate') || 15;
+    rCanRows.forEach(id=>{
+      const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
+      const psEl=document.getElementById(id+'-ps'), sfEl=document.getElementById(id+'-sf');
+      const coEl=document.getElementById(id+'-co'), rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+      if(w>0&&h>0&&q>0){
+        const bigger=Math.max(w,h), smaller=Math.min(w,h);
+        const across=bigger<=rollW?bigger:smaller;
+        const feed  =bigger<=rollW?smaller:bigger;
+        const ipp   =Math.max(1,Math.floor(rollW/across));
+        const passes=Math.ceil(q/ipp);
+        const filmSqFt=passes*(rollW*(feed+1))/144;
+        const cost=filmSqFt*matCost;
+        const printArea=w*h/144;
+        const retailPer=Math.max(printArea*canRate, 25);
+        const retail=retailPer*q;
+        const per=retail/q;
+        if(psEl) psEl.textContent=passes+(passes>1?' passes':' pass');
+        if(sfEl) sfEl.textContent=rsfmt(filmSqFt);
+        if(coEl) coEl.textContent=rfmt(cost);
+        if(rtEl) rtEl.textContent=rfmt(retail);
+        if(peEl){ peEl.textContent=rfmt(per); peEl.title=printArea*canRate<25?'$25 minimum':'$'+canRate+'/sqft'; }
+        canArea+=filmSqFt; canCost+=cost; canRetail+=retail; canPieces+=q;
+      } else { [psEl,sfEl,coEl,rtEl,peEl].forEach(e=>{if(e) e.textContent='—';}); }
+    });
+    const setC=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    setC('r-can-sqft',   canArea>0?rsfmt(canArea):'0 sq ft');
+    setC('r-can-cost',   rfmt(canCost));
+    setC('r-can-retail', rfmt(canRetail));
+    setC('r-can-per',    canPieces>0?rfmt(canRetail/canPieces)+' avg':'—');
+  }
+
+  // ── TOTALS ──
+  const labour = rGetV('r-hrs')*rGetV('r-rate');
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('r-labour-total', rfmt(labour));
+
+  const totalCost   = stkCost+banCost+sgnCost+canCost+labour;
+  const quote       = stkRetail+banRetail+sgnRetail+canRetail+labour;
+  const profit      = quote-totalCost;
+  const margin      = quote>0?(profit/quote*100):0;
+  const hst         = quote*R_HST;
+  const grand       = quote+hst;
+
+  set('r-tt-cost',     rfmt(totalCost));
+  set('r-tt-cost-sub', 'materials '+rfmt(stkCost+banCost+sgnCost+canCost)+(labour>0?' + labour '+rfmt(labour):''));
+  set('r-tt-quote',    rfmt(quote));
+  set('r-tt-profit',   rfmt(profit)+' profit  - '+margin.toFixed(1)+'%');
+  set('r-tt-grand',    rfmt(grand));
+  set('r-tt-tax',      'HST (13%): '+rfmt(hst));
+}
+
+function resetRoland(){
+  if(!confirm('New Roland estimate? This will clear all Roland fields.')) return;
+  const rp=document.getElementById('r-proj'); if(rp) rp.value='';
+  document.getElementById('r-hrs').value='0';
+  ['r-stk-on','r-ban-on','r-sgn-on','r-can-on','r-stk-lam','r-sgn-sub-on'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.checked=false;
+  });
+  ['r-stk-section','r-ban-section','r-sgn-section','r-can-section'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.style.display='none';
+  });
+  [...rStkRows,...rBanRows,...rSgnRows,...rCanRows].forEach(id=>{
+    const r=document.getElementById('rrow-'+id); if(r) r.remove();
+  });
+  rStkRows=[]; rBanRows=[]; rSgnRows=[]; rCanRows=[];
+  rCalc();
+}
+// ── STICKER QUANTITY TIERS (markup on material cost) ──
+// Validated against StickerYou 4x4, 8x8, 2x6, 8.5x10, 2x2 across all quantities
+const PM=3, TM=5;  // paper markup x3, toner markup x5
+const stkTiers = [
+  {from:1,   to:1,   markup:1.8,  minEach:12.00, label:"Single"},
+  {from:2,   to:12,  markup:3.5,  minEach:2.50,  label:"Small qty"},
+  {from:13,  to:50,  markup:2.7,  minEach:1.50,  label:"Small run"},
+  {from:51,  to:100, markup:2.1,  minEach:1.00,  label:"Medium run"},
+  {from:101, to:250, markup:1.8,  minEach:0.75,  label:"Larger run"},
+  {from:251, to:500, markup:1.5,  minEach:0.60,  label:"Volume"},
+  {from:501, to:9999,markup:1.3,  minEach:0.50,  label:"High volume"},
+];
+function getStickerTier(qty){
+  return stkTiers.find(t=>qty>=t.from&&qty<=t.to) || stkTiers[stkTiers.length-1];
+}
+let pTiers=[
+  {from:1,label:"Very small run",adj:50},{from:11,label:"Small run",adj:30},
+  {from:26,label:"Medium run",adj:15},{from:51,label:"Standard",adj:0},
+  {from:101,label:"Large run",adj:-10},{from:251,label:"Volume run",adj:-15},
+  {from:501,label:"High volume",adj:-20}
+];
+
+function buildPaperTables(){
+  // Paper rows
+  const ptb = document.getElementById('p-paper-body');
+  for(let i=0;i<4;i++){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="inp"><select id="pp-s${i}" onchange="pSetPaper(${i})"><option value="">— select paper —</option></select></td>
+      <td class="inp"><input type="number" id="pp-n${i}" value="0" min="0" step="1" oninput="pCalc()"></td>
+      <td class="inp"><input type="number" id="pp-c${i}" value="0.000" min="0" step="0.005" oninput="pCalc()"></td>
+      <td class="res" id="pp-rc${i}">$0.00</td>
+      <td class="res" id="pp-rr${i}">$0.00</td>`;
+    ptb.appendChild(tr);
+  }
+  const s=document.createElement('tr'); s.className='sub-row';
+  s.innerHTML=`<td colspan="3" style="text-align:right;color:#666;font-size:12px">Subtotal paper</td><td class="res" id="p-psc">$0.00</td><td class="res" id="p-psr">$0.00</td>`;
+  ptb.appendChild(s);
+
+  // Print rows
+  const ttb = document.getElementById('p-print-body');
+  for(let i=0;i<4;i++){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="inp"><select id="pt-s${i}" onchange="pSetPrint(${i})"><option value="">— select type —</option></select></td>
+      <td class="inp"><input type="number" id="pt-n${i}" value="0" min="0" step="1" oninput="pCalc()"></td>
+      <td class="inp"><input type="number" id="pt-c${i}" value="0.000" min="0" step="0.005" oninput="pCalc()"></td>
+      <td class="res" id="pt-rc${i}">$0.00</td>
+      <td class="res" id="pt-rr${i}">$0.00</td>`;
+    ttb.appendChild(tr);
+  }
+  const s2=document.createElement('tr'); s2.className='sub-row';
+  s2.innerHTML=`<td colspan="3" style="text-align:right;color:#666;font-size:12px">Subtotal print</td><td class="res" id="p-tsc">$0.00</td><td class="res" id="p-tsr">$0.00</td>`;
+  ttb.appendChild(s2);
+}
+buildPaperTables();
+
+function pSetPaper(i){ const c=parseFloat(document.getElementById('pp-s'+i).value); if(!isNaN(c)) document.getElementById('pp-c'+i).value=c.toFixed(3); pCalc(); }
+function pSetPrint(i){ const c=parseFloat(document.getElementById('pt-s'+i).value); if(!isNaN(c)) document.getElementById('pt-c'+i).value=c.toFixed(3); pCalc(); }
+function pSyncTax(){ const s=document.getElementById('p-tax-type'); if(s.value==='custom') return; document.getElementById('p-tax-pct').value=(parseFloat(s.value)*100).toFixed(1); pCalc(); }
+function pGetTier(qty){ let t=pTiers[0]; for(const x of pTiers){ if(qty>=x.from) t=x; } return t; }
+
+function pRenderTiers(totalR){
+  const tb=document.getElementById('p-tier-body'); tb.innerHTML='';
+  const qty=Math.max(pv('p-qty'),1);
+  pTiers.forEach((t,i)=>{
+    const to=i<pTiers.length-1?pTiers[i+1].from-1:'∞';
+    const active=qty>=t.from&&(i===pTiers.length-1||qty<pTiers[i+1].from);
+    const adj=totalR*(t.adj/100), adjQ=totalR+adj, adjP=adjQ/qty;
+    const sign=t.adj>0?'+':'';
+    const col=t.adj>0?'color:#dc2626':t.adj<0?'color:#166534':'color:#666';
+    const tr=document.createElement('tr'); tr.className=active?'tier-active':'';
+    tr.innerHTML=`
+      <td style="text-align:center"><input class="tier-inp" type="number" value="${t.from}" min="1" onchange="pTiers[${i}].from=Math.max(1,parseInt(this.value)||1);pCalc()" style="width:50px"></td>
+      <td style="text-align:center;color:#666">${to}</td>
+      <td class="tier-lbl-cell"><input class="tier-name-inp" type="text" value="${t.label}" onchange="pTiers[${i}].label=this.value;pCalc()"></td>
+      <td style="text-align:center"><span style="${col};font-weight:700">${sign}${t.adj}%</span>&nbsp;<input class="tier-inp" type="number" value="${t.adj}" step="1" onchange="pTiers[${i}].adj=parseInt(this.value)||0;pCalc()" style="width:46px;font-size:11px"></td>
+      <td class="res" style="${t.adj>0?'color:#dc2626':t.adj<0?'color:#166534':''}">${pfmt(Math.max(adjQ,0))}</td>
+      <td class="res" style="color:#666">${pfmt(Math.max(adjP,0))}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+const pv=id=>parseFloat(document.getElementById(id).value)||0;
+const pel=id=>document.getElementById(id);
+const pfmt=n=>'$'+n.toFixed(2);
+
+function pCalc(){
+  let psc=0,psr=0;
+  for(let i=0;i<4;i++){ const c=pv('pp-n'+i)*pv('pp-c'+i),r=c*PM; pel('pp-rc'+i).textContent=pfmt(c); pel('pp-rr'+i).textContent=pfmt(r); psc+=c; psr+=r; }
+  pel('p-psc').textContent=pfmt(psc); pel('p-psr').textContent=pfmt(psr);
+  let tsc=0,tsr=0;
+  for(let i=0;i<4;i++){ const c=pv('pt-n'+i)*pv('pt-c'+i),r=c*TM; pel('pt-rc'+i).textContent=pfmt(c); pel('pt-rr'+i).textContent=pfmt(r); tsc+=c; tsr+=r; }
+  pel('p-tsc').textContent=pfmt(tsc); pel('p-tsr').textContent=pfmt(tsr);
+
+  const cpuC=psc+tsc, cpuR=psr+tsr;
+  pel('p-cpu-c').textContent=pfmt(cpuC); pel('p-cpu-r').textContent=pfmt(cpuR);
+  const qty=Math.max(pv('p-qty'),1);
+  const totalC=cpuC*qty, totalR=cpuR*qty;
+  pel('p-qt-c').textContent=pfmt(totalC); pel('p-qt-r').textContent=pfmt(totalR);
+  const labour=pv('p-hrs')*pv('p-rate');
+  pel('p-fin-r').textContent=pfmt(labour);
+  // coil binding
+  const coil = coilGetTotal();
+  const coilEnabled = document.getElementById('coil-enabled').checked;
+  pel('p-coil-c').textContent = coilEnabled ? pfmt(coil.cost) : '—';
+  pel('p-coil-r').textContent = coilEnabled ? pfmt(coil.retail) : '—';
+  // lamination
+  const lam = lamGetRetailTotal();
+  // use finished qty for tier, press qty for costs
+  const finishedQty = Math.max(parseFloat(document.getElementById('p-finished-qty').value)||pv('p-qty'), 1);
+  const at=pGetTier(finishedQty);
+  const isBindingJob = document.getElementById('p-binding-job').checked;
+  // Binding job: tier % on print/paper only — labour, coils, lam are flat
+  // Copy job: tier % on full print retail (labour usually zero anyway)
+  const tierBase = isBindingJob ? totalR : totalR;
+  const tierAdj = tierBase*(at.adj/100);
+  const adjR=totalR+tierAdj+labour+lam.retail+coil.retail;
+  const sign=at.adj>0?'+':'', col=at.adj>0?'#dc2626':at.adj<0?'#166534':'#666';
+  const tierNote = at.adj!==0
+    ? at.label+' ('+sign+at.adj+'%'+(isBindingJob?' on print only':' on print')+')'
+    : at.label+' — base rate';
+  pel('p-tier-lbl').textContent=tierNote; pel('p-tier-lbl').style.color=col;
+  pel('p-tier-adj').textContent=(tierAdj>=0?'+':'')+pfmt(tierAdj); pel('p-tier-adj').style.color=col;
+  pel('p-adj-c').textContent=pfmt(totalC); pel('p-adj-r').textContent=pfmt(adjR);
+  const taxRate=pv('p-tax-pct')/100;
+  // minimum job charge — charges whichever is higher
+  const minCharge = pv('p-min-charge');
+  const minKicks  = minCharge > 0 && adjR < minCharge;
+  const finalR    = minKicks ? minCharge : adjR;
+  const minStatus = pel('p-min-status');
+  const minRow    = pel('p-min-r');
+  if(minKicks){
+    minStatus.textContent = 'minimum applies — quote would be '+pfmt(adjR);
+    minStatus.style.color = '#c2410c';
+    minRow.textContent    = pfmt(minCharge);
+    minRow.style.color    = '#c2410c';
+    // upsell hint: how many more could they get for the same price?
+    const perPieceRetail = finishedQty > 0 ? adjR/finishedQty : 0;
+    if(perPieceRetail > 0){
+      const couldGet = Math.floor(minCharge / perPieceRetail);
+      const hint = document.getElementById('p-min-upsell');
+      const hintRow = document.getElementById('p-min-upsell-row');
+      if(hint) hint.textContent = 'Upsell tip: for $'+minCharge+' they could get '+couldGet+' finished pieces instead of '+finishedQty;
+      if(hintRow) hintRow.style.display = '';
+    }
+  } else {
+    minStatus.textContent = minCharge > 0 ? '✓ quote exceeds minimum' : '';
+    minStatus.style.color = '#166534';
+    minRow.textContent    = '—';
+    minRow.style.color    = '';
+    const hint = document.getElementById('p-min-upsell');
+    const hintRow = document.getElementById('p-min-upsell-row');
+    if(hint) hint.textContent = '';
+    if(hintRow) hintRow.style.display = 'none';
+  }
+  const taxAmt=finalR*taxRate, grand=finalR+taxAmt;
+  pel('p-tax').textContent=pfmt(taxAmt);
+  pel('p-total-c').textContent=pfmt(totalC+lam.cost+coil.cost); pel('p-total-r').textContent=pfmt(grand);
+  const yourCost = totalC + labour + lam.cost + coil.cost;
+  const profit=finalR-yourCost, margin=finalR>0?(profit/finalR*100):0;
+  pel('p-yourcost').textContent=pfmt(yourCost);
+  pel('p-yourcost-sub').textContent='paper '+pfmt(totalC)+(coil.cost>0?' + coils '+pfmt(coil.cost):'')+(lam.cost>0?' + lam '+pfmt(lam.cost):'')+(labour>0?' + labour '+pfmt(labour):'');
+  const perUnit = finishedQty>0 ? finalR/finishedQty : 0;
+  pel('p-quote-total').textContent=pfmt(finalR); pel('p-quote-per').textContent=pfmt(perUnit)+' / finished piece';
+  pel('p-profit').textContent=pfmt(profit); pel('p-margin').textContent=margin.toFixed(1)+'% margin';
+  pel('p-grand').textContent=pfmt(grand); pel('p-tax-line').textContent='Tax: '+pfmt(taxAmt);
+  pel('p-active-pill').textContent=at.adj===0?at.label+' — base':at.label+' '+sign+at.adj+'% on print';
+  pel('p-active-quote').textContent=pfmt(grand);
+  pRenderTiers(totalR);
+  pMarketCheck();
+}
+
+function pMarketCheck(){
+  const sel   = document.getElementById('p-job-type');
+  const bar   = document.getElementById('p-market-bar');
+  const status= document.getElementById('p-market-status');
+  if(!sel||!bar||!status) return;
+
+  const opt = sel.options[sel.selectedIndex];
+  if(!sel.value){ 
+    bar.style.background='#f5f5f2'; bar.style.borderColor='#e5e5e5';
+    status.textContent='Pick a job type to see market rates'; status.style.color='#888';
+    return;
+  }
+
+  const low      = parseFloat(opt.dataset.low);
+  const high     = parseFloat(opt.dataset.high);
+  const unit     = opt.dataset.unit;
+  const finQty   = Math.max(parseFloat((document.getElementById('p-finished-qty')||{}).value)||pv('p-qty'),1);
+  // get current per-unit quote
+  const adjREl   = document.getElementById('p-adj-r');
+  const adjR     = adjREl ? parseFloat(adjREl.textContent.replace(/[$,]/g,''))||0 : 0;
+  const perUnit  = finQty>0 ? adjR/finQty : 0;
+
+  const midMarket = (low+high)/2;
+  const pctOfMid  = midMarket>0 ? (perUnit/midMarket)*100 : 0;
+
+  let bg, border, color, icon, msg;
+
+  if(perUnit===0){
+    bg='#f5f5f2'; border='#e5e5e5'; color='#888'; icon='—';
+    msg = `Market range: $${low.toFixed(2)}–$${high.toFixed(2)} ${unit}`;
+  } else if(perUnit < low*0.80){
+    bg='#fef2f2'; border='#fca5a5'; color='#dc2626'; icon='🔴';
+    msg = `$${perUnit.toFixed(2)} ${unit} — BELOW COST RISK. Market: $${low.toFixed(2)}–$${high.toFixed(2)}. Consider declining or repricing.`;
+  } else if(perUnit < low){
+    bg='#fff7ed'; border='#fed7aa'; color='#c2410c'; icon='🟡';
+    msg = `$${perUnit.toFixed(2)} ${unit} — slightly below market ($${low.toFixed(2)}–$${high.toFixed(2)}). Thin margin — ok if quick job.`;
+  } else if(perUnit <= high*1.15){
+    bg='#f0fdf4'; border='#bbf7d0'; color='#166534'; icon='✅';
+    msg = `$${perUnit.toFixed(2)} ${unit} — competitive! Market range: $${low.toFixed(2)}–$${high.toFixed(2)}.`;
+  } else if(perUnit <= high*1.50){
+    bg='#fff7ed'; border='#fed7aa'; color='#c2410c'; icon='🟡';
+    msg = `$${perUnit.toFixed(2)} ${unit} — above market ($${low.toFixed(2)}–$${high.toFixed(2)}). Justified for local service — just be ready to explain value.`;
+  } else {
+    bg='#fef2f2'; border='#fca5a5'; color='#dc2626'; icon='🔴';
+    msg = `$${perUnit.toFixed(2)} ${unit} — significantly above market ($${low.toFixed(2)}–$${high.toFixed(2)}). Check inputs — wrong paper stock or tier surcharge?`;
+  }
+
+  bar.style.background=bg; bar.style.borderColor=border;
+  status.style.color=color;
+  status.innerHTML = `${icon} ${msg}`;
+}
+
+function toggleTierTable(){
+  const wrap = document.getElementById('p-tier-table-wrap');
+  const btn  = document.getElementById('tier-toggle-btn');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? '' : 'none';
+  btn.textContent = open ? '▲ Hide tiers' : '▼ Show tiers';
+}
+
+function resetPaper(){
+  if(!confirm('New paper estimate? Clears all paper fields.')) return;
+  ['p-proj','p-notes'].forEach(id=>pel(id).value='');
+  pel('p-qty').value='1'; pel('p-finished-qty').value='1';
+  pel('p-hrs').value='0'; pel('p-rate').value='45';
+  pel('p-min-charge').value='20';
+  pel('p-tax-pct').value='13'; pel('p-tax-type').value='0.13';
+  document.getElementById('p-binding-job').checked=false;
+  for(let i=0;i<4;i++){ pel('pp-s'+i).value=''; pel('pp-n'+i).value='0'; pel('pp-c'+i).value='0.000'; pel('pt-s'+i).value=''; pel('pt-n'+i).value='0'; pel('pt-c'+i).value='0.000'; }
+  document.getElementById('coil-enabled').checked=false;
+  document.getElementById('coil-inputs').style.display='none';
+  pel('coil-qty').value='1';
+  document.getElementById('lam-enabled').checked=false;
+  document.getElementById('lam-body').style.display='none';
+  document.getElementById('p-lam-row').style.display='none';
+  lamRows.forEach(id=>{ const r=document.getElementById('lrow-'+id); if(r) r.remove(); });
+  const jt=document.getElementById('p-job-type'); if(jt) jt.value='';
+  lamRows=[]; lamId=0;
+  pCalc();
+}
+
+// ══════════════════════════════════════════════
+//  DTF ESTIMATOR
+// ══════════════════════════════════════════════
+const D_HST=0.13;
+let garmentMode='supply';
+let dGarmentRows=[], dImprintRows=[];
+let dTiers=[
+  {from:1, label:"Single garment", minPer:25},
+  {from:2, label:"Very small run", minPer:22},
+  {from:4, label:"Small run",      minPer:18},
+  {from:8, label:"Medium run",     minPer:15},
+  {from:16,label:"Standard run",   minPer:12},
+  {from:31,label:"Large run",      minPer:0},
+];
+let gId=0, iId=0;
+
+function addGarmentRow(){
+  const id='g'+gId++; dGarmentRows.push(id);
+  const tb=document.getElementById('d-garment-body');
+  const tr=document.createElement('tr'); tr.id='row-'+id;
+  tr.innerHTML=`
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. Gildan 18500 Hoodie — Black"></td>
+    <td class="inp">
+      <select id="${id}-sz" oninput="dCalc()" style="font-size:13px;padding:5px 6px;border:1px solid #ddd;border-radius:4px;width:100%;background:#fff">
+        <option value="">— size —</option>
+        <option>XS</option><option>S</option><option>M</option><option>L</option>
+        <option>XL</option><option>2XL</option><option>3XL</option><option>4XL</option>
+        <option>5XL</option><option>Youth S</option><option>Youth M</option>
+        <option>Youth L</option><option>Toddler</option><option>One Size</option>
+      </select>
+    </td>
+    <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="dCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-c" placeholder="0.00" min="0" step="0.50" oninput="dCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-m" value="30" min="0" step="5" oninput="dCalc()"></td>
+    <td class="resg" id="${id}-rc">$0.00</td>
+    <td class="resg" id="${id}-re">$0.00</td>
+    <td class="resg" id="${id}-rt">$0.00</td>
+    <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="removeRow('${id}','garment')" title="Remove">✕</button></td>`;
+  tb.appendChild(tr); dCalc();
+}
+
+function addImprintRow(){
+  const id='i'+iId++; dImprintRows.push(id);
+  const tb=document.getElementById('d-imprint-body');
+  const tr=document.createElement('tr'); tr.id='row-'+id;
+  tr.innerHTML=`
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. Left chest logo"></td>
+    <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="dCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="dCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="dCalc()"></td>
+    <td class="res" id="${id}-sq">—</td>
+    <td class="res dim" id="${id}-fc">—</td>
+    <td class="res" id="${id}-rt">—</td>
+    <td class="res" id="${id}-pp">—</td>
+    <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="removeRow('${id}','imprint')" title="Remove">✕</button></td>`;
+  tb.appendChild(tr); dCalc();
+}
+
+function removeRow(id, type){
+  const el=document.getElementById('row-'+id); if(el) el.remove();
+  if(type==='garment') dGarmentRows=dGarmentRows.filter(r=>r!==id);
+  else dImprintRows=dImprintRows.filter(r=>r!==id);
+  dCalc();
+}
+
+function setGarmentMode(mode){
+  garmentMode=mode;
+  document.getElementById('d-btn-supply').className  ='toggle-btn '+(mode==='supply'?'on':'off');
+  document.getElementById('d-btn-customer').className='toggle-btn '+(mode==='customer'?'on':'off');
+  document.getElementById('d-garment-section').style.display  =mode==='supply'?'':'none';
+  document.getElementById('d-customer-own-msg').style.display =mode==='customer'?'':'none';
+  dCalc();
+}
+
+function toggleDTFSettings(){
+  const wrap=document.getElementById('d-settings-wrap');
+  const btn=document.getElementById('d-settings-btn');
+  const open=wrap.style.display==='none';
+  wrap.style.display=open?'':'none';
+  btn.textContent=open?'▲ Hide settings':'▼ Show settings';
+}
+
+function dGetTier(n){ let t=dTiers[0]; for(const x of dTiers){ if(n>=x.from) t=x; } return t; }
+
+function dRenderTiers(ng){
+  const tb=document.getElementById('d-tier-body'); tb.innerHTML='';
+  dTiers.forEach((t,i)=>{
+    const to=i<dTiers.length-1?dTiers[i+1].from-1:'∞';
+    const active=ng>=t.from&&(i===dTiers.length-1||ng<dTiers[i+1].from);
+    const minTot=t.minPer*ng;
+    const tr=document.createElement('tr'); tr.className=active?'tier-active':'';
+    tr.innerHTML=`
+      <td style="text-align:center"><input class="tier-inp" type="number" value="${t.from}" min="1" onchange="dTiers[${i}].from=Math.max(1,parseInt(this.value)||1);dCalc()" style="width:50px"></td>
+      <td style="text-align:center;color:#666">${to}</td>
+      <td class="tier-lbl-cell"><input class="tier-name-inp" type="text" value="${t.label}" onchange="dTiers[${i}].label=this.value;dCalc()"></td>
+      <td style="text-align:center"><input class="tier-inp" type="number" value="${t.minPer}" min="0" step="1" onchange="dTiers[${i}].minPer=parseFloat(this.value)||0;dCalc()" style="width:60px">${t.minPer===0?'<span style="font-size:11px;color:#888"> (off)</span>':''}</td>
+      <td style="font-size:12px;color:#666;text-align:center">${t.minPer>0?'$'+minTot.toFixed(2)+' for '+ng+' garment'+(ng>1?'s':''):'no minimum'}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+const dv=id=>{ const e=document.getElementById(id); return e?parseFloat(e.value)||0:0; };
+const del=id=>document.getElementById(id);
+const dfmt=n=>'$'+n.toFixed(2);
+
+function dCalc(){
+  const fRate=dv('d-falcon'), rRate=dv('d-retail'), pRate=rRate-fRate;
+  const pill=del('d-profit-pill');
+  if(pill){ pill.textContent=dfmt(pRate)+'/sq in'; pill.style.background=pRate>=0?'#f0fdf4':'#fef2f2'; pill.style.color=pRate>=0?'#166534':'#dc2626'; }
+
+  let gCost=0, gRetail=0, gQty=0;
+  if(garmentMode==='supply'){
+    dGarmentRows.forEach(id=>{
+      const q=dv(id+'-q'),c=dv(id+'-c'),m=dv(id+'-m');
+      const rc=q*c,re=c*(1+m/100),rt=q*re;
+      const rcEl=del(id+'-rc'),reEl=del(id+'-re'),rtEl=del(id+'-rt');
+      if(rcEl) rcEl.textContent=dfmt(rc); if(reEl) reEl.textContent=q>0&&c>0?dfmt(re):'$0.00'; if(rtEl) rtEl.textContent=dfmt(rt);
+      gCost+=rc; gRetail+=rt; gQty+=q;
+    });
+  }
+  const dgc=del('d-g-cost'),dgr=del('d-g-retail'),dgq=del('d-g-qty');
+  if(dgc) dgc.textContent=dfmt(gCost); if(dgr) dgr.textContent=dfmt(gRetail); if(dgq) dgq.textContent=gQty;
+
+  let totalSqIn=0,totalFalcon=0,totalSqCharge=0;
+  dImprintRows.forEach(id=>{
+    const w=dv(id+'-w'),h=dv(id+'-h'),q=dv(id+'-q');
+    const sqEl=del(id+'-sq'),fcEl=del(id+'-fc'),rtEl=del(id+'-rt'),ppEl=del(id+'-pp');
+    if(w>0&&h>0&&q>0){
+      const sq=w*h*q,fc=sq*fRate,sqC=sq*rRate,pp=sqC/q;
+      if(sqEl) sqEl.textContent=sq.toFixed(1); if(fcEl) fcEl.textContent=dfmt(fc); if(rtEl) rtEl.textContent=dfmt(sqC); if(ppEl) ppEl.textContent=dfmt(pp);
+      totalSqIn+=sq; totalFalcon+=fc; totalSqCharge+=sqC;
+    } else { [sqEl,fcEl,rtEl,ppEl].forEach(e=>{ if(e) e.textContent='—'; }); }
+  });
+
+  const ng=Math.max(dv('d-num-garments'),1);
+  const at=dGetTier(ng);
+  const minTotal=at.minPer*ng;
+  const minKicks=at.minPer>0&&totalSqCharge>0&&totalSqCharge<minTotal;
+  const transferCharge=minKicks?minTotal:totalSqCharge;
+
+  const bar=del('d-min-bar'), lbl=del('d-min-label');
+  if(bar&&lbl){
+    if(minKicks){ bar.style.background='#fef3c7'; bar.style.color='#92400e'; lbl.textContent='⚠ Minimum applies — sq in total '+dfmt(totalSqCharge)+' < minimum '+dfmt(minTotal)+' ('+ng+' x $'+at.minPer+') → Charging '+dfmt(transferCharge); }
+    else if(totalSqCharge>0){ bar.style.background='#f0fdf4'; bar.style.color='#166534'; lbl.textContent='✓ Sq in rate exceeds minimum — charging '+dfmt(transferCharge); }
+    else { bar.style.background='#f5f5f2'; bar.style.color='#666'; lbl.textContent='Enter imprint dimensions to see transfer charge'; }
+  }
+
+  const setT=(id,v)=>{ const e=del(id); if(e) e.textContent=v; };
+  setT('d-ib-sqin',totalSqIn.toFixed(1)); setT('d-ib-falcon',dfmt(totalFalcon)); setT('d-ib-garments',ng);
+  setT('d-ib-tier',at.label+(at.minPer>0?' — $'+at.minPer+' min/garment':' — sq in rate'));
+  setT('d-ib-charge',dfmt(transferCharge));
+  setT('d-active-pill',at.label+(at.minPer>0?'  - $'+at.minPer+'/garment':'  - sq in rate'));
+
+  const override=document.getElementById('d-ship-override')&&document.getElementById('d-ship-override').checked;
+  let ship=0; const note=del('d-ship-note');
+  if(override){ ship=dv('d-shipping'); if(note){note.textContent='Manual override'; note.style.color='#dc2626';} }
+  else if(totalFalcon>=99){ ship=0; if(note){note.textContent='✓ Falcon order over $99 — shipping FREE'; note.style.color='#166534';} }
+  else { ship=dv('d-shipping'); if(note){note.textContent='Orders over $99 ship free  - currently '+dfmt(ship); note.style.color='#2563eb';} }
+
+  const labour=dv('d-labour-hrs')*dv('d-labour-rate');
+  setT('d-s-ship',dfmt(ship)); setT('d-s-labour',dfmt(labour));
+  const totalCost=totalFalcon+gCost+ship+labour;
+  const quote=transferCharge+gRetail+ship+labour;
+  // apply DTF minimum job charge
+  const dMin=parseFloat((document.getElementById('d-min-charge')||{}).value)||0;
+  const dMinKicks=dMin>0&&quote<dMin&&(totalFalcon>0||gCost>0);
+  const finalQuote=dMinKicks?dMin:quote;
+  const dMinStatus=document.getElementById('d-min-status');
+  if(dMinStatus){ dMinStatus.textContent=dMinKicks?'minimum applies — calc would be '+dfmt(quote):(dMin>0?'✓ exceeds minimum':''); dMinStatus.style.color=dMinKicks?'#c2410c':'#166534'; }
+  const profit=finalQuote-totalCost, margin=finalQuote>0?(profit/finalQuote*100):0;
+  const hst=finalQuote*D_HST, grand=finalQuote+hst;
+  setT('d-s-quote',dfmt(finalQuote));
+  setT('d-tt-cost',dfmt(totalCost));
+  setT('d-tt-cost-sub','transfers '+dfmt(totalFalcon)+(gCost>0?' + garments '+dfmt(gCost):'')+(ship>0?' + ship '+dfmt(ship):'')+(labour>0?' + labour '+dfmt(labour):''));
+  setT('d-tt-quote',dfmt(finalQuote));
+  setT('d-tt-profit',dfmt(profit)+' profit - '+margin.toFixed(1)+'%');
+  setT('d-tt-grand',dfmt(grand));
+  setT('d-tt-tax','HST (13%): '+dfmt(hst));
+  dRenderTiers(ng);
+}
+
+function resetDTF(){
+  if(!confirm('New DTF estimate? Clears all DTF fields.')) return;
+  const dp=del('d-proj'); if(dp) dp.value='';
+  const dlh=del('d-labour-hrs'); if(dlh) dlh.value='0';
+  const dlr=del('d-labour-rate'); if(dlr) dlr.value='45';
+  const dng=del('d-num-garments'); if(dng) dng.value='1';
+  const dso=document.getElementById('d-ship-override'); if(dso) dso.checked=false;
+  dGarmentRows.forEach(id=>{ const r=document.getElementById('row-'+id); if(r) r.remove(); });
+  dImprintRows.forEach(id=>{ const r=document.getElementById('row-'+id); if(r) r.remove(); });
+  dGarmentRows=[]; dImprintRows=[];
+  addGarmentRow(); addGarmentRow();
+  addImprintRow(); addImprintRow();
+  setGarmentMode('supply'); dCalc();
+}
+
+// ── EPSON LAMINATION ──
+let eLamRows=[], eLamId=0;
+
+function eLamToggle(){
+  const on=document.getElementById('e-lam-enabled').checked;
+  document.getElementById('e-lam-body').style.display=on?'':'none';
+  if(on&&eLamRows.length===0) eLamAddRow();
+  eCalc();
+}
+
+function eLamAddRow(){
+  const id='el'+eLamId++; eLamRows.push(id);
+  const tb=document.getElementById('e-lam-items-body');
+  const tr=document.createElement('tr'); tr.id='elrow-'+id;
+  tr.innerHTML=`
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. 24x36 plan sheet"></td>
+    <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="eLamCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="eLamCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="eLamCalc()"></td>
+    <td class="lam-res" id="${id}-pp">—</td>
+    <td class="lam-res" id="${id}-ps">—</td>
+    <td class="lam-res" id="${id}-sf">—</td>
+    <td class="lam-res" id="${id}-ws">—</td>
+    <td class="lam-res" id="${id}-co">—</td>
+    <td class="lam-res" id="${id}-rt">—</td>
+    <td class="lam-res" id="${id}-pe">—</td>
+    <td style="text-align:center;background:#fff7ed"><button class="btn-remove no-print" onclick="eLamRemoveRow('${id}')" title="Remove">✕</button></td>`;
+  tb.appendChild(tr); eLamCalc();
+}
+
+function eLamRemoveRow(id){
+  const el=document.getElementById('elrow-'+id); if(el) el.remove();
+  eLamRows=eLamRows.filter(r=>r!==id); eLamCalc();
+}
+
+function eLamCalc(){
+  const rollW  = parseFloat(document.getElementById('e-lam-roll').value)      || 25;
+  const margin = parseFloat(document.getElementById('e-lam-margin').value)     || 2;
+  const costSF = parseFloat(document.getElementById('e-lam-cost-sqft').value)  || 0;
+  const markup = parseFloat(document.getElementById('e-lam-markup').value)     || 0;
+  const maxW   = 24;
+  let totFilm=0, totCost=0, totRetail=0, totPieces=0, totPasses=0;
+  eLamRows.forEach(id=>{
+    const w=parseFloat(document.getElementById(id+'-w').value)||0;
+    const h=parseFloat(document.getElementById(id+'-h').value)||0;
+    const q=parseFloat(document.getElementById(id+'-q').value)||0;
+    const ppEl=document.getElementById(id+'-pp'), psEl=document.getElementById(id+'-ps');
+    const sfEl=document.getElementById(id+'-sf'), wsEl=document.getElementById(id+'-ws');
+    const coEl=document.getElementById(id+'-co'), rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+    const all=[ppEl,psEl,sfEl,wsEl,coEl,rtEl,peEl];
+    if(w>0&&h>0&&q>0){
+      if(Math.min(w,h)>maxW){ all.forEach(e=>{if(e){e.textContent='too wide';e.style.color='#dc2626';}}); return; }
+      all.forEach(e=>{if(e) e.style.color='';});
+      const bigger=Math.max(w,h), smaller=Math.min(w,h);
+      const across=bigger<=rollW?bigger:smaller;
+      const feed  =bigger<=rollW?smaller:bigger;
+      const ipp=Math.max(1,Math.floor(rollW/across));
+      const passes=Math.ceil(q/ipp);
+      const filmSqIn=passes*rollW*(feed+2*margin);
+      const filmSqFt=filmSqIn/144;
+      const itemAreaSqIn=w*h*q;
+      const waste=(filmSqIn-itemAreaSqIn)/filmSqIn*100;
+      const cost=filmSqFt*costSF;
+      const retail=cost*(1+markup/100);
+      const per=retail/q;
+      if(ppEl) ppEl.textContent=ipp+(ipp>1?' items':' item');
+      if(psEl) psEl.textContent=passes+(passes>1?' passes':' pass');
+      if(sfEl) sfEl.textContent=filmSqFt.toFixed(3)+' sq ft';
+      if(wsEl) wsEl.textContent=waste.toFixed(1)+'%';
+      if(coEl) coEl.textContent='$'+cost.toFixed(2);
+      if(rtEl) rtEl.textContent='$'+retail.toFixed(2);
+      if(peEl) peEl.textContent='$'+per.toFixed(2);
+      totFilm+=filmSqFt; totCost+=cost; totRetail+=retail; totPieces+=q; totPasses+=passes;
+    } else { all.forEach(e=>{if(e){e.textContent='—';e.style.color='';}}); }
+  });
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('e-lam-tot-ppass','—');
+  set('e-lam-tot-passes',totPasses>0?totPasses+' passes':'—');
+  set('e-lam-tot-sqft',totFilm>0?totFilm.toFixed(3)+' sq ft':'—');
+  set('e-lam-tot-waste','—');
+  set('e-lam-tot-cost','$'+totCost.toFixed(2));
+  set('e-lam-tot-retail','$'+totRetail.toFixed(2));
+  set('e-lam-tot-per',totPieces>0?'$'+(totRetail/totPieces).toFixed(2):'—');
+  eCalc();
+}
+
+function eLamGetRetailTotal(){
+  if(!document.getElementById('e-lam-enabled').checked) return {cost:0,retail:0};
+  const rollW =parseFloat(document.getElementById('e-lam-roll').value)||25;
+  const margin=parseFloat(document.getElementById('e-lam-margin').value)||2;
+  const costSF=parseFloat(document.getElementById('e-lam-cost-sqft').value)||0;
+  const markup=parseFloat(document.getElementById('e-lam-markup').value)||0;
+  let totCost=0,totRetail=0;
+  eLamRows.forEach(id=>{
+    const w=parseFloat(document.getElementById(id+'-w').value)||0;
+    const h=parseFloat(document.getElementById(id+'-h').value)||0;
+    const q=parseFloat(document.getElementById(id+'-q').value)||0;
+    if(w>0&&h>0&&q>0){
+      const bigger=Math.max(w,h),smaller=Math.min(w,h);
+      const across=bigger<=rollW?bigger:smaller;
+      const feed  =bigger<=rollW?smaller:bigger;
+      const ipp=Math.max(1,Math.floor(rollW/across));
+      const passes=Math.ceil(q/ipp);
+      const film=passes*rollW*(feed+2*margin)/144;
+      const c=film*costSF, r=c*(1+markup/100);
+      totCost+=c; totRetail+=r;
+    }
+  });
+  return {cost:totCost,retail:totRetail};
+}
+// ══════════════════════════════════════════════
+const E_HST = 0.13;
+
+// Standard plan sizes with Staples-matched retail prices
+const PLAN_SIZES = [
+  {label:'18×24"',  w:18, h:24, retail:2.69},
+  {label:'24×36"',  w:24, h:36, retail:5.39},
+  {label:'30×42"',  w:30, h:42, retail:7.99},
+  {label:'36×48"',  w:36, h:48, retail:10.99},
+  {label:'Custom',  w:0,  h:0,  retail:0},
+];
+
+let ePlanRows=[], eArtRows=[];
+let ePId=0, eAId=0;
+
+function eToggle(type){
+  const on = document.getElementById('e-'+type+'-on').checked;
+  document.getElementById('e-'+type+'-section').style.display = on ? '' : 'none';
+  if(on){
+    if(type==='plan' && ePlanRows.length===0){ eAddPlan(); eAddPlan(); }
+    if(type==='art'  && eArtRows.length===0)  { eAddArt(); }
+  }
+  eCalc();
+}
+
+function eAddPlan(){
+  const id='ep'+ePId++; ePlanRows.push(id);
+  const tb=document.getElementById('e-plan-body');
+  const tr=document.createElement('tr'); tr.id='erow-'+id;
+  tr.innerHTML=`
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. Site plan A1, floor plan"></td>
+    <td class="inp">
+      <select id="${id}-bw" onchange="ePlanCalcRow('${id}')" style="font-size:12px;padding:4px 5px;border:1px solid #ddd;border-radius:4px;width:100%;background:#fff">
+        <option value="bw">⬛ B&amp;W</option>
+        <option value="colour">🎨 Colour</option>
+      </select>
+    </td>
+    <td class="inp"><input type="number" id="${id}-w" placeholder="24" min="0" step="0.5" oninput="ePlanCalcRow('${id}')"></td>
+    <td class="inp"><input type="number" id="${id}-h" placeholder="36" min="0" step="0.5" oninput="ePlanCalcRow('${id}')"></td>
+    <td class="inp"><input type="number" id="${id}-q" value="1" min="1" step="1" oninput="eCalc()"></td>
+    <td class="resg dim" id="${id}-sf">—</td>
+    <td class="inp"><input type="number" id="${id}-c" placeholder="0.00" min="0" step="0.01" oninput="eCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-r" placeholder="0.00" min="0" step="0.01" oninput="eCalc()"></td>
+    <td class="resg" id="${id}-rt">$0.00</td>
+    <td class="resg dim" id="${id}-co">$0.00</td>
+    <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="eRemove('${id}','plan')" title="Remove">✕</button></td>`;
+  tb.appendChild(tr);
+  eCalc();
+}
+
+function ePlanCalcRow(id){
+  const w=parseFloat(document.getElementById(id+'-w').value)||0;
+  const h=parseFloat(document.getElementById(id+'-h').value)||0;
+  const bwEl=document.getElementById(id+'-bw');
+  const isColour = bwEl && bwEl.value==='colour';
+  const bondCost = parseFloat((document.getElementById('e-bond-cost')||{}).value)||0.13;
+  const inkCost  = isColour
+    ? (parseFloat((document.getElementById('e-ink-colour')||{}).value)||0.41)
+    : (parseFloat((document.getElementById('e-ink')||{}).value)||0.04);
+  const retailRate = isColour
+    ? (parseFloat((document.getElementById('e-plan-col-rate')||{}).value)||7.00)
+    : (parseFloat((document.getElementById('e-plan-bw-rate')||{}).value)||0.90);
+  const sfEl=document.getElementById(id+'-sf');
+  const cEl=document.getElementById(id+'-c');
+  const rEl=document.getElementById(id+'-r');
+  if(w>0&&h>0){
+    const sqft=w*h/144;
+    if(sfEl) sfEl.textContent=sqft.toFixed(3)+' sq ft';
+    if(cEl)  cEl.value=((bondCost+inkCost)*sqft).toFixed(2);
+    if(rEl)  rEl.value=(sqft*retailRate).toFixed(2);
+  } else {
+    if(sfEl) sfEl.textContent='—';
+  }
+  eCalc();
+}
+
+// Common art sizes with Posterjack reference prices
+const ART_SIZES = [
+  {label:'Custom',     w:0,  h:0},
+  {label:'5×7"',       w:5,  h:7},
+  {label:'8×10"',      w:8,  h:10},
+  {label:'8×12"',      w:8,  h:12},
+  {label:'11×14"',     w:11, h:14},
+  {label:'12×18"',     w:12, h:18},
+  {label:'16×20"',     w:16, h:20},
+  {label:'16×24"',     w:16, h:24},
+  {label:'18×24"',     w:18, h:24},
+  {label:'20×30"',     w:20, h:30},
+  {label:'24×36"',     w:24, h:36},
+  {label:'30×40"',     w:30, h:40},
+  {label:'36×48"',     w:36, h:48},
+];
+
+function eAddArt(){
+  const id='ea'+eAId++; eArtRows.push(id);
+  const tb=document.getElementById('e-art-body');
+  const tr=document.createElement('tr'); tr.id='erow-'+id;
+  const opts=ART_SIZES.map(s=>`<option value="${s.w},${s.h}">${s.label}</option>`).join('');
+  tr.innerHTML=`
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. Sunset landscape 18x24"></td>
+    <td class="inp">
+      <select id="${id}-bw" onchange="eCalc()" style="font-size:12px;padding:4px 5px;border:1px solid #ddd;border-radius:4px;width:100%;background:#fff">
+        <option value="colour">🎨 Colour</option>
+        <option value="bw">⬛ B&amp;W</option>
+      </select>
+    </td>
+    <td class="inp"><input type="number" id="${id}-w" placeholder="18" min="0" step="0.5" oninput="eCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-h" placeholder="24" min="0" step="0.5" oninput="eCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-q" value="1" min="1" step="1" oninput="eCalc()"></td>
+    <td class="resg dim" id="${id}-sf">—</td>
+    <td class="resg dim" id="${id}-co">—</td>
+    <td class="resg" id="${id}-rt">—</td>
+    <td class="resg" id="${id}-pe">—</td>
+    <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="eRemove('${id}','art')" title="Remove">✕</button></td>`;
+  tb.appendChild(tr);
+  eCalc();
+}
+
+function eArtSizeChange(id){
+  const sel=document.getElementById(id+'-sz');
+  if(!sel) return;
+  const [w,h]=sel.value.split(',').map(Number);
+  if(w>0&&h>0){
+    const wEl=document.getElementById(id+'-w'), hEl=document.getElementById(id+'-h');
+    if(wEl) wEl.value=w; if(hEl) hEl.value=h;
+  }
+  eCalc();
+}
+
+function eRemove(id, type){
+  const el=document.getElementById('erow-'+id); if(el) el.remove();
+  if(type==='plan') ePlanRows=ePlanRows.filter(r=>r!==id);
+  else eArtRows=eArtRows.filter(r=>r!==id);
+  eCalc();
+}
+
+function toggleEpsonSettings(){
+  const wrap=document.getElementById('e-settings-wrap');
+  const btn=document.getElementById('e-settings-btn');
+  const open=wrap.style.display==='none';
+  wrap.style.display=open?'':'none';
+  btn.textContent=open?'▲ Hide settings':'▼ Show settings';
+}
+
+const ev=id=>{ const e=document.getElementById(id); return e?parseFloat(e.value)||0:0; };
+const efmt=n=>'$'+n.toFixed(2);
+
+function eCalc(){
+  const inkSF        = ev('e-ink');
+  const inkColourSF  = ev('e-ink-colour');
+  const bondSF       = ev('e-bond-cost');
+  const artRate      = ev('e-art-rate') || 14;
+  const mediaSF      = ev('e-art-media');
+
+  // ── PLANS ──
+  let planCost=0, planRetail=0, planQty=0;
+  if(document.getElementById('e-plan-on').checked){
+    ePlanRows.forEach(id=>{
+      const q=ev(id+'-q'), c=ev(id+'-c'), r=ev(id+'-r');
+      const w=ev(id+'-w'), h=ev(id+'-h');
+      const sfEl=document.getElementById(id+'-sf');
+      if(w>0&&h>0&&sfEl) sfEl.textContent=(w*h/144).toFixed(3)+' sq ft';
+      const rt=q*r, co=q*c;
+      const rtEl=document.getElementById(id+'-rt'), coEl=document.getElementById(id+'-co');
+      if(rtEl) rtEl.textContent=efmt(rt);
+      if(coEl) coEl.textContent=efmt(co);
+      planCost+=co; planRetail+=rt; planQty+=q;
+    });
+  }
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('e-plan-cost',   efmt(planCost));
+  set('e-plan-retail', efmt(planRetail));
+  set('e-plan-qty',    planQty);
+
+  // ── ART REPRODUCTION ──
+  let artCost=0, artRetail=0;
+  const epsonW     = ev('e-epson-roll') || 36;
+  const artMargin  = ev('e-art-margin') || 1;
+  if(document.getElementById('e-art-on').checked){
+    eArtRows.forEach(id=>{
+      const w=ev(id+'-w'), h=ev(id+'-h'), q=ev(id+'-q');
+      const bwEl=document.getElementById(id+'-bw');
+      const isColour = !bwEl || bwEl.value==='colour';
+      const inkRate  = isColour ? inkColourSF : inkSF;
+      const sfEl=document.getElementById(id+'-sf'), coEl=document.getElementById(id+'-co');
+      const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+      if(w>0&&h>0&&q>0){
+        // Gang-run: fit as many per pass as possible across roll width
+        const across = Math.max(w,h)<=epsonW ? Math.max(w,h) : Math.min(w,h);
+        const feed   = Math.max(w,h)<=epsonW ? Math.min(w,h) : Math.max(w,h);
+        const ipp    = Math.max(1, Math.floor(epsonW / (across + artMargin*2)));
+        const passes = Math.ceil(q / ipp);
+        // Actual film used
+        const filmSqFt = passes * epsonW * (feed + artMargin*2) / 144;
+        const cost     = filmSqFt * (mediaSF + inkRate);
+        // Retail: $14/sqft on print area, minimum $25 per print for small prints
+        const printArea  = w * h / 144; // sqft of actual print
+        const retailCalc = printArea * artRate;
+        // Apply minimum: $25 for prints ≤ ~216 sqin (12×18"), scale up for larger
+        const minPer     = (w*h <= 216) ? 25 : (w*h <= 432 ? 35 : 0);
+        const retailPer  = Math.max(retailCalc, minPer);
+        const retail     = retailPer * q;
+        const per        = retail / q;
+        if(sfEl) sfEl.textContent = (filmSqFt/q).toFixed(3)+' sqft ea';
+        if(coEl) coEl.textContent = efmt(cost);
+        if(rtEl) rtEl.textContent = efmt(retail);
+        if(peEl){ peEl.textContent=efmt(per); peEl.title=(minPer>0&&retailCalc<minPer)?'Minimum $'+minPer+' applies':'$'+artRate+'/sqft'; }
+        artCost+=cost; artRetail+=retail;
+      } else { [sfEl,coEl,rtEl,peEl].forEach(e=>{if(e) e.textContent='—';}); }
+    });
+  }
+  set('e-art-cost',   efmt(artCost));
+  set('e-art-retail', efmt(artRetail));
+  // market check — pass avg sqft per piece so check can calculate per-sqft rate
+  const artPieces = eArtRows.reduce((n,id)=>n+(parseFloat((document.getElementById(id+'-q')||{}).value)||0),0);
+  const artFilmTot= eArtRows.reduce((n,id)=>{
+    const w=ev(id+'-w'),h=ev(id+'-h'),q=ev(id+'-q');
+    return n+(w>0&&h>0&&q>0?w*h/144:0);
+  },0);
+  const avgSqft = artPieces>0 ? artFilmTot/artPieces : 0;
+  eArtMarketCheck(artRetail, artPieces, avgSqft);
+
+  // ── TOTALS ──
+  const eLam   = eLamGetRetailTotal();
+  const labour = ev('e-hrs')*ev('e-rate');
+  const totalEl=document.getElementById('e-labour-total');
+  if(totalEl) totalEl.textContent=efmt(labour);
+  const totalCost = planCost+artCost+eLam.cost+labour;
+  const quote     = planRetail+artRetail+eLam.retail+labour;
+  const profit=quote-totalCost, margin=quote>0?(profit/quote*100):0;
+  const hst=quote*E_HST, grand=quote+hst;
+  set('e-tt-cost',     efmt(totalCost));
+  set('e-tt-cost-sub', (planCost>0?'plans '+efmt(planCost):'')+(artCost>0?(planCost>0?' + ':'')+'art '+efmt(artCost):'')+(eLam.cost>0?' + lam '+efmt(eLam.cost):'')+(labour>0?' + labour '+efmt(labour):''));
+  set('e-tt-quote',    efmt(quote));
+  set('e-tt-profit',   efmt(profit)+' profit - '+margin.toFixed(1)+'%');
+  set('e-tt-grand',    efmt(grand));
+  set('e-tt-tax',      'HST (13%): '+efmt(hst));
+}
+
+function resetEpson(){
+  if(!confirm('New Epson estimate? Clears all fields.')) return;
+  const ep=document.getElementById('e-proj'); if(ep) ep.value='';
+  document.getElementById('e-hrs').value='0';
+  ['e-plan-on','e-art-on'].forEach(id=>{ const e=document.getElementById(id); if(e) e.checked=false; });
+  ['e-plan-section','e-art-section'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
+  [...ePlanRows,...eArtRows].forEach(id=>{ const r=document.getElementById('erow-'+id); if(r) r.remove(); });
+  eLamRows.forEach(id=>{ const r=document.getElementById('elrow-'+id); if(r) r.remove(); });
+  eLamRows=[]; eLamId=0;
+  const elamOn=document.getElementById('e-lam-enabled'); if(elamOn) elamOn.checked=false;
+  const elamBody=document.getElementById('e-lam-body'); if(elamBody) elamBody.style.display='none';
+  eCalc();
+}
+// ══════════════════════════════════════════════
+invLoad();
+invRenderAll();
+rebuildDropdowns();
+addGarmentRow(); addGarmentRow();
+addImprintRow(); addImprintRow();
+pCalc(); dCalc(); rCalc(); eCalc();
+</script>
+</body>
+</html>
