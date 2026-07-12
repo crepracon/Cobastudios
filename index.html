@@ -160,6 +160,36 @@
       .tab-btn { padding: 10px 12px; font-size: 12px; }
       .customer-bar .cb-grid { grid-template-columns: 1fr; }
     }
+    /* ===== JOBS / WORKFLOW TAB ===== */
+    .jobs-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:1.2rem; }
+    .jobs-toolbar input[type=text] { flex:1; min-width:200px; padding:9px 12px; border:1px solid #ddd; border-radius:6px; font-size:14px; font-family:inherit; }
+    .jobs-btn { padding:9px 14px; font-size:13px; font-family:inherit; font-weight:500; border:1px solid #ddd; border-radius:6px; background:#fff; cursor:pointer; }
+    .jobs-btn:hover { background:#f5f5f2; }
+    .cb-save-btn { padding:9px 16px; font-size:13px; font-family:inherit; font-weight:600; border:none; border-radius:6px; background:#2f6f4f; color:#fff; cursor:pointer; white-space:nowrap; }
+    .cb-save-btn:hover { background:#255c40; }
+    .jobs-cust { border:1px solid #e5e5e5; border-radius:8px; background:#fff; margin-bottom:14px; overflow:hidden; }
+    .jobs-cust-head { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; background:#fafaf8; }
+    .jobs-cust-head:hover { background:#f2f2ee; }
+    .jobs-cust-name { font-weight:600; font-size:15px; }
+    .jobs-cust-meta { font-size:12px; color:#888; }
+    .jobs-cust-body { padding:12px 16px; border-top:1px solid #eee; display:none; }
+    .jobs-cust.open .jobs-cust-body { display:block; }
+    .jobs-cust-notes { width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; font-family:inherit; margin-bottom:10px; }
+    .jobs-est { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:10px 12px; border:1px solid #eee; border-radius:6px; margin-bottom:8px; background:#fff; }
+    .jobs-est-title { font-weight:600; font-size:14px; }
+    .jobs-est-meta { font-size:12px; color:#888; }
+    .jobs-est-total { font-weight:600; font-size:14px; margin-left:auto; }
+    .jobs-status { padding:5px 8px; font-size:12px; font-family:inherit; border:1px solid #ddd; border-radius:5px; background:#fff; }
+    .jobs-status.st-quote { background:#fff8e6; border-color:#e6d9a8; }
+    .jobs-status.st-approved { background:#e9f3ff; border-color:#b8d4f0; }
+    .jobs-status.st-production { background:#f3e9ff; border-color:#d4bcf0; }
+    .jobs-status.st-done { background:#e9f7ee; border-color:#b5ddc3; }
+    .jobs-mini { padding:5px 10px; font-size:12px; font-family:inherit; border:1px solid #ddd; border-radius:5px; background:#fff; cursor:pointer; }
+    .jobs-mini:hover { background:#f5f5f2; }
+    .jobs-mini.danger { color:#b33; border-color:#e0bcbc; }
+    .jobs-empty { color:#999; font-size:14px; padding:2rem 0; text-align:center; }
+    #jobs-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#222; color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; display:none; z-index:999; }
+    @media (max-width:600px){ .jobs-est-total { margin-left:0; width:100%; } }
   </style>
 </head>
 <body>
@@ -180,6 +210,7 @@
       <div class="cb-field"><label>Name</label><input type="text" id="cb-name" placeholder="Full name…"></div>
       <div class="cb-field"><label>Phone</label><input type="tel" id="cb-phone" placeholder="613-555-0100"></div>
       <div class="cb-field"><label>Email</label><input type="email" id="cb-email" placeholder="customer@email.com"></div>
+      <div class="cb-field" style="display:flex;align-items:flex-end"><button class="cb-save-btn" onclick="saveEstimate()">&#128190; Save estimate</button></div>
     </div>
   </div>
 
@@ -189,6 +220,7 @@
     <button class="tab-btn" onclick="switchTab('dtf',this)">🔥 DTF Heat Transfer</button>
     <button class="tab-btn" onclick="switchTab('vinyl',this)">🎨 Vinyl / Roland</button>
     <button class="tab-btn" onclick="switchTab('epson',this)">🖼 Epson</button>
+    <button class="tab-btn" onclick="switchTab('jobs',this)">🗂 Jobs</button>
     <button class="tab-btn" onclick="switchTab('inventory',this)">📦 Inventory</button>
   </div>
 
@@ -1171,6 +1203,20 @@
   </div>
 
   <!-- ═══════════════ INVENTORY ═══════════════ -->
+  <!-- ═══════════════ JOBS / WORKFLOW ═══════════════ -->
+  <div class="tab-panel" id="panel-jobs">
+    <h2 style="margin-top:0">Jobs &amp; Customers</h2>
+    <p style="font-size:13px;color:#888;margin-top:-6px">Saved estimates, grouped by customer. Use the Save estimate button in the customer bar from any estimator tab. Loading an estimate reopens it exactly as it was quoted, including the rates at the time.</p>
+    <div class="jobs-toolbar">
+      <input type="text" id="jobs-search" placeholder="Search customers, job titles, notes..." oninput="renderJobs()">
+      <button class="jobs-btn" onclick="exportJobs()">&#11015; Export backup</button>
+      <button class="jobs-btn" onclick="document.getElementById('jobs-import-file').click()">&#11014; Import backup</button>
+      <input type="file" id="jobs-import-file" accept=".json" style="display:none" onchange="importJobs(this)">
+    </div>
+    <div id="jobs-list"></div>
+  </div>
+  <div id="jobs-toast"></div>
+
   <div class="tab-panel" id="panel-inventory">
     <div class="panel-body">
 
@@ -1351,11 +1397,238 @@
 // ══════════════════════════════════════════════
 //  TAB SWITCHING
 // ══════════════════════════════════════════════
+let currentTab = 'paper';
 function switchTab(name, btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
+  currentTab = name;
+  if(name === 'jobs') renderJobs();
+}
+function switchTabByName(name){
+  const btn = document.querySelector('.tab-btn[onclick*="\'' + name + '\'"]');
+  if(btn) switchTab(name, btn);
+}
+
+// ══════════════════════════════════════════════
+//  JOBS / WORKFLOW MODULE  (localStorage: coba-jobs-v1)
+// ══════════════════════════════════════════════
+const JOBS_KEY = 'coba-jobs-v1';
+const JOBS_TABS = { paper:'Paper', dtf:'DTF', vinyl:'Vinyl/Roland', epson:'Epson' };
+const JOBS_STATUSES = ['Quote','Approved','In Production','Done'];
+let jobsData = { customers: [] };
+
+function jobsLoad(){
+  try{
+    const s = localStorage.getItem(JOBS_KEY);
+    if(s){ const d = JSON.parse(s); if(d && Array.isArray(d.customers)) jobsData = d; }
+  }catch(e){ console.error('jobs load failed', e); }
+}
+function jobsSave(){
+  try{ localStorage.setItem(JOBS_KEY, JSON.stringify(jobsData)); }
+  catch(e){ alert('Could not save jobs data (storage full or blocked): ' + e.message); }
+}
+function jobsToast(msg){
+  const t = document.getElementById('jobs-toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(jobsToast._h);
+  jobsToast._h = setTimeout(()=>{ t.style.display='none'; }, 2600);
+}
+
+// --- per-tab dynamic row state (save/restore JS variables alongside the DOM) ---
+const SNAP_STATE = {
+  paper:  { get: ()=>({ lamRows:[...lamRows], lamId }),
+            set: s=>{ lamRows=[...(s.lamRows||[])]; lamId=s.lamId||0; } },
+  dtf:    { get: ()=>({ dGarmentRows:[...dGarmentRows], dImprintRows:[...dImprintRows], gId, iId }),
+            set: s=>{ dGarmentRows=[...(s.dGarmentRows||[])]; dImprintRows=[...(s.dImprintRows||[])]; gId=s.gId||0; iId=s.iId||0; } },
+  vinyl:  { get: ()=>({ rStkRows:[...rStkRows], rBanRows:[...rBanRows], rSgnRows:[...rSgnRows], rCanRows:[...rCanRows], rSId, rBId, rGId, rCId }),
+            set: s=>{ rStkRows=[...(s.rStkRows||[])]; rBanRows=[...(s.rBanRows||[])]; rSgnRows=[...(s.rSgnRows||[])]; rCanRows=[...(s.rCanRows||[])]; rSId=s.rSId||0; rBId=s.rBId||0; rGId=s.rGId||0; rCId=s.rCId||0; } },
+  epson:  { get: ()=>({ ePlanRows:[...ePlanRows], eArtRows:[...eArtRows], eLamRows:[...eLamRows], ePId, eAId, eLamId }),
+            set: s=>{ ePlanRows=[...(s.ePlanRows||[])]; eArtRows=[...(s.eArtRows||[])]; eLamRows=[...(s.eLamRows||[])]; ePId=s.ePId||0; eAId=s.eAId||0; eLamId=s.eLamId||0; } }
+};
+const SNAP_TOTALS = {
+  paper: { cost:'p-yourcost', quote:'p-quote-total', grand:'p-grand' },
+  dtf:   { cost:'d-tt-cost',  quote:'d-tt-quote',    grand:'d-tt-grand' },
+  vinyl: { cost:'r-tt-cost',  quote:'r-tt-quote',    grand:'r-tt-grand' },
+  epson: { cost:'e-tt-cost',  quote:'e-tt-quote',    grand:'e-tt-grand' }
+};
+const SNAP_CALCS = { paper:['pCalc'], dtf:['dCalc'], vinyl:['rCalc'], epson:['eCalc'] };
+
+function snapCapture(tab){
+  const panel = document.getElementById('panel-'+tab);
+  const fields = [];
+  let noteText = '';
+  panel.querySelectorAll('input, select, textarea').forEach(el=>{
+    if(el.type === 'checkbox' || el.type === 'radio') fields.push({ c: el.checked ? 1 : 0 });
+    else fields.push({ v: el.value });
+    if(el.tagName === 'TEXTAREA') noteText += ' ' + el.value;
+  });
+  const totals = {};
+  const tIds = SNAP_TOTALS[tab] || {};
+  for(const k in tIds){ const el = document.getElementById(tIds[k]); totals[k] = el ? el.textContent : ''; }
+  return { html: panel.innerHTML, fields, state: SNAP_STATE[tab] ? SNAP_STATE[tab].get() : null, totals, noteText: noteText.trim() };
+}
+function snapRestore(tab, snap){
+  const panel = document.getElementById('panel-'+tab);
+  panel.innerHTML = snap.html;
+  if(SNAP_STATE[tab] && snap.state) SNAP_STATE[tab].set(snap.state);
+  const els = panel.querySelectorAll('input, select, textarea');
+  snap.fields.forEach((f, i)=>{
+    const el = els[i]; if(!el) return;
+    if('c' in f){ el.checked = !!f.c; } else { el.value = f.v; }
+  });
+  (SNAP_CALCS[tab]||[]).forEach(fn=>{ try{ window[fn] ? window[fn]() : eval(fn+'()'); }catch(e){ console.error(fn, e); } });
+}
+
+// --- save flow ---
+function saveEstimate(){
+  if(!(currentTab in JOBS_TABS)){ alert('Switch to an estimator tab (Paper, DTF, Vinyl, or Epson) to save an estimate.'); return; }
+  const name = document.getElementById('cb-name').value.trim();
+  if(!name){ alert('Enter a customer name in the customer bar first.'); return; }
+  const title = prompt('Job title for this estimate:', '');
+  if(title === null) return;
+  const snap = snapCapture(currentTab);
+  const cust = jobsUpsertCustomer(name);
+  cust.estimates.unshift({
+    id: 'e' + Date.now(),
+    title: title.trim() || (JOBS_TABS[currentTab] + ' estimate'),
+    tab: currentTab,
+    date: new Date().toISOString().slice(0,10),
+    status: 'Quote',
+    totals: snap.totals,
+    noteText: snap.noteText,
+    snap: { html: snap.html, fields: snap.fields, state: snap.state }
+  });
+  jobsSave();
+  jobsToast('Saved "' + (title.trim()||'estimate') + '" under ' + cust.name);
+}
+function jobsUpsertCustomer(name){
+  const key = name.toLowerCase();
+  let c = jobsData.customers.find(x=>x.name.toLowerCase() === key);
+  if(!c){ c = { id:'c'+Date.now(), name, phone:'', email:'', notes:'', estimates:[] }; jobsData.customers.unshift(c); }
+  const ph = document.getElementById('cb-phone').value.trim();
+  const em = document.getElementById('cb-email').value.trim();
+  if(ph) c.phone = ph;
+  if(em) c.email = em;
+  return c;
+}
+
+// --- load / duplicate / delete / status ---
+function jobsFind(cid, eid){
+  const c = jobsData.customers.find(x=>x.id===cid); if(!c) return {};
+  return { c, e: c.estimates.find(x=>x.id===eid) };
+}
+function loadEstimate(cid, eid, dup){
+  const { c, e } = jobsFind(cid, eid); if(!e) return;
+  const verb = dup ? 'Duplicate' : 'Load';
+  if(!confirm(verb + ' "' + e.title + '" into the ' + JOBS_TABS[e.tab] + ' tab? Unsaved work there will be replaced.')) return;
+  switchTabByName(e.tab);
+  snapRestore(e.tab, e.snap);
+  document.getElementById('cb-name').value  = c.name;
+  document.getElementById('cb-phone').value = c.phone || '';
+  document.getElementById('cb-email').value = c.email || '';
+  jobsToast(dup ? 'Duplicated as a new working copy - hit Save estimate to keep it' : 'Loaded "' + e.title + '"');
+}
+function deleteEstimate(cid, eid){
+  const { c, e } = jobsFind(cid, eid); if(!e) return;
+  if(!confirm('Delete estimate "' + e.title + '"? This cannot be undone.')) return;
+  c.estimates = c.estimates.filter(x=>x.id!==eid);
+  jobsSave(); renderJobs();
+}
+function deleteCustomer(cid){
+  const c = jobsData.customers.find(x=>x.id===cid); if(!c) return;
+  if(!confirm('Delete ' + c.name + ' and ALL ' + c.estimates.length + ' saved estimate(s)? This cannot be undone.')) return;
+  jobsData.customers = jobsData.customers.filter(x=>x.id!==cid);
+  jobsSave(); renderJobs();
+}
+function setEstStatus(cid, eid, val){
+  const { e } = jobsFind(cid, eid); if(!e) return;
+  e.status = val; jobsSave(); renderJobs();
+}
+function setCustNotes(cid, val){
+  const c = jobsData.customers.find(x=>x.id===cid); if(!c) return;
+  c.notes = val; jobsSave();
+}
+function toggleCust(el){ el.parentElement.classList.toggle('open'); }
+
+// --- render ---
+function jobsEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function renderJobs(){
+  const list = document.getElementById('jobs-list'); if(!list) return;
+  const q = (document.getElementById('jobs-search').value || '').toLowerCase().trim();
+  let shown = 0, html = '';
+  jobsData.customers.forEach(c=>{
+    let ests = c.estimates;
+    const custMatch = !q || c.name.toLowerCase().includes(q) || (c.notes||'').toLowerCase().includes(q) || (c.phone||'').includes(q) || (c.email||'').toLowerCase().includes(q);
+    if(q && !custMatch){
+      ests = ests.filter(e=> e.title.toLowerCase().includes(q) || (e.noteText||'').toLowerCase().includes(q));
+      if(!ests.length) return;
+    }
+    shown++;
+    const statusCls = { 'Quote':'st-quote','Approved':'st-approved','In Production':'st-production','Done':'st-done' };
+    let estHtml = ests.map(e=>{
+      const opts = JOBS_STATUSES.map(s=>'<option' + (e.status===s?' selected':'') + '>' + s + '</option>').join('');
+      return '<div class="jobs-est">' +
+        '<span class="jobs-est-title">' + jobsEsc(e.title) + '</span>' +
+        '<span class="jobs-est-meta">' + e.date + ' &middot; ' + (JOBS_TABS[e.tab]||e.tab) + '</span>' +
+        '<select class="jobs-status ' + (statusCls[e.status]||'') + '" onchange="setEstStatus(\'' + c.id + '\',\'' + e.id + '\',this.value)">' + opts + '</select>' +
+        '<span class="jobs-est-total">' + jobsEsc((e.totals&&e.totals.grand)||'') + '</span>' +
+        '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',false)">Load</button>' +
+        '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',true)">Duplicate</button>' +
+        '<button class="jobs-mini danger" onclick="deleteEstimate(\'' + c.id + '\',\'' + e.id + '\')">Delete</button>' +
+        '</div>';
+    }).join('');
+    if(!estHtml) estHtml = '<div class="jobs-est-meta" style="padding:6px 0">No saved estimates yet.</div>';
+    const meta = [c.phone, c.email].filter(Boolean).join(' &middot; ');
+    html += '<div class="jobs-cust' + (q ? ' open' : '') + '">' +
+      '<div class="jobs-cust-head" onclick="toggleCust(this)">' +
+        '<div><div class="jobs-cust-name">' + jobsEsc(c.name) + '</div><div class="jobs-cust-meta">' + meta + '</div></div>' +
+        '<div class="jobs-cust-meta">' + c.estimates.length + ' estimate(s)</div>' +
+      '</div>' +
+      '<div class="jobs-cust-body">' +
+        '<textarea class="jobs-cust-notes" rows="2" placeholder="Customer notes - preferences, pricing history, reminders..." onchange="setCustNotes(\'' + c.id + '\',this.value)">' + jobsEsc(c.notes) + '</textarea>' +
+        estHtml +
+        '<button class="jobs-mini danger" onclick="deleteCustomer(\'' + c.id + '\')">Delete customer</button>' +
+      '</div></div>';
+  });
+  list.innerHTML = shown ? html : '<div class="jobs-empty">' + (q ? 'No matches for "' + jobsEsc(q) + '"' : 'No saved jobs yet. Build an estimate on any tab, enter a customer name up top, and hit Save estimate.') + '</div>';
+}
+
+// --- backup / restore ---
+function exportJobs(){
+  const blob = new Blob([JSON.stringify(jobsData, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'coba-jobs-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  jobsToast('Backup downloaded - keep it somewhere safe');
+}
+function importJobs(input){
+  const file = input.files && input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(){
+    try{
+      const d = JSON.parse(reader.result);
+      if(!d || !Array.isArray(d.customers)) throw new Error('Not a valid jobs backup file');
+      let added = 0;
+      d.customers.forEach(ic=>{
+        let c = jobsData.customers.find(x=>x.name.toLowerCase() === ic.name.toLowerCase());
+        if(!c){ jobsData.customers.push(ic); added += (ic.estimates||[]).length; return; }
+        (ic.estimates||[]).forEach(ie=>{
+          if(!c.estimates.some(x=>x.id===ie.id)){ c.estimates.push(ie); added++; }
+        });
+        if(!c.notes && ic.notes) c.notes = ic.notes;
+        if(!c.phone && ic.phone) c.phone = ic.phone;
+        if(!c.email && ic.email) c.email = ic.email;
+      });
+      jobsSave(); renderJobs();
+      jobsToast('Import merged: ' + added + ' estimate(s) added');
+    }catch(e){ alert('Import failed: ' + e.message); }
+    input.value = '';
+  };
+  reader.readAsText(file);
 }
 
 // ══════════════════════════════════════════════
@@ -3128,6 +3401,7 @@ function resetEpson(){
 }
 // ══════════════════════════════════════════════
 invLoad();
+jobsLoad();
 invRenderAll();
 rebuildDropdowns();
 addGarmentRow(); addGarmentRow();
