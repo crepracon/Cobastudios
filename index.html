@@ -212,6 +212,11 @@
       <div class="cb-field"><label>Email</label><input type="email" id="cb-email" placeholder="customer@email.com"></div>
       <div class="cb-field" style="display:flex;align-items:flex-end"><button class="cb-save-btn" onclick="saveEstimate()">&#128190; Save estimate</button></div>
     </div>
+    <div id="save-title-bar" style="display:none;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+      <input type="text" id="save-title-input" placeholder="Job title for this estimate..." class="jobs-cust-notes" style="margin:0;flex:1;min-width:200px" onkeydown="if(event.key==='Enter')saveEstimateConfirm()">
+      <button class="cb-save-btn" onclick="saveEstimateConfirm()">Save</button>
+      <button class="jobs-btn" onclick="saveEstimateCancel()">Cancel</button>
+    </div>
   </div>
 
   <!-- TABS -->
@@ -1228,6 +1233,15 @@
     <div id="jobs-list"></div>
   </div>
   <div id="jobs-toast"></div>
+  <div id="coba-confirm-wrap" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:10px;padding:20px 22px;max-width:380px;width:88%;box-shadow:0 8px 30px rgba(0,0,0,.25)">
+      <div id="coba-confirm-msg" style="font-size:14px;line-height:1.45;margin-bottom:16px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="jobs-btn" onclick="cobaConfirmAnswer(false)">Cancel</button>
+        <button class="cb-save-btn" id="coba-confirm-yes" onclick="cobaConfirmAnswer(true)">Yes</button>
+      </div>
+    </div>
+  </div>
 
   <div class="tab-panel" id="panel-inventory">
     <div class="panel-body">
@@ -1426,6 +1440,19 @@ function switchTabByName(name){
 // ══════════════════════════════════════════════
 //  JOBS / WORKFLOW MODULE  (localStorage: coba-jobs-v1)
 // ══════════════════════════════════════════════
+// In-page confirm (native confirm() is blocked in sandboxed previews/webviews)
+function cobaConfirm(msg, onYes){
+  const w = document.getElementById('coba-confirm-wrap');
+  document.getElementById('coba-confirm-msg').textContent = msg;
+  w.style.display = 'flex';
+  cobaConfirm._cb = onYes;
+}
+function cobaConfirmAnswer(yes){
+  document.getElementById('coba-confirm-wrap').style.display = 'none';
+  const cb = cobaConfirm._cb; cobaConfirm._cb = null;
+  if(yes && cb) cb();
+}
+function notify(msg){ jobsToast(msg); }
 const JOBS_KEY = 'coba-jobs-v1';
 const JOBS_TABS = { paper:'Paper', dtf:'DTF', vinyl:'Vinyl/Roland', epson:'Epson' };
 const JOBS_STATUSES = ['Quote','Approved','In Production','Done'];
@@ -1439,7 +1466,7 @@ function jobsLoad(){
 }
 function jobsSave(){
   try{ localStorage.setItem(JOBS_KEY, JSON.stringify(jobsData)); }
-  catch(e){ alert('Could not save jobs data (storage full or blocked): ' + e.message); }
+  catch(e){ notify('Could not save jobs data (storage full or blocked): ' + e.message); }
 }
 function jobsToast(msg){
   const t = document.getElementById('jobs-toast');
@@ -1503,11 +1530,19 @@ function saveEstimate(){
     document.getElementById('jl-cust').focus();
     return;
   }
-  if(!(currentTab in JOBS_TABS)){ alert('Switch to an estimator tab (Paper, DTF, Vinyl, or Epson) to save an estimate, or use the Jobs tab to log a job manually.'); return; }
+  if(!(currentTab in JOBS_TABS)){ notify('Switch to an estimator tab to save, or use the Jobs tab to log a job.'); return; }
   const name = document.getElementById('cb-name').value.trim();
-  if(!name){ alert('Enter a customer name in the customer bar first.'); return; }
-  const title = prompt('Job title for this estimate:', '');
-  if(title === null) return;
+  if(!name){ notify('Enter a customer name in the customer bar first.'); document.getElementById('cb-name').focus(); return; }
+  const bar = document.getElementById('save-title-bar');
+  bar.style.display = 'flex';
+  document.getElementById('save-title-input').focus();
+}
+function saveEstimateConfirm(){
+  const title = document.getElementById('save-title-input').value;
+  document.getElementById('save-title-bar').style.display = 'none';
+  document.getElementById('save-title-input').value = '';
+  const name = document.getElementById('cb-name').value.trim();
+  if(!name){ notify('Enter a customer name first.'); return; }
   const snap = snapCapture(currentTab);
   const cust = jobsUpsertCustomer(name);
   cust.estimates.unshift({
@@ -1523,6 +1558,10 @@ function saveEstimate(){
   jobsSave();
   jobsToast('Saved "' + (title.trim()||'estimate') + '" under ' + cust.name);
 }
+function saveEstimateCancel(){
+  document.getElementById('save-title-bar').style.display = 'none';
+  document.getElementById('save-title-input').value = '';
+}
 function jobsUpsertCustomer(name){
   const key = name.toLowerCase();
   let c = jobsData.customers.find(x=>x.name.toLowerCase() === key);
@@ -1536,7 +1575,7 @@ function jobsUpsertCustomer(name){
 
 function jobsLogManual(){
   const name = document.getElementById('jl-cust').value.trim();
-  if(!name){ alert('Enter a customer name.'); return; }
+  if(!name){ notify('Enter a customer name.'); return; }
   const amt = parseFloat(document.getElementById('jl-amount').value);
   const cust = jobsUpsertCustomer(name);
   cust.estimates.unshift({
@@ -1563,27 +1602,30 @@ function jobsFind(cid, eid){
 }
 function loadEstimate(cid, eid, dup){
   const { c, e } = jobsFind(cid, eid); if(!e) return;
-  if(!e.snap){ alert('This is a manually logged job - there is no saved estimate to load.'); return; }
+  if(!e.snap){ notify('This is a manually logged job - there is no saved estimate to load.'); return; }
   const verb = dup ? 'Duplicate' : 'Load';
-  if(!confirm(verb + ' "' + e.title + '" into the ' + JOBS_TABS[e.tab] + ' tab? Unsaved work there will be replaced.')) return;
+  cobaConfirm(verb + ' "' + e.title + '" into the ' + JOBS_TABS[e.tab] + ' tab? Unsaved work there will be replaced.', ()=>{
   switchTabByName(e.tab);
   snapRestore(e.tab, e.snap);
   document.getElementById('cb-name').value  = c.name;
   document.getElementById('cb-phone').value = c.phone || '';
   document.getElementById('cb-email').value = c.email || '';
   jobsToast(dup ? 'Duplicated as a new working copy - hit Save estimate to keep it' : 'Loaded "' + e.title + '"');
+  });
 }
 function deleteEstimate(cid, eid){
   const { c, e } = jobsFind(cid, eid); if(!e) return;
-  if(!confirm('Delete estimate "' + e.title + '"? This cannot be undone.')) return;
-  c.estimates = c.estimates.filter(x=>x.id!==eid);
-  jobsSave(); renderJobs();
+  cobaConfirm('Delete estimate "' + e.title + '"? This cannot be undone.', ()=>{
+    c.estimates = c.estimates.filter(x=>x.id!==eid);
+    jobsSave(); renderJobs();
+  });
 }
 function deleteCustomer(cid){
   const c = jobsData.customers.find(x=>x.id===cid); if(!c) return;
-  if(!confirm('Delete ' + c.name + ' and ALL ' + c.estimates.length + ' saved estimate(s)? This cannot be undone.')) return;
-  jobsData.customers = jobsData.customers.filter(x=>x.id!==cid);
-  jobsSave(); renderJobs();
+  cobaConfirm('Delete ' + c.name + ' and ALL ' + c.estimates.length + ' saved estimate(s)? This cannot be undone.', ()=>{
+    jobsData.customers = jobsData.customers.filter(x=>x.id!==cid);
+    jobsSave(); renderJobs();
+  });
 }
 function setEstStatus(cid, eid, val){
   const { e } = jobsFind(cid, eid); if(!e) return;
@@ -1673,7 +1715,7 @@ function importJobs(input){
       });
       jobsSave(); renderJobs();
       jobsToast('Import merged: ' + added + ' estimate(s) added');
-    }catch(e){ alert('Import failed: ' + e.message); }
+    }catch(e){ notify('Import failed: ' + e.message); }
     input.value = '';
   };
   reader.readAsText(file);
@@ -1888,7 +1930,7 @@ function invRenderEpsonPapers(){
   });
 }
 function invAddEpsonPaper(){ inventory.epsonPapers.push({name:'',cost:0,size:'',supplier:'NHS',notes:''}); invRenderEpsonPapers(); invDebounceSave(); }
-function invRemoveEpsonPaper(i){ if(!confirm('Remove?')) return; inventory.epsonPapers.splice(i,1); invRenderEpsonPapers(); invDebounceSave(); }
+function invRemoveEpsonPaper(i){ cobaConfirm('Remove?', ()=>{ inventory.epsonPapers.splice(i,1); invRenderEpsonPapers(); invDebounceSave(); }); }
 
 function invRenderInks(){
   const tb = document.getElementById('inv-ink-body');
@@ -1911,7 +1953,7 @@ function invRenderInks(){
   });
 }
 function invAddInk(){ inventory.inks.push({name:'',brand:'',cost:0,size:'500ml',code:'',supplier:'',notes:''}); invRenderInks(); invDebounceSave(); }
-function invRemoveInk(i){ if(!confirm('Remove this ink?')) return; inventory.inks.splice(i,1); invRenderInks(); invDebounceSave(); }
+function invRemoveInk(i){ cobaConfirm('Remove this ink?', ()=>{ inventory.inks.splice(i,1); invRenderInks(); invDebounceSave(); }); }
 
 function invRenderVinyl(){
   const tb = document.getElementById('inv-vinyl-body');
@@ -1951,8 +1993,8 @@ function invRenderSubstrates(){
 
 function invAddVinyl(){ inventory.vinyl.push({name:'New vinyl',cost:0,code:'',supplier:'',notes:''}); invRenderVinyl(); invDebounceSave(); }
 function invAddSubstrate(){ inventory.substrates.push({name:'New substrate',cost:0,size:'',supplier:'',notes:''}); invRenderSubstrates(); invDebounceSave(); }
-function invRemoveVinyl(i){ if(!confirm('Remove this vinyl?')) return; inventory.vinyl.splice(i,1); invRenderVinyl(); invDebounceSave(); }
-function invRemoveSubstrate(i){ if(!confirm('Remove this substrate?')) return; inventory.substrates.splice(i,1); invRenderSubstrates(); invDebounceSave(); }
+function invRemoveVinyl(i){ cobaConfirm('Remove this vinyl?', ()=>{ inventory.vinyl.splice(i,1); invRenderVinyl(); invDebounceSave(); }); }
+function invRemoveSubstrate(i){ cobaConfirm('Remove this substrate?', ()=>{ inventory.substrates.splice(i,1); invRenderSubstrates(); invDebounceSave(); }); }
 
 function invRenderCoils(){
   const tb = document.getElementById('inv-coil-body');
@@ -1972,7 +2014,7 @@ function invRenderCoils(){
   });
 }
 function invAddCoil(){ inventory.coils.push({size:'',color:'Black',cost:0,code:'',notes:''}); invRenderCoils(); invDebounceSave(); }
-function invRemoveCoil(i){ if(!confirm('Remove this coil?')) return; inventory.coils.splice(i,1); invRenderCoils(); invDebounceSave(); }
+function invRemoveCoil(i){ cobaConfirm('Remove this coil?', ()=>{ inventory.coils.splice(i,1); invRenderCoils(); invDebounceSave(); }); }
 
 function invRenderPapers(){
   const tb = document.getElementById('inv-paper-body');
@@ -2025,11 +2067,11 @@ function invAddPaper(){ inventory.papers.push({name:'New paper stock',cost:0.00,
 function invAddToner(){ inventory.toner.push({name:'New type',cost:0.00,notes:''}); invRenderToner(); invDebounceSave(); }
 function invAddOther(){ inventory.other.push({name:'New item',cost:0.00,unit:'',supplier:'',notes:''}); invRenderOther(); invDebounceSave(); }
 
-function invRemovePaper(i){ if(!confirm('Remove "'+inventory.papers[i].name+'"?')) return; inventory.papers.splice(i,1); invRenderPapers(); invDebounceSave(); }
-function invRemoveToner(i){ if(!confirm('Remove "'+inventory.toner[i].name+'"?')) return; inventory.toner.splice(i,1); invRenderToner(); invDebounceSave(); }
+function invRemovePaper(i){ cobaConfirm('Remove "'+inventory.papers[i].name+'"?', ()=>{ inventory.papers.splice(i,1); invRenderPapers(); invDebounceSave(); }); }
+function invRemoveToner(i){ cobaConfirm('Remove "'+inventory.toner[i].name+'"?', ()=>{ inventory.toner.splice(i,1); invRenderToner(); invDebounceSave(); }); }
 function invRemoveOther(i){ inventory.other.splice(i,1); invRenderOther(); invDebounceSave(); }
 
-function invReset(){ if(!confirm('Reset all inventory to defaults? This cannot be undone.')) return; invSetDefaults(); invRenderAll(); invSave(); rebuildDropdowns(); }
+function invReset(){ cobaConfirm('Reset all inventory to defaults? This cannot be undone.', ()=>{ invSetDefaults(); invRenderAll(); invSave(); rebuildDropdowns(); }); }
 
 function invExport(){
   const blob = new Blob([JSON.stringify(inventory, null, 2)], {type:'application/json'});
@@ -2042,9 +2084,9 @@ function invImport(input){
   r.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if(data.papers && data.toner){ inventory = data; invRenderAll(); invSave(); rebuildDropdowns(); alert('Inventory imported successfully!'); }
-      else { alert('Invalid inventory file.'); }
-    } catch(ex){ alert('Could not read file: '+ex.message); }
+      if(data.papers && data.toner){ inventory = data; invRenderAll(); invSave(); rebuildDropdowns(); notify('Inventory imported successfully!'); }
+      else { notify('Invalid inventory file.'); }
+    } catch(ex){ notify('Could not read file: '+ex.message); }
   };
   r.readAsText(file);
   input.value = '';
@@ -2620,20 +2662,21 @@ function rCalc(){
 }
 
 function resetRoland(){
-  if(!confirm('New Roland estimate? This will clear all Roland fields.')) return;
-  const rp=document.getElementById('r-proj'); if(rp) rp.value='';
-  document.getElementById('r-hrs').value='0';
-  ['r-stk-on','r-ban-on','r-sgn-on','r-can-on','r-stk-lam','r-sgn-sub-on'].forEach(id=>{
-    const e=document.getElementById(id); if(e) e.checked=false;
+  cobaConfirm('New Roland estimate? This will clear all Roland fields.', ()=>{
+    const rp=document.getElementById('r-proj'); if(rp) rp.value='';
+    document.getElementById('r-hrs').value='0';
+    ['r-stk-on','r-ban-on','r-sgn-on','r-can-on','r-stk-lam','r-sgn-sub-on'].forEach(id=>{
+      const e=document.getElementById(id); if(e) e.checked=false;
+    });
+    ['r-stk-section','r-ban-section','r-sgn-section','r-can-section'].forEach(id=>{
+      const e=document.getElementById(id); if(e) e.style.display='none';
+    });
+    [...rStkRows,...rBanRows,...rSgnRows,...rCanRows].forEach(id=>{
+      const r=document.getElementById('rrow-'+id); if(r) r.remove();
+    });
+    rStkRows=[]; rBanRows=[]; rSgnRows=[]; rCanRows=[];
+    rCalc();
   });
-  ['r-stk-section','r-ban-section','r-sgn-section','r-can-section'].forEach(id=>{
-    const e=document.getElementById(id); if(e) e.style.display='none';
-  });
-  [...rStkRows,...rBanRows,...rSgnRows,...rCanRows].forEach(id=>{
-    const r=document.getElementById('rrow-'+id); if(r) r.remove();
-  });
-  rStkRows=[]; rBanRows=[]; rSgnRows=[]; rCanRows=[];
-  rCalc();
 }
 // ── STICKER QUANTITY TIERS (markup on material cost) ──
 // Validated against StickerYou 4x4, 8x8, 2x6, 8.5x10, 2x2 across all quantities
@@ -2869,24 +2912,25 @@ function toggleTierTable(){
 }
 
 function resetPaper(){
-  if(!confirm('New paper estimate? Clears all paper fields.')) return;
-  ['p-proj','p-notes'].forEach(id=>pel(id).value='');
-  pel('p-qty').value='1'; pel('p-finished-qty').value='1';
-  pel('p-hrs').value='0'; pel('p-rate').value='45';
-  pel('p-min-charge').value='20';
-  pel('p-tax-pct').value='13'; pel('p-tax-type').value='0.13';
-  document.getElementById('p-binding-job').checked=false;
-  for(let i=0;i<4;i++){ pel('pp-s'+i).value=''; pel('pp-n'+i).value='0'; pel('pp-c'+i).value='0.000'; pel('pt-s'+i).value=''; pel('pt-n'+i).value='0'; pel('pt-c'+i).value='0.000'; }
-  document.getElementById('coil-enabled').checked=false;
-  document.getElementById('coil-inputs').style.display='none';
-  pel('coil-qty').value='1';
-  document.getElementById('lam-enabled').checked=false;
-  document.getElementById('lam-body').style.display='none';
-  document.getElementById('p-lam-row').style.display='none';
-  lamRows.forEach(id=>{ const r=document.getElementById('lrow-'+id); if(r) r.remove(); });
-  const jt=document.getElementById('p-job-type'); if(jt) jt.value='';
-  lamRows=[]; lamId=0;
-  pCalc();
+  cobaConfirm('New paper estimate? Clears all paper fields.', ()=>{
+    ['p-notes'].forEach(id=>{ const el=pel(id); if(el) el.value=''; });
+    pel('p-qty').value='1'; pel('p-finished-qty').value='1';
+    pel('p-hrs').value='0'; pel('p-rate').value='45';
+    pel('p-min-charge').value='20';
+    pel('p-tax-pct').value='13'; pel('p-tax-type').value='0.13';
+    document.getElementById('p-binding-job').checked=false;
+    for(let i=0;i<4;i++){ pel('pp-s'+i).value=''; pel('pp-n'+i).value='0'; pel('pp-c'+i).value='0.000'; pel('pt-s'+i).value=''; pel('pt-n'+i).value='0'; pel('pt-c'+i).value='0.000'; }
+    document.getElementById('coil-enabled').checked=false;
+    document.getElementById('coil-inputs').style.display='none';
+    pel('coil-qty').value='1';
+    document.getElementById('lam-enabled').checked=false;
+    document.getElementById('lam-body').style.display='none';
+    document.getElementById('p-lam-row').style.display='none';
+    lamRows.forEach(id=>{ const r=document.getElementById('lrow-'+id); if(r) r.remove(); });
+    const jt=document.getElementById('p-job-type'); if(jt) jt.value='';
+    lamRows=[]; lamId=0;
+    pCalc();
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -3071,18 +3115,19 @@ function dCalc(){
 }
 
 function resetDTF(){
-  if(!confirm('New DTF estimate? Clears all DTF fields.')) return;
-  const dp=del('d-proj'); if(dp) dp.value='';
-  const dlh=del('d-labour-hrs'); if(dlh) dlh.value='0';
-  const dlr=del('d-labour-rate'); if(dlr) dlr.value='45';
-  const dng=del('d-num-garments'); if(dng) dng.value='1';
-  const dso=document.getElementById('d-ship-override'); if(dso) dso.checked=false;
-  dGarmentRows.forEach(id=>{ const r=document.getElementById('row-'+id); if(r) r.remove(); });
-  dImprintRows.forEach(id=>{ const r=document.getElementById('row-'+id); if(r) r.remove(); });
-  dGarmentRows=[]; dImprintRows=[];
-  addGarmentRow(); addGarmentRow();
-  addImprintRow(); addImprintRow();
-  setGarmentMode('supply'); dCalc();
+  cobaConfirm('New DTF estimate? Clears all DTF fields.', ()=>{
+    const dp=del('d-proj'); if(dp) dp.value='';
+    const dlh=del('d-labour-hrs'); if(dlh) dlh.value='0';
+    const dlr=del('d-labour-rate'); if(dlr) dlr.value='45';
+    const dng=del('d-num-garments'); if(dng) dng.value='1';
+    const dso=document.getElementById('d-ship-override'); if(dso) dso.checked=false;
+    dGarmentRows.forEach(id=>{ const r=document.getElementById('row-'+id); if(r) r.remove(); });
+    dImprintRows.forEach(id=>{ const r=document.getElementById('row-'+id); if(r) r.remove(); });
+    dGarmentRows=[]; dImprintRows=[];
+    addGarmentRow(); addGarmentRow();
+    addImprintRow(); addImprintRow();
+    setGarmentMode('supply'); dCalc();
+  });
 }
 
 // ── EPSON LAMINATION ──
@@ -3435,17 +3480,18 @@ function eCalc(){
 }
 
 function resetEpson(){
-  if(!confirm('New Epson estimate? Clears all fields.')) return;
-  const ep=document.getElementById('e-proj'); if(ep) ep.value='';
-  document.getElementById('e-hrs').value='0';
-  ['e-plan-on','e-art-on'].forEach(id=>{ const e=document.getElementById(id); if(e) e.checked=false; });
-  ['e-plan-section','e-art-section'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
-  [...ePlanRows,...eArtRows].forEach(id=>{ const r=document.getElementById('erow-'+id); if(r) r.remove(); });
-  eLamRows.forEach(id=>{ const r=document.getElementById('elrow-'+id); if(r) r.remove(); });
-  eLamRows=[]; eLamId=0;
-  const elamOn=document.getElementById('e-lam-enabled'); if(elamOn) elamOn.checked=false;
-  const elamBody=document.getElementById('e-lam-body'); if(elamBody) elamBody.style.display='none';
-  eCalc();
+  cobaConfirm('New Epson estimate? Clears all fields.', ()=>{
+    const ep=document.getElementById('e-proj'); if(ep) ep.value='';
+    document.getElementById('e-hrs').value='0';
+    ['e-plan-on','e-art-on'].forEach(id=>{ const e=document.getElementById(id); if(e) e.checked=false; });
+    ['e-plan-section','e-art-section'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
+    [...ePlanRows,...eArtRows].forEach(id=>{ const r=document.getElementById('erow-'+id); if(r) r.remove(); });
+    eLamRows.forEach(id=>{ const r=document.getElementById('elrow-'+id); if(r) r.remove(); });
+    eLamRows=[]; eLamId=0;
+    const elamOn=document.getElementById('e-lam-enabled'); if(elamOn) elamOn.checked=false;
+    const elamBody=document.getElementById('e-lam-body'); if(elamBody) elamBody.style.display='none';
+    eCalc();
+  });
 }
 // ══════════════════════════════════════════════
 invLoad();
