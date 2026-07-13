@@ -1207,6 +1207,18 @@
   <div class="tab-panel" id="panel-jobs">
     <h2 style="margin-top:0">Jobs &amp; Customers</h2>
     <p style="font-size:13px;color:#888;margin-top:-6px">Saved estimates, grouped by customer. Use the Save estimate button in the customer bar from any estimator tab. Loading an estimate reopens it exactly as it was quoted, including the rates at the time.</p>
+    <div id="jobs-logform" style="display:none;border:1px solid #e5e5e5;border-radius:8px;background:#fafaf8;padding:14px 16px;margin-bottom:1.2rem">
+      <div style="font-weight:600;margin-bottom:10px">Log a job (no estimate attached)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px">
+        <input type="text" id="jl-cust" placeholder="Customer name" class="jobs-cust-notes" style="margin:0">
+        <input type="text" id="jl-title" placeholder="Job title" class="jobs-cust-notes" style="margin:0">
+        <input type="date" id="jl-date" class="jobs-cust-notes" style="margin:0">
+        <input type="number" id="jl-amount" placeholder="Amount $ (optional)" step="0.01" min="0" class="jobs-cust-notes" style="margin:0">
+      </div>
+      <textarea id="jl-notes" rows="2" placeholder="Notes..." class="jobs-cust-notes"></textarea>
+      <button class="cb-save-btn" onclick="jobsLogManual()">Save log entry</button>
+      <button class="jobs-btn" onclick="document.getElementById('jobs-logform').style.display='none'">Cancel</button>
+    </div>
     <div class="jobs-toolbar">
       <input type="text" id="jobs-search" placeholder="Search customers, job titles, notes..." oninput="renderJobs()">
       <button class="jobs-btn" onclick="exportJobs()">&#11015; Export backup</button>
@@ -1483,7 +1495,15 @@ function snapRestore(tab, snap){
 
 // --- save flow ---
 function saveEstimate(){
-  if(!(currentTab in JOBS_TABS)){ alert('Switch to an estimator tab (Paper, DTF, Vinyl, or Epson) to save an estimate.'); return; }
+  if(currentTab === 'jobs'){
+    const f = document.getElementById('jobs-logform');
+    f.style.display = 'block';
+    document.getElementById('jl-cust').value = document.getElementById('cb-name').value.trim();
+    document.getElementById('jl-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('jl-cust').focus();
+    return;
+  }
+  if(!(currentTab in JOBS_TABS)){ alert('Switch to an estimator tab (Paper, DTF, Vinyl, or Epson) to save an estimate, or use the Jobs tab to log a job manually.'); return; }
   const name = document.getElementById('cb-name').value.trim();
   if(!name){ alert('Enter a customer name in the customer bar first.'); return; }
   const title = prompt('Job title for this estimate:', '');
@@ -1514,6 +1534,28 @@ function jobsUpsertCustomer(name){
   return c;
 }
 
+function jobsLogManual(){
+  const name = document.getElementById('jl-cust').value.trim();
+  if(!name){ alert('Enter a customer name.'); return; }
+  const amt = parseFloat(document.getElementById('jl-amount').value);
+  const cust = jobsUpsertCustomer(name);
+  cust.estimates.unshift({
+    id: 'e' + Date.now(),
+    title: document.getElementById('jl-title').value.trim() || 'Logged job',
+    tab: 'log',
+    date: document.getElementById('jl-date').value || new Date().toISOString().slice(0,10),
+    status: 'Quote',
+    totals: { grand: isNaN(amt) ? '' : '$' + amt.toFixed(2) },
+    noteText: document.getElementById('jl-notes').value.trim(),
+    snap: null
+  });
+  jobsSave();
+  ['jl-cust','jl-title','jl-amount','jl-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('jobs-logform').style.display = 'none';
+  renderJobs();
+  jobsToast('Logged under ' + cust.name);
+}
+
 // --- load / duplicate / delete / status ---
 function jobsFind(cid, eid){
   const c = jobsData.customers.find(x=>x.id===cid); if(!c) return {};
@@ -1521,6 +1563,7 @@ function jobsFind(cid, eid){
 }
 function loadEstimate(cid, eid, dup){
   const { c, e } = jobsFind(cid, eid); if(!e) return;
+  if(!e.snap){ alert('This is a manually logged job - there is no saved estimate to load.'); return; }
   const verb = dup ? 'Duplicate' : 'Load';
   if(!confirm(verb + ' "' + e.title + '" into the ' + JOBS_TABS[e.tab] + ' tab? Unsaved work there will be replaced.')) return;
   switchTabByName(e.tab);
@@ -1569,14 +1612,19 @@ function renderJobs(){
     const statusCls = { 'Quote':'st-quote','Approved':'st-approved','In Production':'st-production','Done':'st-done' };
     let estHtml = ests.map(e=>{
       const opts = JOBS_STATUSES.map(s=>'<option' + (e.status===s?' selected':'') + '>' + s + '</option>').join('');
+      const loadBtns = e.snap
+        ? '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',false)">Load</button>' +
+          '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',true)">Duplicate</button>'
+        : '';
+      const noteLine = (!e.snap && e.noteText) ? '<div class="jobs-est-meta" style="width:100%">' + jobsEsc(e.noteText) + '</div>' : '';
       return '<div class="jobs-est">' +
         '<span class="jobs-est-title">' + jobsEsc(e.title) + '</span>' +
-        '<span class="jobs-est-meta">' + e.date + ' &middot; ' + (JOBS_TABS[e.tab]||e.tab) + '</span>' +
+        '<span class="jobs-est-meta">' + e.date + ' &middot; ' + (JOBS_TABS[e.tab]||'Logged') + '</span>' +
         '<select class="jobs-status ' + (statusCls[e.status]||'') + '" onchange="setEstStatus(\'' + c.id + '\',\'' + e.id + '\',this.value)">' + opts + '</select>' +
         '<span class="jobs-est-total">' + jobsEsc((e.totals&&e.totals.grand)||'') + '</span>' +
-        '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',false)">Load</button>' +
-        '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',true)">Duplicate</button>' +
+        loadBtns +
         '<button class="jobs-mini danger" onclick="deleteEstimate(\'' + c.id + '\',\'' + e.id + '\')">Delete</button>' +
+        noteLine +
         '</div>';
     }).join('');
     if(!estHtml) estHtml = '<div class="jobs-est-meta" style="padding:6px 0">No saved estimates yet.</div>';
