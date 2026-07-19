@@ -34,5 +34,6 @@ Run validation → commit and push → tag if milestone → recap what changed i
 - Inventory export/import between devices (localStorage is per-device)
 - VersaWorks CSV import — back-calculate real Roland ink cost/sqft and waste from job logs
 - QuickBooks Online integration (needs OAuth + small backend — this is the phase where the single-file constraint gets revisited, deliberately)
+- Market pricing strategy: defend/compete guidance in market-check bars (added v26); backed by a separate market pricing reference doc to be refreshed quarterly
 
-Current version: **v23** (Jobs tab added — per-customer estimate database with snapshots, statuses, search, JSON backup)
+Current version: **v26** (defend/compete pricing strategy guidance added to Paper, Banner, and Art Reproduction market-check bars)
