@@ -1840,7 +1840,15 @@ function importJobs(input){
 // The Firebase SDK is only downloaded once a config is saved, so without
 // cloud sync the file stays fully offline with no dependencies.
 const FB_VERSION = '10.12.2';
-const FB_CONFIG_BUILTIN = null;   // optional: paste the firebaseConfig object here so new devices only need to sign in
+// Firebase web config - not a secret; access is controlled by Firestore rules (email allowlist)
+const FB_CONFIG_BUILTIN = {
+  apiKey: "AIzaSyD5-N2eX7tRNnnhhH6emGEEApIsvVYJ2Xg",
+  authDomain: "coba-studios-estimator.firebaseapp.com",
+  projectId: "coba-studios-estimator",
+  storageBucket: "coba-studios-estimator.firebasestorage.app",
+  messagingSenderId: "1007890889978",
+  appId: "1:1007890889978:web:ded1d2b1538bfb5ded9d43"
+};
 const FB_CFG_KEY = 'coba-fb-config-v1';
 const FB_JOINED_KEY = 'coba-jobs-cloud-joined-v1';      // projectId once this device's local jobs were merged (or skipped)
 const FB_LASTSYNC_KEY = 'coba-jobs-cloud-lastsync-v1';  // last time this device heard from the server
@@ -1928,7 +1936,14 @@ function cloudClearConfig(){
   });
 }
 function cloudSignIn(){
-  if(!fb){ notify(cloudConfig() ? 'Still connecting to Firebase - try again in a moment.' : 'Save the Firebase config first.'); return; }
+  if(!fb){
+    if(!cloudConfig()){ notify('Save the Firebase config first.'); return; }
+    if(cloudState === 'connecting'){ notify('Still connecting to Firebase - try again in a moment.'); return; }
+    // the earlier load failed (offline or blocked) - try loading Firebase again, then sign in
+    jobsToast('Retrying connection to Firebase...');
+    cloudInit().then(()=>{ if(fb) cloudSignIn(); else notify('Could not reach Firebase. Check the internet connection, or open the live site instead of a preview.'); });
+    return;
+  }
   const em = document.getElementById('cloud-email').value.trim();
   const pw = document.getElementById('cloud-pass');
   if(!em || !pw.value){ notify('Enter the email and password.'); return; }
