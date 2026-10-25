@@ -1233,6 +1233,39 @@
   <div class="tab-panel" id="panel-jobs">
     <h2 style="margin-top:0">Jobs &amp; Customers</h2>
     <p style="font-size:13px;color:#888;margin-top:-6px">Saved estimates, grouped by customer. Use the Save estimate button in the customer bar from any estimator tab. Loading an estimate reopens it exactly as it was quoted, including the rates at the time.</p>
+    <div id="cloud-bar" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:1rem">
+      <span id="cloud-pill" style="font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid #ddd;background:#f5f5f2;color:#666">&#9729; Cloud sync: off (this device only)</span>
+      <button class="jobs-mini" onclick="cloudTogglePanel()">Cloud settings</button>
+    </div>
+    <div id="cloud-merge" style="display:none;border:1px solid #e6d9a8;border-radius:8px;background:#fff8e6;padding:12px 16px;margin-bottom:1rem;font-size:13px;line-height:1.45">
+      <div id="cloud-merge-msg" style="margin-bottom:10px"></div>
+      <button class="cb-save-btn" onclick="cloudMergeLocal()">Merge into cloud</button>
+      <button class="jobs-btn" onclick="cloudExportLocal()">Download this device's copy</button>
+      <button class="jobs-btn" onclick="cloudSkipLocal()">Skip</button>
+    </div>
+    <div id="cloud-panel" style="display:none;border:1px solid #e5e5e5;border-radius:8px;background:#fafaf8;padding:14px 16px;margin-bottom:1.2rem;font-size:13px">
+      <div style="font-weight:600;margin-bottom:6px">Cloud sync (Firebase)</div>
+      <div style="color:#888;margin-bottom:10px">Shares the Jobs list across every computer and phone that signs in. App updates never touch it - jobs live in the cloud, not in the app file.</div>
+      <div id="cloud-cfg-wrap">
+        <div style="margin-bottom:4px">1. Firebase config (paste the firebaseConfig block from your Firebase project settings):</div>
+        <textarea id="cloud-cfg" rows="4" class="jobs-cust-notes" placeholder="apiKey: &quot;...&quot;, authDomain: &quot;...&quot;, projectId: &quot;...&quot; ..."></textarea>
+        <button class="jobs-btn" onclick="cloudSaveConfig()">Save config</button>
+        <button class="jobs-btn" onclick="cloudClearConfig()">Turn off on this device</button>
+        <div style="height:12px"></div>
+      </div>
+      <div id="cloud-login">
+        <div style="margin-bottom:4px"><span id="cloud-step2">2. </span>Sign in with the shop account you created in Firebase:</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px">
+          <input type="email" id="cloud-email" placeholder="Email" class="jobs-cust-notes" style="margin:0" autocomplete="username">
+          <input type="password" id="cloud-pass" placeholder="Password" class="jobs-cust-notes" style="margin:0" autocomplete="current-password" onkeydown="if(event.key==='Enter')cloudSignIn()">
+        </div>
+        <button class="cb-save-btn" onclick="cloudSignIn()">Sign in</button>
+      </div>
+      <div id="cloud-signedin" style="display:none">
+        <span id="cloud-who"></span>
+        <button class="jobs-btn" onclick="cloudSignOut()" style="margin-left:8px">Sign out</button>
+      </div>
+    </div>
     <div id="jobs-logform" style="display:none;border:1px solid #e5e5e5;border-radius:8px;background:#fafaf8;padding:14px 16px;margin-bottom:1.2rem">
       <div style="font-weight:600;margin-bottom:10px">Log a job (no estimate attached)</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px">
@@ -1526,8 +1559,12 @@ function jobsLoad(){
   }catch(e){ console.error('jobs load failed', e); }
 }
 function jobsSave(){
-  try{ localStorage.setItem(JOBS_KEY, JSON.stringify(jobsData)); }
-  catch(e){ notify('Could not save jobs data (storage full or blocked): ' + e.message); }
+  // Until this device has joined the cloud list, don't overwrite its own local jobs with the cloud copy
+  if(!(cloudActive() && !cloudDeviceJoined())){
+    try{ localStorage.setItem(JOBS_KEY, JSON.stringify(jobsData)); }
+    catch(e){ if(!cloudActive()) notify('Could not save jobs data (storage full or blocked): ' + e.message); }
+  }
+  cloudPush();
 }
 function jobsToast(msg){
   const t = document.getElementById('jobs-toast');
@@ -1677,7 +1714,8 @@ function loadEstimate(cid, eid, dup){
 function deleteEstimate(cid, eid){
   const { c, e } = jobsFind(cid, eid); if(!e) return;
   cobaConfirm('Delete estimate "' + e.title + '"? This cannot be undone.', ()=>{
-    c.estimates = c.estimates.filter(x=>x.id!==eid);
+    const cur = jobsFind(cid, eid).c; if(!cur) return; // re-find: cloud sync may have refreshed the list while the dialog was open
+    cur.estimates = cur.estimates.filter(x=>x.id!==eid);
     jobsSave(); renderJobs();
   });
 }
@@ -1696,7 +1734,11 @@ function setCustNotes(cid, val){
   const c = jobsData.customers.find(x=>x.id===cid); if(!c) return;
   c.notes = val; jobsSave();
 }
-function toggleCust(el){ el.parentElement.classList.toggle('open'); }
+const jobsOpen = new Set(); // remembers expanded customers so a sync refresh doesn't collapse them
+function toggleCust(el, cid){
+  const open = el.parentElement.classList.toggle('open');
+  if(cid){ if(open) jobsOpen.add(cid); else jobsOpen.delete(cid); }
+}
 
 // --- render ---
 function jobsEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1732,8 +1774,8 @@ function renderJobs(){
     }).join('');
     if(!estHtml) estHtml = '<div class="jobs-est-meta" style="padding:6px 0">No saved estimates yet.</div>';
     const meta = [c.phone, c.email].filter(Boolean).join(' &middot; ');
-    html += '<div class="jobs-cust' + (q ? ' open' : '') + '">' +
-      '<div class="jobs-cust-head" onclick="toggleCust(this)">' +
+    html += '<div class="jobs-cust' + ((q || jobsOpen.has(c.id)) ? ' open' : '') + '">' +
+      '<div class="jobs-cust-head" onclick="toggleCust(this,\'' + c.id + '\')">' +
         '<div><div class="jobs-cust-name">' + jobsEsc(c.name) + '</div><div class="jobs-cust-meta">' + meta + '</div></div>' +
         '<div class="jobs-cust-meta">' + c.estimates.length + ' estimate(s)</div>' +
       '</div>' +
@@ -1747,11 +1789,26 @@ function renderJobs(){
 }
 
 // --- backup / restore ---
-function exportJobs(){
-  const blob = new Blob([JSON.stringify(jobsData, null, 2)], { type:'application/json' });
+// Merge another jobs list into jobsData: customers match by name, estimates by id. Returns estimates added.
+function jobsMergeData(d){
+  let added = 0;
+  (d && d.customers || []).forEach(ic=>{
+    let c = jobsData.customers.find(x=>x.name.toLowerCase() === String(ic.name||'').toLowerCase());
+    if(!c){ jobsData.customers.push(ic); added += (ic.estimates||[]).length; return; }
+    (ic.estimates||[]).forEach(ie=>{
+      if(!c.estimates.some(x=>x.id===ie.id)){ c.estimates.push(ie); added++; }
+    });
+    if(!c.notes && ic.notes) c.notes = ic.notes;
+    if(!c.phone && ic.phone) c.phone = ic.phone;
+    if(!c.email && ic.email) c.email = ic.email;
+  });
+  return added;
+}
+function exportJobs(data, label){
+  const blob = new Blob([JSON.stringify(data || jobsData, null, 2)], { type:'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'coba-jobs-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = 'coba-jobs-' + (label || 'backup') + '-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   URL.revokeObjectURL(a.href);
   jobsToast('Backup downloaded - keep it somewhere safe');
@@ -1763,17 +1820,7 @@ function importJobs(input){
     try{
       const d = JSON.parse(reader.result);
       if(!d || !Array.isArray(d.customers)) throw new Error('Not a valid jobs backup file');
-      let added = 0;
-      d.customers.forEach(ic=>{
-        let c = jobsData.customers.find(x=>x.name.toLowerCase() === ic.name.toLowerCase());
-        if(!c){ jobsData.customers.push(ic); added += (ic.estimates||[]).length; return; }
-        (ic.estimates||[]).forEach(ie=>{
-          if(!c.estimates.some(x=>x.id===ie.id)){ c.estimates.push(ie); added++; }
-        });
-        if(!c.notes && ic.notes) c.notes = ic.notes;
-        if(!c.phone && ic.phone) c.phone = ic.phone;
-        if(!c.email && ic.email) c.email = ic.email;
-      });
+      const added = jobsMergeData(d);
       jobsSave(); renderJobs();
       jobsToast('Import merged: ' + added + ' estimate(s) added');
     }catch(e){ notify('Import failed: ' + e.message); }
@@ -1781,6 +1828,328 @@ function importJobs(input){
   };
   reader.readAsText(file);
 }
+
+// ══════════════════════════════════════════════
+//  CLOUD SYNC  (Firebase Firestore - optional, the app works fully without it)
+// ══════════════════════════════════════════════
+// Every customer and every estimate is its own Firestore document, so two
+// computers editing different jobs at the same time never overwrite each other.
+// jobsSave() calls cloudPush(), which compares jobsData to what the cloud last
+// had and sends only the documents that changed. Live listeners (onSnapshot)
+// pull other devices' changes in and rebuild jobsData.
+// The Firebase SDK is only downloaded once a config is saved, so without
+// cloud sync the file stays fully offline with no dependencies.
+const FB_VERSION = '10.12.2';
+const FB_CONFIG_BUILTIN = null;   // optional: paste the firebaseConfig object here so new devices only need to sign in
+const FB_CFG_KEY = 'coba-fb-config-v1';
+const FB_JOINED_KEY = 'coba-jobs-cloud-joined-v1';      // projectId once this device's local jobs were merged (or skipped)
+const FB_LASTSYNC_KEY = 'coba-jobs-cloud-lastsync-v1';  // last time this device heard from the server
+const FB_BATCH_OPS = 400, FB_BATCH_BYTES = 4000000;     // stay well under Firestore's 500 writes / 10 MB per commit
+let fb = null, cloudUser = null, cloudState = 'off';
+let cloudCust = null, cloudEst = null;     // Map id -> doc data: live copy of the cloud
+let cloudSent = { c:{}, e:{} };            // id -> json string the cloud is known to hold
+let cloudUnsubs = [], cloudLoaded = false, cloudFirstApply = true;
+let cloudMergeCandidate = null, cloudRenderDeferred = false;
+const cloudParseCache = new Map();
+
+function cloudActive(){ return cloudLoaded; }
+function cloudConfig(){
+  if(FB_CONFIG_BUILTIN) return FB_CONFIG_BUILTIN;
+  try{ const s = localStorage.getItem(FB_CFG_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; }
+}
+function cloudDeviceJoined(){
+  const cfg = cloudConfig(); if(!cfg) return false;
+  try{ return localStorage.getItem(FB_JOINED_KEY) === cfg.projectId; }catch(e){ return false; }
+}
+function cloudMarkJoined(){ const cfg = cloudConfig(); try{ if(cfg) localStorage.setItem(FB_JOINED_KEY, cfg.projectId); }catch(e){} }
+function idTime(id){ const n = parseInt(String(id).slice(1), 10); return isNaN(n) ? 0 : n; }
+function jobsReadLocal(){
+  try{ const s = localStorage.getItem(JOBS_KEY); const d = s ? JSON.parse(s) : null; if(d && Array.isArray(d.customers)) return d; }catch(e){}
+  return { customers: [] };
+}
+// Accepts the snippet from the Firebase console (JS object, unquoted keys) or plain JSON
+function cloudParseConfigText(txt){
+  txt = String(txt || '').trim(); if(!txt) return null;
+  try{ const j = JSON.parse(txt); if(j && j.apiKey && j.projectId) return j; }catch(e){}
+  const out = {}; const re = /([A-Za-z]+)\s*:\s*["']([^"']*)["']/g; let m;
+  while((m = re.exec(txt))) out[m[1]] = m[2];
+  return (out.apiKey && out.projectId) ? out : null;
+}
+
+// --- status pill + settings panel ---
+function cloudStatus(state, msg){
+  cloudState = state;
+  const S = {
+    off:        ['Cloud sync: off (this device only)', '#f5f5f2', '#ddd', '#666'],
+    connecting: ['Cloud sync: connecting...', '#fff8e6', '#e6d9a8', '#8a6d00'],
+    signedout:  ['Cloud sync: signed out (this device only)', '#fff8e6', '#e6d9a8', '#8a6d00'],
+    on:         ['Cloud sync: on', '#e9f7ee', '#b5ddc3', '#1e6b3a'],
+    offline:    ['Cloud sync: offline - changes will sync when back online', '#fff8e6', '#e6d9a8', '#8a6d00'],
+    error:      [msg || 'Cloud sync error', '#fdecec', '#e0bcbc', '#b33']
+  };
+  const s = S[state] || S.off;
+  const pill = document.getElementById('cloud-pill');
+  if(pill){
+    pill.innerHTML = '&#9729; ' + jobsEsc(s[0]);
+    pill.style.background = s[1]; pill.style.borderColor = s[2]; pill.style.color = s[3];
+  }
+  cloudRefreshPanel();
+}
+function cloudTogglePanel(){
+  const p = document.getElementById('cloud-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  cloudRefreshPanel();
+}
+function cloudRefreshPanel(){
+  const cfgWrap = document.getElementById('cloud-cfg-wrap'); if(!cfgWrap) return;
+  cfgWrap.style.display = FB_CONFIG_BUILTIN ? 'none' : 'block';
+  document.getElementById('cloud-step2').textContent = FB_CONFIG_BUILTIN ? '' : '2. ';
+  const ta = document.getElementById('cloud-cfg');
+  const cfg = cloudConfig();
+  if(!FB_CONFIG_BUILTIN && cfg && !ta.value) ta.value = JSON.stringify(cfg, null, 1);
+  document.getElementById('cloud-login').style.display = cloudUser ? 'none' : 'block';
+  document.getElementById('cloud-signedin').style.display = cloudUser ? 'block' : 'none';
+  document.getElementById('cloud-who').textContent = cloudUser ? 'Signed in as ' + (cloudUser.email || 'shop account') : '';
+}
+function cloudSaveConfig(){
+  const cfg = cloudParseConfigText(document.getElementById('cloud-cfg').value);
+  if(!cfg){ notify('That does not look like a Firebase config - it needs at least apiKey and projectId.'); return; }
+  try{ localStorage.setItem(FB_CFG_KEY, JSON.stringify(cfg)); }catch(e){ notify('Could not save config: ' + e.message); return; }
+  if(fb){ notify('Config saved - reload the page to use the new project.'); return; }
+  jobsToast('Config saved - now sign in');
+  cloudInit();
+}
+function cloudClearConfig(){
+  cobaConfirm('Turn off cloud sync on this device? Jobs already in the cloud stay there; this device goes back to its own local list after a reload.', ()=>{
+    try{ localStorage.removeItem(FB_CFG_KEY); }catch(e){}
+    if(fb && cloudUser) fb.au.signOut(fb.auth);
+    document.getElementById('cloud-cfg').value = '';
+    notify('Cloud sync turned off - reload the page to finish.');
+  });
+}
+function cloudSignIn(){
+  if(!fb){ notify(cloudConfig() ? 'Still connecting to Firebase - try again in a moment.' : 'Save the Firebase config first.'); return; }
+  const em = document.getElementById('cloud-email').value.trim();
+  const pw = document.getElementById('cloud-pass');
+  if(!em || !pw.value){ notify('Enter the email and password.'); return; }
+  fb.au.signInWithEmailAndPassword(fb.auth, em, pw.value)
+    .then(()=>{ pw.value = ''; jobsToast('Signed in - syncing jobs'); })
+    .catch(e=> notify('Sign-in failed: ' + (e.code || e.message)));
+}
+function cloudSignOut(){
+  cobaConfirm('Sign out of cloud sync on this device?', ()=>{
+    if(fb) fb.au.signOut(fb.auth).then(()=>{ jobsLoad(); jobsRenderSoon(); });
+  });
+}
+
+// --- connect + listen ---
+async function cloudInit(){
+  if(!cloudConfig()){ cloudStatus('off'); return; }
+  if(fb) return;
+  cloudStatus('connecting');
+  try{
+    const base = 'https://www.gstatic.com/firebasejs/' + FB_VERSION + '/';
+    const mods = await Promise.all([ import(base + 'firebase-app.js'), import(base + 'firebase-firestore.js'), import(base + 'firebase-auth.js') ]);
+    const appM = mods[0], fs = mods[1], au = mods[2];
+    const app = appM.initializeApp(cloudConfig());
+    let db;
+    // persistent cache = changes made while offline are queued and sent once back online
+    try{ db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
+    catch(e){ console.warn('Firestore offline cache unavailable', e); db = fs.getFirestore(app); }
+    fb = { app, db, fs, au, auth: au.getAuth(app) };
+    au.onAuthStateChanged(fb.auth, user=>{
+      cloudUser = user;
+      if(user) cloudStart(); else { cloudStop(); cloudStatus('signedout'); }
+    });
+  }catch(e){
+    console.error('cloud init failed', e); fb = null;
+    cloudStatus('error', 'Cloud sync could not load (offline?) - using this device only');
+  }
+}
+function cloudStop(){
+  cloudUnsubs.forEach(u=>{ try{ u(); }catch(e){} });
+  cloudUnsubs = []; cloudLoaded = false;
+}
+function cloudStart(){
+  cloudStop();
+  cloudFirstApply = true; cloudCust = null; cloudEst = null;
+  cloudStatus('connecting');
+  const fs = fb.fs, db = fb.db;
+  const onErr = e=>{
+    console.error('cloud listen', e);
+    cloudStatus('error', 'Cloud sync error: ' + (e.code || e.message) + (e.code === 'permission-denied' ? ' - check the Firestore rules include this email' : ''));
+  };
+  const listen = (name, setMap, getMap)=> fs.onSnapshot(fs.collection(db, name), { includeMetadataChanges: true }, snap=>{
+    if(!getMap()) setMap(new Map());
+    const m = getMap();
+    snap.docChanges().forEach(ch=>{ if(ch.type === 'removed') m.delete(ch.doc.id); else m.set(ch.doc.id, ch.doc.data()); });
+    cloudApply(snap.metadata);
+  }, onErr);
+  cloudUnsubs.push(listen('customers', m=>{ cloudCust = m; }, ()=>cloudCust));
+  cloudUnsubs.push(listen('estimates', m=>{ cloudEst = m; }, ()=>cloudEst));
+}
+function cloudParse(key, json){
+  const hit = cloudParseCache.get(key);
+  if(hit && hit.json === json) return hit.obj;
+  let obj = null; try{ obj = JSON.parse(json); }catch(e){ console.error('bad cloud doc', key, e); }
+  cloudParseCache.set(key, { json, obj });
+  return obj;
+}
+// Rebuild jobsData from the cloud documents
+function cloudBuild(){
+  const byId = {}, custs = [], sent = { c:{}, e:{} };
+  cloudCust.forEach((d, id)=>{
+    const base = cloudParse('c:' + id, d.json); if(!base) return;
+    const c = Object.assign({}, base);
+    ['name','phone','email','notes'].forEach(k=>{ if(c[k] == null) c[k] = ''; });
+    c.id = id; c.estimates = [];
+    byId[id] = c; custs.push(c); sent.c[id] = d.json;
+  });
+  cloudEst.forEach((d, id)=>{
+    const c = byId[d.cid]; if(!c) return;   // customer doc not arrived yet - picked up on the next snapshot
+    const base = cloudParse('e:' + id, d.json); if(!base) return;
+    c.estimates.push(Object.assign({}, base, { id }));
+    sent.e[id] = d.cid + '|' + d.json;
+  });
+  custs.sort((a, b)=> idTime(b.id) - idTime(a.id));
+  custs.forEach(c=> c.estimates.sort((a, b)=> idTime(b.id) - idTime(a.id)));
+  jobsData = { customers: custs };
+  cloudSent = sent;
+}
+function cloudApply(meta){
+  if(!cloudCust || !cloudEst) return;   // wait until both collections have loaded once
+  const localBefore = cloudFirstApply ? jobsReadLocal() : null;
+  cloudBuild();
+  cloudLoaded = true;
+  if(cloudFirstApply){
+    cloudFirstApply = false;
+    if(!cloudDeviceJoined()){
+      // First time on this device: offer to merge its local-only jobs into the shared list
+      const info = cloudCountNew(localBefore);
+      if(info.cust || info.est){ cloudMergeCandidate = localBefore; cloudShowMerge(info); }
+      else cloudMarkJoined();
+    } else {
+      // Device already joined: send up anything created here while the cloud was unreachable
+      const since = parseInt(localStorage.getItem(FB_LASTSYNC_KEY) || '0', 10);
+      const fresh = cloudNewerThan(localBefore, since);
+      if(fresh.customers.length){
+        const n = jobsMergeData(fresh);
+        jobsSave();
+        if(n) jobsToast(n + ' estimate(s) saved while offline are now synced');
+      }
+    }
+  }
+  if(meta && !meta.fromCache && !meta.hasPendingWrites){ try{ localStorage.setItem(FB_LASTSYNC_KEY, String(Date.now())); }catch(e){} }
+  if(cloudDeviceJoined()){ try{ localStorage.setItem(JOBS_KEY, JSON.stringify(jobsData)); }catch(e){} }  // local cache for when the cloud is unreachable
+  cloudStatus(meta && meta.fromCache ? 'offline' : 'on');
+  jobsRenderSoon();
+}
+function cloudCountNew(local){
+  const r = { cust: 0, est: 0 };
+  (local.customers || []).forEach(lc=>{
+    const has = jobsData.customers.some(x=>x.name.toLowerCase() === String(lc.name || '').toLowerCase());
+    if(!has) r.cust++;
+    (lc.estimates || []).forEach(le=>{ if(!cloudEst.has(le.id)) r.est++; });
+  });
+  return r;
+}
+function cloudNewerThan(local, since){
+  const out = { customers: [] };
+  if(!since) return out;
+  (local.customers || []).forEach(lc=>{
+    const ests = (lc.estimates || []).filter(e=> idTime(e.id) > since && !cloudEst.has(e.id));
+    const newCust = idTime(lc.id) > since && !cloudCust.has(lc.id);
+    if(ests.length || newCust) out.customers.push(Object.assign({}, lc, { estimates: ests }));
+  });
+  return out;
+}
+
+// --- push local changes up ---
+function cloudSplit(){
+  const C = {}, E = {};
+  jobsData.customers.forEach(c=>{
+    const cr = Object.assign({}, c); delete cr.estimates; delete cr.id;
+    C[c.id] = { name: c.name || '', json: JSON.stringify(cr) };
+    (c.estimates || []).forEach(e=>{
+      const er = Object.assign({}, e); delete er.id;
+      E[e.id] = { cid: c.id, title: e.title || '', status: e.status || '', date: e.date || '', json: JSON.stringify(er) };
+    });
+  });
+  return { C, E };
+}
+function cloudPush(){
+  if(!fb || !cloudUser || !cloudLoaded) return;
+  const fs = fb.fs, db = fb.db, s = cloudSplit(), now = Date.now();
+  const ops = [], next = { c:{}, e:{} };
+  for(const id in s.C){
+    next.c[id] = s.C[id].json;
+    if(cloudSent.c[id] !== next.c[id]) ops.push({ ref: fs.doc(db, 'customers', id), data: { name: s.C[id].name, json: s.C[id].json, t: now } });
+  }
+  for(const id in s.E){
+    const x = s.E[id];
+    next.e[id] = x.cid + '|' + x.json;
+    if(cloudSent.e[id] !== next.e[id]) ops.push({ ref: fs.doc(db, 'estimates', id), data: { cid: x.cid, title: x.title, status: x.status, date: x.date, json: x.json, t: now } });
+  }
+  for(const id in cloudSent.c) if(!(id in next.c)) ops.push({ ref: fs.doc(db, 'customers', id) });
+  for(const id in cloudSent.e) if(!(id in next.e)) ops.push({ ref: fs.doc(db, 'estimates', id) });
+  cloudSent = next;
+  // commit in chunks (count + size) so a big first upload never hits Firestore's per-commit limits
+  let batch = null, nOps = 0, nBytes = 0;
+  const flush = ()=>{
+    if(!batch) return;
+    batch.commit().catch(err=>{
+      console.error('cloud save', err);
+      cloudStatus('error', 'Cloud save failed: ' + (err.code || err.message) + ' - that change is only on this device');
+    });
+    batch = null; nOps = 0; nBytes = 0;
+  };
+  ops.forEach(o=>{
+    const size = o.data ? o.data.json.length : 100;
+    if(batch && (nOps >= FB_BATCH_OPS || nBytes + size > FB_BATCH_BYTES)) flush();
+    if(!batch) batch = fs.writeBatch(db);
+    if(o.data) batch.set(o.ref, o.data); else batch.delete(o.ref);
+    nOps++; nBytes += size;
+  });
+  flush();
+}
+
+// --- first-time merge banner ---
+function cloudShowMerge(info){
+  document.getElementById('cloud-merge-msg').innerHTML =
+    '<strong>This device has jobs that are not in the shared cloud list yet</strong> (' +
+    info.cust + ' new customer(s), ' + info.est + ' estimate(s)). Merge them in so every computer sees them? ' +
+    'Matching customer names are combined; nothing already in the cloud is changed.';
+  document.getElementById('cloud-merge').style.display = 'block';
+}
+function cloudMergeLocal(){
+  if(!cloudMergeCandidate || !cloudLoaded) return;
+  const n = jobsMergeData(cloudMergeCandidate);
+  cloudMergeCandidate = null;
+  cloudMarkJoined();
+  document.getElementById('cloud-merge').style.display = 'none';
+  jobsSave(); renderJobs();
+  jobsToast('Merged ' + n + ' estimate(s) into the cloud list');
+}
+function cloudExportLocal(){ if(cloudMergeCandidate) exportJobs(cloudMergeCandidate, 'this-device'); }
+function cloudSkipLocal(){
+  cobaConfirm('Skip merging? This device switches to the cloud list and its local-only jobs will be replaced. Download this device copy first if you are unsure.', ()=>{
+    cloudMergeCandidate = null;
+    cloudMarkJoined();
+    document.getElementById('cloud-merge').style.display = 'none';
+    jobsSave(); renderJobs();
+  });
+}
+
+// Re-render after a sync, but never while someone is typing in a Jobs field
+function jobsRenderSoon(){
+  if(currentTab !== 'jobs') return;
+  const a = document.activeElement, list = document.getElementById('jobs-list');
+  if(a && list && list.contains(a) && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT')){ cloudRenderDeferred = true; return; }
+  renderJobs();
+}
+document.addEventListener('focusout', ()=>{
+  if(cloudRenderDeferred){ cloudRenderDeferred = false; setTimeout(jobsRenderSoon, 0); }
+});
 
 // ══════════════════════════════════════════════
 //  INVENTORY MODULE
@@ -3572,6 +3941,7 @@ rebuildDropdowns();
 addGarmentRow(); addGarmentRow();
 addImprintRow(); addImprintRow();
 pCalc(); dCalc(); rCalc(); eCalc();
+cloudInit();
 </script>
 </body>
 </html>
