@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Applies freshly collected competitor prices to the sticker beta (beta/index.html).
+// Applies freshly collected competitor prices to the estimator (index.html, Vinyl / Roland stickers)
+// and keeps the sticker beta (beta/index.html) in step. Both files carry the same market-data block.
 //
 //   node tools/market-refresh/apply.js --in <dir> [--date YYYY-MM-DD] [--dry-run]
 //
@@ -22,16 +23,21 @@ const DRY = args.includes('--dry-run');
 const IN_DIR = arg('--in');
 const DATE = arg('--date', new Date().toISOString().slice(0, 10));
 const ROOT = path.resolve(__dirname, '..', '..');
-const BETA = path.join(ROOT, 'beta', 'index.html');
+const TARGETS = [path.join(ROOT, 'index.html'), path.join(ROOT, 'beta', 'index.html')]; // first one is the reference copy
 const BIG = 0.30, MAX_BIG_SHARE = 0.10;
 if (!IN_DIR) { console.error('Usage: node tools/market-refresh/apply.js --in <dir> [--date YYYY-MM-DD] [--dry-run]'); process.exit(2); }
 
-// ---- read current data from the beta ----
-const html = fs.readFileSync(BETA, 'utf8');
+// ---- read current data from the estimator (index.html is the reference copy) ----
 const OPEN = '<script type="application/json" id="market-data">', CLOSE = '</script>';
-const a = html.indexOf(OPEN); if (a < 0) throw new Error('market-data block not found in beta/index.html');
-const b = html.indexOf(CLOSE, a);
-const current = JSON.parse(html.slice(a + OPEN.length, b));
+function readBlock(file) {
+  const html = fs.readFileSync(file, 'utf8');
+  const a = html.indexOf(OPEN); if (a < 0) throw new Error('market-data block not found in ' + path.relative(ROOT, file));
+  const b = html.indexOf(CLOSE, a);
+  return { html, a, b, json: html.slice(a + OPEN.length, b) };
+}
+const blocks = TARGETS.filter(f => fs.existsSync(f)).map(f => Object.assign({ file: f }, readBlock(f)));
+const current = JSON.parse(blocks[0].json);
+const outOfStep = blocks.slice(1).filter(x => JSON.stringify(JSON.parse(x.json)) !== JSON.stringify(current));
 
 // ---- read collected data ----
 const collected = {}, collectorErrors = [];
@@ -100,7 +106,8 @@ if (anyApplied) current.captured = DATE;
 
 report.push('## Summary', '', ...summary, '');
 if (collectorErrors.length) report.push('## Collector errors', '', ...collectorErrors.map(e => '- ' + e), '');
-report.push(anyApplied ? `Market data date is now ${current.captured}.` : 'No seller was updated; the beta is unchanged.');
+if (outOfStep.length) report.push('Note: ' + outOfStep.map(x => path.relative(ROOT, x.file)).join(', ') + ' had different market data; it now gets the same data as index.html.', '');
+report.push(anyApplied ? `Market data date is now ${current.captured}.` : 'No seller was updated; the estimator is unchanged.');
 const text = report.join('\n') + '\n';
 
 // ---- write back in the one-size-per-line layout ----
@@ -119,10 +126,13 @@ function layout(d) {
   JSON.parse(txt);
   return txt;
 }
-if (!DRY && anyApplied) {
-  const next = html.slice(0, a + OPEN.length) + '\n' + layout(current) + '\n' + html.slice(b);
-  if (/[^\x00-\x7F]/.test(layout(current))) throw new Error('non-ASCII in market data');
-  fs.writeFileSync(BETA, next);
+if (!DRY && (anyApplied || outOfStep.length)) {
+  const txt = layout(current);
+  if (/[^\x00-\x7F]/.test(txt)) throw new Error('non-ASCII in market data');
+  for (const x of blocks) { // only the JSON between the tags changes; the rest of each file is untouched
+    const next = x.html.slice(0, x.a + OPEN.length) + '\n' + txt + '\n' + x.html.slice(x.b);
+    if (next !== x.html) fs.writeFileSync(x.file, next);
+  }
 }
 if (!DRY) {
   fs.mkdirSync(path.join(__dirname, 'reports'), { recursive: true });

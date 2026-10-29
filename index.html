@@ -140,7 +140,14 @@
     .inv-save-badge.saved   { background: #f0fdf4; color: #166534; }
     .inv-save-badge.saving  { background: #fef3c7; color: #92400e; }
 
+    /* sticker market pricing (v28) */
+    .stk-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+    .stk-dot.ok { background:#16a34a; } .stk-dot.thin { background:#f59e0b; } .stk-dot.loss { background:#dc2626; }
+    .mkt-lam { font-size:10px; font-weight:700; border-radius:20px; padding:0 6px; }
+    .mkt-lam.yes { background:#dbeafe; color:#1e40af; } .mkt-lam.no { background:#fff; color:#555; border:1px solid #d4d4d4; }
+
     @media print {
+      .stk-dot { display:none !important; }
       body { background: #fff; padding: 0; }
       .tab-bar, .action-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; border-radius: 0; }
@@ -773,6 +780,9 @@
                 <input type="checkbox" id="r-stk-lam" onchange="rCalc()" style="accent-color:#1e40af"> Laminate:
               </label>
               <select id="r-stk-lam-type" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:160px"></select>
+              <div class="rate-item no-print" style="font-size:12px">
+                Pricing: <select id="r-stk-mode" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:auto"><option value="market" selected>Market (like for like)</option><option value="classic">Classic markup</option></select>
+              </div>
             </div>
           </div>
         </div>
@@ -801,6 +811,8 @@
             <div class="info-item">Avg per sticker: <strong id="r-stk-per">—</strong></div>
             <div class="info-item">Pricing tier: <strong id="r-stk-tier" style="color:#1e40af">—</strong></div>
           </div>
+          <div id="r-stk-mkt" class="no-print" style="margin-top:8px;padding:10px 12px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;color:#444;line-height:1.55"></div>
+          <input type="hidden" id="r-stk-mkt-date" value="">
         </div>
       </div>
 
@@ -949,7 +961,12 @@
           <div class="rate-div"></div>
           <div class="rate-item">Ink cost: $<input type="number" id="r-ink" value="0.50" min="0" step="0.05" oninput="rCalc()" style="width:60px">/sq ft</div>
           <div class="rate-div"></div>
-          <div class="rate-item" style="font-size:11px;color:#888;max-width:260px">Sticker retail: auto — markup tiers on material cost (StickerYou-matched: 3.5x small qty → 1.3x volume)</div>
+          <div class="rate-item">Sticker market price at: <select id="r-stk-at" onchange="rCalc()" style="width:auto;font-size:12px;padding:3px 6px"><option value="mid" selected>Market middle</option><option value="low">Market low</option><option value="high">Market high</option><option value="sy">StickerYou (laminated)</option><option value="sm">Sticker Mule (laminated)</option><option value="sme">Sticker Mule Economy (not laminated)</option><option value="vp">VistaPrint (not laminated)</option></select></div>
+          <div class="rate-item">Adjust: <input type="number" id="r-stk-pct" value="100" min="10" max="300" step="1" oninput="rCalc()" style="width:60px">% of it</div>
+          <div class="rate-item">Round to: <select id="r-stk-round" onchange="rCalc()" style="width:auto;font-size:12px;padding:3px 6px"><option value="0">the cent</option><option value="0.25">$0.25</option><option value="0.5">$0.50</option><option value="1" selected>$1</option><option value="5">$5</option></select></div>
+          <div class="rate-item">Min per sticker row: $<input type="number" id="r-stk-min" value="0" min="0" step="1" oninput="rCalc()" style="width:60px"></div>
+          <div class="rate-item">Warn below: <input type="number" id="r-stk-warn" value="1.3" min="1" max="10" step="0.1" oninput="rCalc()" style="width:55px">&times; material</div>
+          <div class="rate-item" style="font-size:11px;color:#888;max-width:260px">Classic sticker pricing (when picked): markup tiers on material cost, 3.5x small qty down to 1.3x volume</div>
           <div class="rate-div"></div>
           <div class="rate-item">Banner retail: $<input type="number" id="r-ban-rate" value="6.00" min="0" step="0.50" oninput="rCalc()" style="width:65px">/sq ft <span style="font-size:10px;color:#888">(incl. print+hems+grommets)</span></div>
           <div class="rate-div"></div>
@@ -1473,6 +1490,74 @@
 
 </div><!-- /wrapper -->
 
+<!-- Sticker market prices (v28). Refreshed by tools/market-refresh; only the JSON inside changes. -->
+<script type="application/json" id="market-data">
+{"captured":"2026-10-29","currency":"CAD","version":2,"sellers":[
+{"id":"sy","name":"StickerYou","product":"Die-Cut Stickers (white vinyl, semi-gloss, removable)","url":"https://www.stickeryou.com/en-ca/products/die-cut-stickers/623","captured":"2026-10-29","material":"White vinyl, laminated, semi-gloss, removable","shipping":"Shipping extra; standard delivery about 11 days (Nov 9 for an Oct 29 order)","sizing":"area","minQty":1,"lam":"laminated","lamLabel":"Laminated","lamSource":"StickerYou die-cut page: \"Our custom die-cut stickers have a clear lamination.\"","sizes":[
+{"w":1,"h":1,"ladder":[[1,6.84],[5,17.26],[10,18.66],[25,37.35],[50,58.64],[100,66.71],[250,103.98],[500,114.81],[1000,164.26],[2000,234.27],[5000,428.81],[10000,689.11],[20000,1134.36]]},
+{"w":1.5,"h":1.5,"ladder":[[1,6.84],[5,18.64],[10,19.84],[25,39.76],[50,62.42],[100,73.17],[250,122.82],[500,146.73],[1000,222.62],[2000,334.83],[5000,682.26],[10000,1135.73],[20000,1923.48]]},
+{"w":2,"h":2,"ladder":[[1,7.31],[5,20.13],[10,21.61],[25,43.38],[50,68.11],[100,75.69],[250,145.56],[500,187.83],[1000,295.1],[2000,460.87],[5000,982.29],[10000,1663.18],[20000,2849.6]]},
+{"w":2.5,"h":2.5,"ladder":[[1,7.31],[5,20.45],[10,23.17],[25,47.44],[50,74.49],[100,85.49],[250,171.87],[500,235.78],[1000,378.8],[2000,608.28],[5000,1328.22],[10000,2274.2],[20000,3926.42]]},
+{"w":3,"h":3,"ladder":[[1,7.31],[5,21.81],[10,25.14],[25,51.81],[50,81.35],[100,109.45],[250,202.73],[500,293.25],[1000,472.38],[2000,775.69],[5000,1639.89],[10000,2827.68],[20000,5189.56]]},
+{"w":3.5,"h":3.5,"ladder":[[1,8.93],[5,25.28],[10,27.99],[25,57.01],[50,89.5],[100,124.35],[250,236.36],[500,352.36],[1000,575.95],[2000,963.11],[5000,2057.74],[10000,3563.37],[20000,6921.24]]},
+{"w":4,"h":4,"ladder":[[1,10.36],[5,26.11],[10,30.43],[25,62.05],[50,97.43],[100,138.63],[250,272.9],[500,418.67],[1000,689.8],[2000,1168.06],[5000,2514.64],[10000,4489.49],[20000,8831.02]]},
+{"w":4.5,"h":4.5,"ladder":[[1,11.98],[5,27.04],[10,33.53],[25,68.38],[50,107.36],[100,156.21],[250,314.52],[500,489.3],[1000,814.46],[2000,1388.91],[5000,2979.75],[10000,5580.01],[20000,11012.06]]},
+{"w":5,"h":5,"ladder":[[1,13.41],[5,28.1],[10,36.63],[25,74.72],[50,117.29],[100,173.78],[250,359.59],[500,565.95],[1000,949.68],[2000,1627.56],[5000,3507.88],[10000,6728.07],[20000,13310.92]]},
+{"w":6,"h":6,"ladder":[[1,15.09],[5,30.51],[10,43.43],[25,88.57],[50,139.03],[100,213.95],[250,454.57],[500,734.39],[1000,1244.78],[2000,2171.72],[5000,4793.63],[10000,9570.82],[20000,18996.42]]},
+{"w":2,"h":1,"ladder":[[1,6.84],[5,18.62],[10,19.79],[25,39.16],[50,61.48],[100,72.5],[250,119.57],[500,140.7],[1000,211.8],[2000,315.92],[5000,650.75],[10000,1079.56],[20000,1822.1]]},
+{"w":3,"h":2,"ladder":[[1,7.31],[5,20.3],[10,22.99],[25,46.99],[50,73.77],[100,84.39],[250,168.96],[500,230.37],[1000,370.17],[2000,592.66],[5000,1291.22],[10000,2209.81],[20000,3811.34]]},
+{"w":4,"h":2,"ladder":[[1,7.31],[5,21.3],[10,24.42],[25,50.01],[50,78.5],[100,93.09],[250,191.05],[500,272.49],[1000,439.22],[2000,715.69],[5000,1582.35],[10000,2720.82],[20000,4751.16]]},
+{"w":4,"h":3,"ladder":[[1,8.84],[5,25.23],[10,27.81],[25,56.63],[50,88.91],[100,123.25],[250,233.93],[500,347.84],[1000,568.41],[2000,949.14],[5000,2026.92],[10000,3508.57],[20000,6789.72]]},
+{"w":5,"h":3,"ladder":[[1,9.98],[5,25.89],[10,29.84],[25,60.86],[50,95.54],[100,135.38],[250,263.18],[500,401.27],[1000,659.52],[2000,1114.08],[5000,2394.76],[10000,4216.86],[20000,8340.56]]},
+{"w":6,"h":4,"ladder":[[1,13.16],[5,27.88],[10,35.94],[25,73.31],[50,115.09],[100,170.21],[250,350.14],[500,549.92],[1000,921.46],[2000,1577.97],[5000,3392.8],[10000,6493.8],[20000,12842.38]]}
+]},
+{"id":"sm","name":"Sticker Mule","product":"Die cut stickers (standard, laminated vinyl)","url":"https://www.stickermule.com/ca/products/die-cut-stickers","captured":"2026-10-29","material":"Thick matte vinyl","shipping":"Free shipping included; 4-day turnaround","sizing":"area","minQty":10,"lam":"laminated","lamLabel":"Laminated","lamSource":"Sticker Mule FAQ: standard stickers are vinyl with a protective laminate (Economy is the unlaminated line).","sizes":[
+{"w":1,"h":1,"ladder":[[10,20],[25,39],[50,68],[100,77],[200,91],[250,97],[300,103],[500,126],[1000,174],[2000,256],[3000,329],[5000,460],[10000,743]]},
+{"w":1.5,"h":1.5,"ladder":[[10,21],[25,42],[50,73],[100,86],[200,107],[250,117],[300,126],[500,160],[1000,234],[2000,362],[3000,476],[5000,684],[10000,1138]]},
+{"w":2,"h":2,"ladder":[[10,23],[25,46],[50,80],[100,97],[200,127],[250,140],[300,153],[500,202],[1000,308],[2000,493],[3000,659],[5000,962],[10000,1629]]},
+{"w":2.5,"h":2.5,"ladder":[[10,25],[25,50],[50,87],[100,110],[200,150],[250,168],[300,186],[500,251],[1000,396],[2000,647],[3000,874],[5000,1288],[10000,2206]]},
+{"w":3,"h":3,"ladder":[[10,27],[25,55],[50,96],[100,125],[200,177],[250,200],[300,223],[500,307],[1000,495],[2000,822],[3000,1118],[5000,1659],[10000,2861]]},
+{"w":3.5,"h":3.5,"ladder":[[10,30],[25,60],[50,105],[100,142],[200,206],[250,236],[300,264],[500,370],[1000,605],[2000,1017],[3000,1390],[5000,2072],[10000,3591]]},
+{"w":4,"h":4,"ladder":[[10,32],[25,66],[50,116],[100,160],[200,238],[250,274],[300,309],[500,438],[1000,726],[2000,1231],[3000,1688],[5000,2525],[10000,4412]]},
+{"w":4.5,"h":4.5,"ladder":[[10,35],[25,72],[50,127],[100,180],[200,273],[250,316],[300,358],[500,513],[1000,857],[2000,1462],[3000,2011],[5000,3016],[10000,5497]]},
+{"w":5,"h":5,"ladder":[[10,39],[25,79],[50,139],[100,201],[200,311],[250,362],[300,410],[500,592],[1000,998],[2000,1711],[3000,2357],[5000,3542],[10000,6710]]},
+{"w":6,"h":6,"ladder":[[10,46],[25,94],[50,165],[100,248],[200,394],[250,461],[300,526],[500,768],[1000,1307],[2000,2256],[3000,3118],[5000,4819],[10000,9519]]},
+{"w":2,"h":1,"ladder":[[10,21],[25,42],[50,72],[100,84],[200,104],[250,113],[300,121],[500,153],[1000,223],[2000,342],[3000,448],[5000,642],[10000,1064]]},
+{"w":3,"h":2,"ladder":[[10,25],[25,50],[50,86],[100,109],[200,148],[250,165],[300,182],[500,246],[1000,386],[2000,631],[3000,851],[5000,1253],[10000,2144]]},
+{"w":4,"h":2,"ladder":[[10,26],[25,53],[50,93],[100,120],[200,167],[250,189],[300,210],[500,287],[1000,459],[2000,760],[3000,1031],[5000,1527],[10000,2628]]},
+{"w":4,"h":3,"ladder":[[10,29],[25,60],[50,104],[100,141],[200,204],[250,233],[300,261],[500,365],[1000,597],[2000,1003],[3000,1369],[5000,2042],[10000,3535]]},
+{"w":5,"h":3,"ladder":[[10,32],[25,65],[50,113],[100,155],[200,230],[250,264],[300,297],[500,420],[1000,694],[2000,1175],[3000,1610],[5000,2407],[10000,4180]]},
+{"w":6,"h":4,"ladder":[[10,38],[25,78],[50,136],[100,197],[200,303],[250,352],[300,399],[500,576],[1000,969],[2000,1659],[3000,2285],[5000,3433],[10000,6454]]}
+]},
+{"id":"sme","name":"Sticker Mule Economy","product":"Economy stickers (vinyl, not laminated)","url":"https://www.stickermule.com/ca/products/economy-stickers","captured":"2026-10-29","material":"Lower-cost matte vinyl, not laminated, for indoor or short-term use","shipping":"Free shipping included; 4-day turnaround","sizing":"area","minQty":10,"lam":"none","lamLabel":"Not laminated","lamSource":"Sticker Mule FAQ: economy stickers are not laminated.","sizes":[
+{"w":1,"h":1,"ladder":[[10,15],[25,30],[50,52],[100,59],[200,71],[250,77],[300,82],[500,100],[1000,141],[2000,208],[3000,268],[5000,374],[10000,604]]},
+{"w":1.5,"h":1.5,"ladder":[[10,16],[25,32],[50,56],[100,66],[200,82],[250,90],[300,97],[500,124],[1000,182],[2000,282],[3000,371],[5000,531],[10000,880]]},
+{"w":2,"h":2,"ladder":[[10,17],[25,35],[50,60],[100,73],[200,96],[250,107],[300,117],[500,154],[1000,234],[2000,374],[3000,499],[5000,726],[10000,1224]]},
+{"w":2.5,"h":2.5,"ladder":[[10,19],[25,38],[50,65],[100,83],[200,113],[250,126],[300,139],[500,188],[1000,296],[2000,482],[3000,649],[5000,954],[10000,1628]]},
+{"w":3,"h":3,"ladder":[[10,20],[25,41],[50,71],[100,93],[200,131],[250,149],[300,165],[500,228],[1000,365],[2000,604],[3000,820],[5000,1214],[10000,2087]]},
+{"w":3.5,"h":3.5,"ladder":[[10,22],[25,45],[50,78],[100,105],[200,152],[250,173],[300,194],[500,271],[1000,442],[2000,741],[3000,1011],[5000,1504],[10000,2657]]},
+{"w":4,"h":4,"ladder":[[10,24],[25,49],[50,85],[100,118],[200,174],[250,201],[300,226],[500,319],[1000,527],[2000,891],[3000,1219],[5000,1820],[10000,3376]]},
+{"w":4.5,"h":4.5,"ladder":[[10,26],[25,54],[50,93],[100,132],[200,199],[250,230],[300,260],[500,371],[1000,619],[2000,1053],[3000,1445],[5000,2164],[10000,4190]]},
+{"w":5,"h":5,"ladder":[[10,28],[25,58],[50,101],[100,146],[200,225],[250,262],[300,297],[500,427],[1000,717],[2000,1227],[3000,1688],[5000,2602],[10000,5099]]},
+{"w":6,"h":6,"ladder":[[10,33],[25,69],[50,120],[100,179],[200,283],[250,331],[300,377],[500,550],[1000,934],[2000,1609],[3000,2227],[5000,3656],[10000,7206]]},
+{"w":2,"h":1,"ladder":[[10,16],[25,32],[50,55],[100,64],[200,80],[250,88],[300,94],[500,120],[1000,175],[2000,268],[3000,352],[5000,501],[10000,829]]},
+{"w":3,"h":2,"ladder":[[10,19],[25,38],[50,65],[100,82],[200,111],[250,124],[300,137],[500,185],[1000,289],[2000,470],[3000,633],[5000,930],[10000,1584]]},
+{"w":4,"h":2,"ladder":[[10,20],[25,40],[50,69],[100,89],[200,125],[250,141],[300,156],[500,214],[1000,340],[2000,561],[3000,759],[5000,1121],[10000,1923]]},
+{"w":4,"h":3,"ladder":[[10,22],[25,45],[50,77],[100,104],[200,150],[250,172],[300,192],[500,268],[1000,437],[2000,731],[3000,996],[5000,1482],[10000,2609]]},
+{"w":5,"h":3,"ladder":[[10,24],[25,48],[50,83],[100,114],[200,169],[250,193],[300,217],[500,307],[1000,505],[2000,851],[3000,1164],[5000,1737],[10000,3184]]},
+{"w":6,"h":4,"ladder":[[10,28],[25,57],[50,100],[100,143],[200,220],[250,255],[300,289],[500,416],[1000,697],[2000,1190],[3000,1637],[5000,2506],[10000,4908]]}
+]},
+{"id":"vp","name":"VistaPrint","product":"Custom Die-Cut Sticker Singles (White Plastic BOPP)","url":"https://www.vistaprint.ca/labels-stickers/die-cut-sticker-singles","captured":"2026-10-29","material":"White plastic (BOPP), coated","shipping":"Free standard shipping (about 11 days); faster delivery extra","sizing":"squares","minQty":10,"sale":"20% off 25+ on capture day","lam":"coated","lamLabel":"Not laminated (gloss-coated)","lamSource":"VistaPrint page: plastic stickers are \"coated for durability\"; product options list Finish: Gloss and no laminate.","sizes":[
+{"w":2,"h":2,"ladder":[[10,14.99,14.99],[25,34,27.2],[50,61,48.8],[100,95,76],[150,126,100.8],[200,147,117.6],[250,153,122.4],[300,164,131.2],[400,198,158.4],[500,213,170.4],[1000,289,231.2],[1500,387,309.6],[2000,490,392],[2500,576,460.8],[3000,653,522.4],[4000,811,648.8],[5000,980,784]]},
+{"w":2.5,"h":2.5,"ladder":[[10,21.99,21.99],[25,42,33.6],[50,81,64.8],[100,116,92.8],[150,148,118.4],[200,163,130.4],[250,174,139.2],[300,190,152],[400,235,188],[500,245,196],[1000,366,292.8],[1500,485,388],[2000,609,487.2],[2500,714,571.2],[3000,811,648.8],[4000,1001,800.8],[5000,1214,971.2]]},
+{"w":3,"h":3,"ladder":[[10,24.99,24.99],[25,45,36],[50,85,68],[100,132,105.6],[150,158,126.4],[200,179,143.2],[250,198,158.4],[300,229,183.2],[400,278,222.4],[500,289,231.2],[1000,451,360.8],[1500,571,456.8],[2000,734,587.2],[2500,853,682.4],[3000,975,780],[4000,1190,952],[5000,1450,1160]]},
+{"w":3.5,"h":3.5,"ladder":[[10,28.99,28.99],[25,54,43.2],[50,99,79.2],[100,147,117.6],[150,191,152.8],[200,213,170.4],[250,234,187.2],[300,261,208.8],[400,331,264.8],[500,360,288],[1000,549,439.2],[1500,718,574.4],[2000,881,704.8],[2500,1052,841.6],[3000,1225,980],[4000,1545,1236],[5000,1835,1468]]},
+{"w":4,"h":4,"ladder":[[10,31.99,31.99],[25,61,48.8],[50,116,92.8],[100,158,126.4],[150,214,171.2],[200,240,192],[250,273,218.4],[300,305,244],[400,381,304.8],[500,429,343.2],[1000,653,522.4],[1500,853,682.4],[2000,1029,823.2],[2500,1251,1000.8],[3000,1475,1180],[4000,1910,1528],[5000,2220,1776]]},
+{"w":4.5,"h":4.5,"ladder":[[10,34.99,34.99],[25,67,53.6],[50,126,100.8],[100,193,154.4],[150,234,187.2],[200,261,208.8],[250,305,244],[300,336,268.8],[400,424,339.2],[500,485,388],[1000,724,579.2],[1500,1011,808.8],[2000,1250,1000],[2500,1555,1244],[3000,1865,1492],[4000,2330,1864],[5000,2770,2216]]},
+{"w":5,"h":5,"ladder":[[10,39.99,39.99],[25,72,57.6],[50,137,109.6],[100,219,175.2],[150,250,200],[200,283,226.4],[250,342,273.6],[300,371,296.8],[400,462,369.6],[500,544,435.2],[1000,800,640],[1500,1153,922.4],[2000,1460,1168],[2500,1825,1460],[3000,2180,1744],[4000,2720,2176],[5000,3290,2632]]}
+]}
+]}
+</script>
 <script>
 // ══════════════════════════════════════════════
 //  TAB SWITCHING
@@ -1708,7 +1793,8 @@ function loadEstimate(cid, eid, dup){
   document.getElementById('cb-name').value  = c.name;
   document.getElementById('cb-phone').value = c.phone || '';
   document.getElementById('cb-email').value = c.email || '';
-  jobsToast(dup ? 'Duplicated as a new working copy - hit Save estimate to keep it' : 'Loaded "' + e.title + '"');
+  const legacyStk = e.tab === 'vinyl' && !document.getElementById('r-stk-mode');
+  jobsToast((dup ? 'Duplicated as a new working copy - hit Save estimate to keep it' : 'Loaded "' + e.title + '"') + (legacyStk ? ' (classic sticker pricing - saved before market pricing)' : ''));
   });
 }
 function deleteEstimate(cid, eid){
@@ -2835,6 +2921,7 @@ function eArtMarketCheck(artRetail, artPieces, avgSqft, cost){
 }
 
 function toggleRolandSettings(){
+  const wrap = document.getElementById('r-settings-wrap');
   const btn  = document.getElementById('r-settings-btn');
   const open = wrap.style.display === 'none';
   wrap.style.display = open ? '' : 'none';
@@ -2860,7 +2947,7 @@ function rAddRow(type){
 
   if(type==='stk'){
     tr.innerHTML=`
-      <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. 4x4 logo sticker"></td>
+      <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. 4x4 logo sticker"><input type="hidden" id="${id}-mb" value=""><input type="hidden" id="${id}-ms" value=""></td>
       <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="rCalc()"></td>
       <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="rCalc()"></td>
       <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>
@@ -2944,6 +3031,157 @@ function rebuildRolandDropdowns(){
   rBuildSubstrateOpts('r-sgn-sub');
 }
 
+// ===== STICKER MARKET PRICING (v28) =====
+// Competitor price ladders live in the JSON block id="market-data" above this script
+// (refreshed every 4 months by tools/market-refresh, see its README).
+// Like for like: a laminated sticker is only compared with laminated products, an unlaminated one
+// only with unlaminated products. Each sticker row remembers the market price it was quoted at
+// (hidden -mb / -ms inputs) so a later price refresh never changes a saved quote unless that row's
+// size, qty, laminate or price rule changes. Old jobs saved before v28 have no Pricing select and
+// reopen on Classic pricing. Plain ASCII only in strings (symbols via String.fromCharCode).
+const MKT = (function(){
+  let data = { captured:'', sellers:[] };
+  try { data = JSON.parse(document.getElementById('market-data').textContent); } catch(e){ console.error('market data', e); }
+  function ladderAt(ladder, q, col){
+    const first = ladder[0][0], last = ladder[ladder.length-1][0];
+    if(q < first) return { na:'min', limit:first };
+    if(q > last) return { na:'max', limit:last };
+    for(let i=0;i<ladder.length;i++){
+      const r = ladder[i], v = r[col] != null ? r[col] : r[1];
+      if(r[0] === q) return { p:v, exact:true };
+      if(r[0] > q){
+        const a = ladder[i-1], av = a[col] != null ? a[col] : a[1];
+        const k = Math.log(v/av) / Math.log(r[0]/a[0]);
+        return { p: av * Math.pow(q/a[0], k), exact:false };
+      }
+    }
+    return { na:'max', limit:last };
+  }
+  function norm(s){ const W=Math.max(s.w,s.h), H=Math.min(s.w,s.h); return { W, H, A:W*H, s }; }
+  function naNote(r){ return r.na === 'min' ? 'Minimum ' + r.limit : 'Online max ' + r.limit; }
+  // Returns {p, exact, note} or {na, note}. VistaPrint ("squares") is priced at its smallest square that fits.
+  function sellerPrice(seller, w, h, q, useSale){
+    const col = useSale ? 2 : 1, W = Math.max(w,h), H = Math.min(w,h), A = W*H, sizes = seller.sizes.map(norm);
+    if(seller.sizing === 'squares'){
+      const fits = sizes.filter(z => z.W >= W - 1e-9).sort((a,b) => a.W - b.W);
+      if(!fits.length) return { na:'size', note:'Largest size is ' + sizes.reduce((m,z) => Math.max(m, z.W), 0) + ' in' };
+      const z = fits[0], r = ladderAt(z.s.ladder, q, col);
+      if(r.na) return { na:r.na, note:naNote(r) };
+      const same = Math.abs(z.W - W) < 1e-9 && Math.abs(z.H - H) < 1e-9;
+      return { p:r.p, exact: same && r.exact, note: same ? (r.exact ? '' : 'between quantity tiers') : 'priced as their ' + z.W + ' x ' + z.W + ' in' };
+    }
+    const ex = sizes.filter(z => Math.abs(z.W - W) < 1e-9 && Math.abs(z.H - H) < 1e-9)[0];
+    if(ex){ const re = ladderAt(ex.s.ladder, q, col); if(re.na) return { na:re.na, note:naNote(re) }; return { p:re.p, exact:re.exact, note: re.exact ? '' : 'between quantity tiers' }; }
+    const sorted = sizes.slice().sort((a,b) => a.A - b.A || a.W - b.W);
+    if(A < sorted[0].A - 1e-9 || A > sorted[sorted.length-1].A + 1e-9) return { na:'size', note:'outside captured sizes' };
+    let lo = null, hi = null;
+    sorted.forEach(z => { if(z.A <= A + 1e-9) lo = z; });
+    for(let i=0;i<sorted.length;i++){ if(sorted[i].A >= A - 1e-9){ hi = sorted[i]; break; } }
+    const rl = ladderAt(lo.s.ladder, q, col), rh = ladderAt(hi.s.ladder, q, col);
+    if(rl.na || rh.na){ const n = rl.na ? rl : rh; return { na:n.na, note:naNote(n) }; }
+    const p = hi.A === lo.A ? (rl.p + rh.p) / 2 : rl.p + (A - lo.A) / (hi.A - lo.A) * (rh.p - rl.p);
+    return { p, exact:false, note:'estimated from nearby sizes' };
+  }
+  function market(sellers, w, h, q){
+    const vals = [];
+    sellers.forEach(s => { const r = sellerPrice(s, w, h, q, false); if(!r.na) vals.push(r.p); });
+    if(!vals.length) return null;
+    vals.sort((a,b) => a - b);
+    const n = vals.length, med = n % 2 ? vals[(n-1)/2] : (vals[n/2-1] + vals[n/2]) / 2;
+    return { low:vals[0], high:vals[n-1], median:med, n };
+  }
+  function group(lam){ return data.sellers.filter(s => lam ? s.lam === 'laminated' : s.lam !== 'laminated'); }
+  function ageDays(){ if(!data.captured) return null; return Math.max(0, Math.floor((Date.now() - new Date(data.captured + 'T12:00:00').getTime()) / 86400000)); }
+  return { data, ladderAt, sellerPrice, market, group, ageDays };
+})();
+const MKT_X = String.fromCharCode(215), MKT_OK = String.fromCharCode(10004), MKT_WARN = String.fromCharCode(9888), MKT_LOSS = String.fromCharCode(10006);
+const MKT_RULE = { mid:'the market middle', low:'the market low', high:'the market high', sy:'StickerYou', sm:'Sticker Mule', sme:'Sticker Mule Economy', vp:'VistaPrint' };
+const MKT_BREAK_QTYS = [10,25,50,100,250,500,1000,2500,5000];
+// The Vinyl panel as first loaded: "New estimate" restores it after an old (pre-v28) job replaced the markup.
+const R_PANEL_PRISTINE = (document.getElementById('panel-vinyl') || {}).innerHTML || '';
+function rStkSel(id, dflt){ const e = document.getElementById(id); return e ? e.value : dflt; }
+function rStkEsc(s){ return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]); }
+function rStkDate(iso){ if(!iso) return 'unknown date'; return new Date(iso + 'T12:00:00').toLocaleDateString('en-CA', { month:'short', day:'numeric', year:'numeric' }); }
+// Same film math as the sticker rows in rCalc (used for the quantity price breaks).
+function rStkFilm(w, h, q){
+  const rollW = rGetV('r-roll-w') || 50, reg = rGetV('r-reg-overhead') || 8;
+  const bigger = Math.max(w,h), smaller = Math.min(w,h);
+  const across = bigger <= rollW ? bigger : smaller, feed = bigger <= rollW ? smaller : bigger;
+  const ipp = Math.max(1, Math.floor(rollW / across)), passes = Math.ceil(q / ipp);
+  return passes * (rollW * (feed + reg)) / 144;
+}
+function rClassicStk(cost, q){ const t = getStickerTier(q); return Math.max(cost * t.markup, q * t.minEach); }
+// Market reference for one job: like-for-like seller group, the market range and the base price picked by the rule.
+function rStkMarketBase(w, h, q, lam){
+  const at = rStkSel('r-stk-at', 'mid'), grp = MKT.group(lam), m = MKT.market(grp, w, h, q), prices = {};
+  grp.forEach(s => { prices[s.id] = MKT.sellerPrice(s, w, h, q, false); });
+  let base = null, basis = '', note = '';
+  if(at === 'mid' || at === 'low' || at === 'high'){ if(m){ base = at === 'mid' ? m.median : at === 'low' ? m.low : m.high; basis = MKT_RULE[at]; } }
+  else if(prices[at] && !prices[at].na){ base = prices[at].p; basis = MKT_RULE[at]; }
+  else if(m){ base = m.median; basis = MKT_RULE.mid; note = (MKT_RULE[at] || at) + (prices[at] ? ' does not offer this job' : ' sells the other type (laminated or not)') + ', so the middle is used'; }
+  return { at, grp, m, prices, base, basis, note };
+}
+// Adjust %, rounding and the row minimum. No market data -> the classic price.
+function rStkQuote(base, q, classic){
+  if(base == null) return { quote:classic, noMarket:true, minApplied:false };
+  const pct = rGetV('r-stk-pct') || 100, step = parseFloat(rStkSel('r-stk-round', '1')) || 0, minRow = rGetV('r-stk-min');
+  const raw = base * pct / 100;
+  let qt = step > 0 ? Math.round(raw / step) * step : Math.round(raw * 100) / 100;
+  const minApplied = minRow > 0 && qt < minRow; if(minApplied) qt = minRow;
+  return { quote:qt, noMarket:false, minApplied };
+}
+function rStkStatus(quote, cost){
+  const warn = rGetV('r-stk-warn') || 1.3, x = cost > 0 ? quote / cost : Infinity;
+  return { x, status: quote < cost - 0.005 ? 'loss' : (x < warn ? 'thin' : 'ok') };
+}
+// One sticker row in market mode. Uses the market price saved with the row when its details are unchanged.
+function rStkRowMarket(id, w, h, q, lam, cost, classic){
+  const sig = [w, h, q, lam ? 1 : 0, rStkSel('r-stk-at', 'mid')].join('|');
+  const mb = document.getElementById(id + '-mb'), ms = document.getElementById(id + '-ms');
+  const r = rStkMarketBase(w, h, q, lam), fresh = r.base == null ? null : Math.round(r.base * 100) / 100;
+  let base = fresh, kept = false;
+  if(mb && ms){
+    if(ms.value === sig && mb.value !== ''){ const v = parseFloat(mb.value); base = v > 0 ? v : null; kept = Math.abs((base || 0) - (fresh || 0)) >= 0.005; }
+    else { mb.value = fresh == null ? '0' : String(fresh); ms.value = sig; const de = document.getElementById('r-stk-mkt-date'); if(de) de.value = MKT.data.captured; }
+  }
+  const qq = rStkQuote(base, q, classic), st = rStkStatus(qq.quote, cost);
+  const title = qq.noMarket ? 'No market data for this size and quantity - classic price used' : 'Quote = ' + r.basis + (kept ? ' (market price kept from when this was quoted)' : '');
+  return Object.assign({}, r, qq, st, { base, kept, classic, cost, title });
+}
+function rStkRenderMarket(mode, rows, lam, matCost){
+  const box = document.getElementById('r-stk-mkt'); if(!box) return;
+  if(mode !== 'market'){ box.innerHTML = 'Classic markup pricing. Pick <strong>Pricing: Market</strong> in the sticker header to price from competitors, like for like.'; return; }
+  if(!rows.length){ box.innerHTML = 'The market check appears here once a sticker row has a width, height and quantity.'; return; }
+  const wasOpen = !!box.querySelector('details[open]');
+  const d = MKT.data, age = MKT.ageDays(), de = document.getElementById('r-stk-mkt-date');
+  const typeWord = lam ? 'laminated' : 'unlaminated', badge = s => '<span class="mkt-lam ' + (s.lam === 'laminated' ? 'yes' : 'no') + '">' + rStkEsc(s.lamLabel) + '</span>';
+  const statusTxt = r => r.status === 'loss' ? MKT_LOSS + ' below your material cost - walk away or quote higher' : r.status === 'thin' ? MKT_WARN + ' thin: ' + r.x.toFixed(2) + MKT_X + ' material cost' : MKT_OK + ' ' + r.x.toFixed(1) + MKT_X + ' material cost';
+  let h = '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin-bottom:4px"><strong style="color:#1e40af">Market check &middot; ' + typeWord + ' stickers only</strong>' +
+    '<span style="color:#888">Market data ' + rStkDate(d.captured) + (age != null ? ' (' + age + ' days old)' : '') +
+    (age > 150 ? ' <span style="background:#fbbf24;color:#1a1a1a;border-radius:20px;padding:0 6px;font-weight:700;font-size:10px">due for a refresh</span>' : '') + '</span></div>';
+  rows.forEach((r, i) => {
+    const sellers = r.grp.map(s => { const p = r.prices[s.id]; return rStkEsc(s.name) + ' ' + badge(s) + ' ' + (p.na ? '<span style="color:#aaa">not offered</span>' : rfmt(p.p) + (p.exact ? '' : ' <span style="color:#aaa">(est.)</span>')); }).join(' &middot; ');
+    const notes = [r.note, r.minApplied ? 'row minimum applied' : '', r.kept ? 'market price kept from when this was quoted' : '', r.noMarket ? 'no ' + typeWord + ' seller offers this - classic price used' : ''].filter(Boolean);
+    h += '<div style="padding:5px 0;border-top:1px solid #e0ecff"><strong>' + rStkEsc(r.name || ('Row ' + (i + 1))) + '</strong> &middot; ' + r.w + ' &times; ' + r.h + ' in &times; ' + r.q.toLocaleString('en-CA') + ' &mdash; ' + sellers +
+      (r.noMarket ? '' : ' &rarr; ' + rStkEsc(r.basis) + ' ' + rfmt(r.base)) + ' &rarr; <strong>quote ' + rfmt(r.quote) + '</strong>' +
+      ' &middot; <span class="stk-dot ' + r.status + '"></span>' + rStkEsc(statusTxt(r)) + ' &middot; <span style="color:#888">classic ' + rfmt(r.classic) + '</span>' +
+      (notes.length ? '<div style="color:#92400e;font-size:11px">' + rStkEsc(notes.join('; ')) + '</div>' : '') + '</div>';
+  });
+  h += '<div style="color:#888;margin-top:4px">Not compared (' + (lam ? 'not laminated' : 'laminated') + '): ' + rStkEsc(MKT.group(!lam).map(s => s.name).join(', ')) + '.' +
+    (de && de.value && de.value !== d.captured ? ' Quoted with market data from ' + rStkDate(de.value) + '; change a row to use the latest.' : '') + '</div>';
+  const r0 = rows[0], qs = MKT_BREAK_QTYS.slice(); if(qs.indexOf(r0.q) < 0) qs.push(r0.q); qs.sort((a,b) => a - b);
+  let t = '<table style="margin:6px 0 0;min-width:420px"><thead><tr><th class="dh">Qty</th><th class="dh">Market middle</th><th class="dh">Quote</th><th class="dh">Each</th><th class="dh">Your cost</th><th class="dh">' + MKT_X + ' cost</th></tr></thead><tbody>';
+  qs.forEach(qq => {
+    const cost = rStkFilm(r0.w, r0.h, qq) * matCost, b = rStkMarketBase(r0.w, r0.h, qq, lam);
+    const qo = rStkQuote(b.base == null ? null : Math.round(b.base * 100) / 100, qq, rClassicStk(cost, qq)), st = rStkStatus(qo.quote, cost);
+    t += '<tr' + (qq === r0.q ? ' style="background:#fef3c7"' : '') + '><td class="res" style="background:none;color:#1a1a1a">' + qq.toLocaleString('en-CA') + '</td><td class="res" style="background:none;color:#1a1a1a">' + (b.m ? rfmt(b.m.median) : 'n/a') + '</td>' +
+      '<td class="res" style="background:none;color:#1a1a1a"><span class="stk-dot ' + st.status + '"></span>' + rfmt(qo.quote) + '</td><td class="res" style="background:none;color:#1a1a1a">' + rfmt(qo.quote / qq) + '</td>' +
+      '<td class="res dim" style="background:none">' + rfmt(cost) + '</td><td class="res" style="background:none;color:#1a1a1a">' + (isFinite(st.x) ? st.x.toFixed(1) + MKT_X : '') + '</td></tr>';
+  });
+  h += '<details' + (wasOpen ? ' open' : '') + ' style="margin-top:6px"><summary style="cursor:pointer;color:#1e40af">Quantity price breaks for ' + rStkEsc(r0.name || 'row 1') + ' (' + r0.w + ' &times; ' + r0.h + ' in)</summary><div class="scroll-x">' + t + '</tbody></table></div></details>';
+  box.innerHTML = h;
+}
+
 function rCalc(){
   const rollW  = rGetV('r-roll-w') || 50;
   const inkSF  = rGetV('r-ink');
@@ -2960,6 +3198,8 @@ function rCalc(){
     const lamCost    = lamOn ? rGetV('r-stk-lam-type') : 0;
     const matCost    = vinylCost + inkSF + lamCost;
     const regOverhead = rGetV('r-reg-overhead') || 8;
+    const stkMode = rStkSel('r-stk-mode', 'classic');   // pre-v28 saved jobs have no Pricing select -> classic
+    const stkMktRows = [];
 
     rStkRows.forEach(id=>{
       const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
@@ -2978,14 +3218,21 @@ function rCalc(){
         const tier=getStickerTier(q);
         const retailCalc=cost*tier.markup;
         const retailFloor=q*tier.minEach;
-        const retail=Math.max(retailCalc, retailFloor);
-        const per=q>0?retail/q:0;
+        let retail=Math.max(retailCalc, retailFloor);
         const mkLabel=tier.label+' ('+tier.markup+'x'+(retailFloor>retailCalc?' · $'+tier.minEach+'/ea min':'')+')';
+        let mkt=null;
+        if(stkMode==='market'){
+          mkt=rStkRowMarket(id, w, h, q, lamOn, cost, retail);
+          retail=mkt.quote;
+          const nEl=document.getElementById(id+'-n');
+          stkMktRows.push(Object.assign({ name: nEl ? nEl.value.trim() : '', w, h, q }, mkt));
+        }
+        const per=q>0?retail/q:0;
         if(psEl) psEl.textContent=passes+(passes>1?' passes':' pass');
         if(sfEl) sfEl.textContent=rsfmt(filmSqFt);
         if(coEl) coEl.textContent=rfmt(cost);
-        if(rtEl){ rtEl.textContent=rfmt(retail); rtEl.title=mkLabel; }
-        if(peEl){ peEl.textContent=rfmt(per); peEl.title=mkLabel; }
+        if(rtEl){ if(mkt){ rtEl.innerHTML='<span class="stk-dot '+mkt.status+'"></span>'+rfmt(retail); rtEl.title=mkt.title; } else { rtEl.textContent=rfmt(retail); rtEl.title=mkLabel; } }
+        if(peEl){ peEl.textContent=rfmt(per); peEl.title=mkt ? mkt.title : mkLabel; }
         all.forEach(e=>{if(e) e.style.color='';});
         stkFilm+=filmSqFt; stkCost+=cost; stkRetail+=retail; stkPieces+=q;
       } else { all.forEach(e=>{if(e){e.textContent='—';e.style.color='';}}); }
@@ -2999,6 +3246,8 @@ function rCalc(){
       const t=getStickerTier(firstRowQty||stkPieces);
       rSet('r-stk-tier', t.label+' — '+t.markup+'x markup · $'+t.minEach+'/sticker min per row');
     } else { rSet('r-stk-tier','—'); }
+    if(stkMode==='market') rSet('r-stk-tier', 'Market pricing (' + (lamOn ? 'laminated' : 'unlaminated') + ') - see the market check below');
+    rStkRenderMarket(stkMode, stkMktRows, lamOn, matCost);
   }
 
   // ── BANNERS ──
@@ -3113,6 +3362,11 @@ function rCalc(){
 
 function resetRoland(){
   cobaConfirm('New Roland estimate? This will clear all Roland fields.', ()=>{
+    if(!document.getElementById('r-stk-mode') && R_PANEL_PRISTINE){ // a job saved before v28 replaced the panel markup
+      const pv=document.getElementById('panel-vinyl'); if(pv){ pv.innerHTML=R_PANEL_PRISTINE; rebuildRolandDropdowns(); }
+    }
+    const sm=document.getElementById('r-stk-mode'); if(sm) sm.value='market';
+    const sd=document.getElementById('r-stk-mkt-date'); if(sd) sd.value='';
     const rp=document.getElementById('r-proj'); if(rp) rp.value='';
     document.getElementById('r-hrs').value='0';
     ['r-stk-on','r-ban-on','r-sgn-on','r-can-on','r-stk-lam','r-sgn-sub-on'].forEach(id=>{

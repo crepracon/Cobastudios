@@ -1,6 +1,10 @@
 # Sticker market refresh — runbook
 
-How the competitor prices inside the Sticker Quick Quote beta (`beta/index.html`) get refreshed.
+How the competitor sticker prices inside the estimator get refreshed. Since v28 the live estimator (`index.html`,
+Vinyl / Roland tab, Stickers, Pricing: Market) quotes from this data; the Sticker Quick Quote beta (`beta/index.html`)
+carries an identical copy. Both files hold the same `<script type="application/json" id="market-data">` block and
+the refresh changes nothing else in them. Saved jobs keep the market price they were quoted at (pricing integrity),
+so a refresh only affects new quotes and rows that get edited.
 A scheduled Claude task runs this every 4 months (March, July, November). Anyone can follow it by hand too.
 
 **Why a real browser:** StickerYou, Sticker Mule and VistaPrint only show prices through their own price
@@ -14,12 +18,13 @@ on each site, using the same price requests the pages make when a customer picks
 | `collect-stickeryou.js` | Run in a tab on the StickerYou die-cut page. Laminated die-cut, 16 sizes, 1–20,000 pcs. |
 | `collect-stickermule.js` | Run in a tab on Sticker Mule (CA). Standard die cut (laminated) + Economy (not laminated). |
 | `collect-vistaprint.js` | Run in a tab on VistaPrint (CA) die-cut sticker singles. White Plastic, gloss-coated, not laminated. List + sale price. |
-| `apply.js` | Compares collected prices with the beta's current data, applies the safe changes, writes a report. |
+| `apply.js` | Compares collected prices with the current data in `index.html`, applies the safe changes to the market-data block in **both** `index.html` and `beta/index.html`, writes a report. |
+| `smoke-estimator.js` | Checks the live estimator after the update: data is valid ASCII JSON, scripts compile, the Vinyl / Roland sticker quote equals the like-for-like market middle (laminated and not), Classic mode works, no page errors. |
 | `smoke-beta.js` | Checks the beta after the update (scripts compile and are ASCII, both laminate modes work). |
 | `reports/` | One change report per refresh (`YYYY-MM-DD.md`). |
 
 ## Steps (Claude, scheduled run)
-1. **Already done this cycle?** Read the `"captured"` date at the top of the `market-data` JSON in `beta/index.html`.
+1. **Already done this cycle?** Read the `"captured"` date at the top of the `market-data` JSON in `index.html`.
    If it is less than 60 days old, stop — nothing to do (no message needed).
 2. **Is Chris's computer reachable?** The collectors need the Claude desktop app's built-in browser on his computer
    (`Claude_Browser` tools). If those tools are missing or can't reach the computer, stop and tell Chris in one line:
@@ -35,11 +40,14 @@ on each site, using the same price requests the pages make when a customer picks
    Safety rules built in: a price that moved more than 30% is held at its old value and listed; if more than 10% of a
    seller's prices moved that much, or prices are missing, that whole seller is held (likely a site change or a sale).
    Lamination labels are never touched by the script.
-5. **Validate.** `node tools/market-refresh/smoke-beta.js` must pass. Never edit `index.html` (the live estimator).
-6. **Commit and push** `beta/index.html` and the new report to `main` with a short message, e.g.
-   `beta: sticker market refresh 2027-03-01`. GitHub Pages updates the live beta within a couple of minutes.
+5. **Validate.** `node tools/market-refresh/smoke-estimator.js` and `node tools/market-refresh/smoke-beta.js` must
+   both pass. Check `git diff --stat`: only `index.html`, `beta/index.html` (market-data lines only) and the new report
+   may change. Never edit anything else in either file. If a smoke test fails, do not push: `git checkout -- .`,
+   and tell Chris what failed.
+6. **Commit and push** to `main` with a short message, e.g. `market: sticker price refresh 2027-03-01`.
+   GitHub Pages updates the live estimator and the beta within a couple of minutes. No version tag for a data refresh.
 7. **Tell Chris** the report's summary in plain words: which sellers changed and by roughly how much, anything held
-   for him to check, and the beta link https://crepracon.github.io/Cobastudios/beta/.
+   for him to check, and the estimator link https://crepracon.github.io/Cobastudios/.
 
 ## When a collector breaks
 Sites change. If a collector returns errors for every size, look at what the page itself requests when you change the
@@ -55,4 +63,4 @@ size (network requests), update the collector, and note the change here. Known r
 - Sticker Mule die cut (standard): laminated (their FAQ: vinyl with a protective laminate).
 - Sticker Mule Economy: not laminated (their FAQ says so).
 - VistaPrint die-cut singles, White Plastic: not laminated — "coated for durability", product options show Finish: Gloss and no laminate.
-Re-check these if a site's wording changes; the beta never compares laminated with unlaminated prices.
+Re-check these if a site's wording changes; the estimator and the beta never compare laminated with unlaminated prices.
