@@ -16,6 +16,8 @@
     .app-header a { font-size: 12px; color: #ccc; text-decoration: none; border: 1px solid #444; border-radius: 6px; padding: 6px 10px; }
     .app-header a:hover { color: #fff; border-color: #777; }
     .beta-pill { font-size: 10px; font-weight: 800; letter-spacing: .08em; background: #fbbf24; color: #1a1a1a; border-radius: 20px; padding: 2px 8px; }
+    .stale-pill { display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700; background: #fbbf24; color: #1a1a1a; border-radius: 20px; padding: 1px 8px; }
+    .stale-pill[hidden] { display: none; }
     .beta-bar { background: #fffbeb; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 1px solid #fde68a; padding: .6rem 1.25rem; font-size: 12px; color: #92400e; }
 
     .panel { background: #fff; border-radius: 0 0 12px 12px; border: 1px solid #e0e0e0; border-top: 0; }
@@ -134,7 +136,7 @@
   <div class="app-header">
     <div>
       <h1>Coba Studios — Sticker Quick Quote <span class="beta-pill">BETA</span></h1>
-      <div class="sub">Die-cut stickers priced from the market &middot; Market data <span id="mk-date">Oct 29, 2026</span> &middot; All prices in CAD</div>
+      <div class="sub">Die-cut stickers priced from the market &middot; Market data <span id="mk-date">Oct 29, 2026</span><span id="mk-age"></span> &middot; All prices in CAD <span class="stale-pill" id="stale-pill" hidden>Prices due for a refresh</span></div>
     </div>
     <a href="../" class="no-print">Open the live estimator &rarr;</a>
   </div>
@@ -615,6 +617,9 @@ const DEFAULT_VINYL = [
     var d = new Date(MARKET.captured + 'T12:00:00');
     var ds = d.toLocaleDateString('en-CA', { month:'short', day:'numeric', year:'numeric' });
     $('mk-date').textContent = ds; $('mk-date2').textContent = ds;
+    var days = Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+    $('mk-age').textContent = ' (' + (days === 0 ? 'today' : days + (days === 1 ? ' day' : ' days') + ' old') + ')';
+    if (days > 150) $('stale-pill').hidden = false;
     fillSelect($('b-vinyl'), printList, S.vinyl, false);
     fillSelect($('b-lam'), lamList, S.lam, true);
     $('src-note').textContent = invSource === 'saved' ? 'Material costs come from the inventory saved on this device (read only).' : 'No saved inventory on this device, so material costs use the estimator\'s built-in defaults.';
