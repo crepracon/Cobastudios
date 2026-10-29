@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Coba Studios — Sticker Quick Quote (beta)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f0ed; color: #1a1a1a; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
+    .wrapper { max-width: 960px; margin: 0 auto; }
+
+    .app-header { background: #1a1a1a; border-radius: 12px 12px 0 0; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .app-header h1 { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .app-header .sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .app-header a { font-size: 12px; color: #ccc; text-decoration: none; border: 1px solid #444; border-radius: 6px; padding: 6px 10px; }
+    .app-header a:hover { color: #fff; border-color: #777; }
+    .beta-pill { font-size: 10px; font-weight: 800; letter-spacing: .08em; background: #fbbf24; color: #1a1a1a; border-radius: 20px; padding: 2px 8px; }
+    .beta-bar { background: #fffbeb; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 1px solid #fde68a; padding: .6rem 1.25rem; font-size: 12px; color: #92400e; }
+
+    .panel { background: #fff; border-radius: 0 0 12px 12px; border: 1px solid #e0e0e0; border-top: 0; }
+    .panel-body { padding: 1.25rem; }
+    .sec-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: .6rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .sec-title .hint { font-weight: 400; color: #888; font-size: 12px; }
+    .divider { border: none; border-top: 1px solid #e5e5e5; margin: 1.25rem 0; }
+
+    .field-label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; }
+    input[type=number], select { width: 100%; padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; }
+    input:focus, select:focus { outline: none; border-color: #999; }
+    .job-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)) minmax(0,1.4fr) minmax(0,1.4fr); gap: 12px; align-items: end; }
+    .job-grid input[type=number] { font-size: 18px; font-family: monospace; padding: 8px 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+    .chips .lbl { font-size: 11px; color: #888; min-width: 34px; }
+    .chip { font-size: 12px; font-family: monospace; color: #555; background: #f5f5f2; border: 1px solid #e0e0e0; border-radius: 20px; padding: 4px 10px; cursor: pointer; }
+    .chip:hover { border-color: #999; color: #1a1a1a; }
+    .chip.on { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
+    .src-note { font-size: 11px; color: #888; margin-top: 8px; }
+
+    .cards4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 1.25rem 0 1rem; }
+    .card  { border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e5e5e5; }
+    .card.yourCost { background: #f5f5f2; border-color: #d1d5db; }
+    .card.quote    { background: #f0fdf4; border-color: #bbf7d0; }
+    .card.profit   { background: #f5f5f2; }
+    .card.grand    { background: #fff; border: 2px solid #93c5fd; }
+    .card-lbl { font-size: 11px; margin-bottom: 4px; color: #666; }
+    .card.quote .card-lbl { color: #166534; }
+    .card.grand .card-lbl { color: #1e40af; }
+    .card-num { font-size: 20px; font-weight: 700; font-family: monospace; }
+    .card.quote .card-num { color: #166534; }
+    .card.grand .card-num { font-size: 24px; }
+    .card-sub { font-size: 10px; margin-top: 4px; color: #888; }
+    .card.quote .card-sub { color: #166534; }
+    .card.grand .card-sub { color: #1e40af; }
+
+    .check { border-radius: 6px; padding: 10px 14px; margin-bottom: 1rem; font-size: 13px; font-weight: 500; border: 1px solid; }
+    .check.ok   { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .check.thin { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .check.loss { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+    .check.none { background: #f5f5f2; border-color: #e5e5e5; color: #555; }
+
+    .market { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .mk-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #666; }
+    .mk-head strong { color: #1a1a1a; font-family: monospace; font-size: 14px; }
+    .sellers { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+    .seller { background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 10px; min-width: 0; }
+    .seller.used { border-color: #1a1a1a; box-shadow: inset 0 0 0 1px #1a1a1a; }
+    .seller .nm { font-size: 11px; color: #666; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .seller .pr { font-family: monospace; font-size: 16px; font-weight: 700; margin-top: 2px; }
+    .seller .nt { font-size: 10.5px; color: #888; margin-top: 2px; }
+    .seller.na .pr { color: #aaa; font-size: 13px; font-weight: 400; font-family: inherit; }
+    .tag { font-size: 9.5px; font-weight: 700; letter-spacing: .04em; border-radius: 20px; padding: 1px 6px; background: #e5e5e5; color: #555; }
+    .tag.ex { background: #dcfce7; color: #166534; }
+    .mk-foot { font-size: 12px; color: #666; display: flex; gap: 6px 16px; flex-wrap: wrap; }
+    .mk-foot strong { color: #1a1a1a; font-family: monospace; }
+
+    .scroll-x { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #e0e0e0; padding: 7px 8px; font-size: 13px; vertical-align: middle; white-space: nowrap; }
+    th { background: #f5f5f2; font-weight: 600; font-size: 12px; color: #555; text-align: center; }
+    td.num { text-align: right; font-family: monospace; }
+    td.qcell { font-family: monospace; font-weight: 600; text-align: right; }
+    tr.cur td { background: #fef3c7; }
+    tr.cur td.qcell { color: #92400e; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .dot.ok { background: #16a34a; } .dot.thin { background: #f59e0b; } .dot.loss { background: #dc2626; } .dot.none { background: #bbb; }
+
+    .settings-btn { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #555; border: 1px solid #ccc; border-radius: 6px; padding: 7px 12px; font-size: 12px; font-family: inherit; cursor: pointer; }
+    .settings-btn:hover { background: #f0f0ed; }
+    .settings { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 8px; padding: 1rem 1.25rem; margin-top: .75rem; }
+    .set-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px 16px; }
+    .set-grid .help { font-size: 10.5px; color: #888; margin-top: 3px; line-height: 1.35; }
+    .set-head { font-size: 11px; font-weight: 700; color: #888; letter-spacing: .06em; text-transform: uppercase; margin: 14px 0 8px; }
+    .set-head:first-child { margin-top: 0; }
+
+    .action-bar { background: #f5f5f2; border-top: 1px solid #e5e5e5; padding: .75rem 1.25rem; display: flex; gap: 8px; flex-wrap: wrap; border-radius: 0 0 12px 12px; }
+    .btn-dark { display: inline-flex; align-items: center; gap: 6px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-dark:hover { background: #333; }
+    .btn-light { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #666; border: 1px solid #ccc; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-light:hover { background: #f0f0ed; color: #333; }
+    button:focus-visible, .chip:focus-visible, a:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+    .copy-box { margin-top: 10px; }
+    .copy-box textarea { width: 100%; font-family: monospace; font-size: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+    .notes { font-size: 12px; color: #777; line-height: 1.55; display: flex; flex-direction: column; gap: 4px; }
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 999; }
+
+    @media (max-width: 760px) {
+      .job-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .job-grid .mat { grid-column: span 3; }
+      .cards4 { grid-template-columns: 1fr 1fr; }
+      .sellers { grid-template-columns: minmax(0,1fr); }
+      .set-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 460px) {
+      .set-grid { grid-template-columns: 1fr; }
+      .card-num { font-size: 17px; } .card.grand .card-num { font-size: 20px; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .beta-bar, .action-bar, .no-print, #settings, .chips, .src-note { display: none !important; }
+      .app-header { background: #fff; border-radius: 0; }
+      .app-header h1 { color: #1a1a1a; } .app-header a { display: none; }
+      .panel { border: 0; }
+      input, select { border: none; padding: 0; background: transparent; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="app-header">
+    <div>
+      <h1>Coba Studios — Sticker Quick Quote <span class="beta-pill">BETA</span></h1>
+      <div class="sub">Die-cut stickers priced from the market &middot; Market data <span id="mk-date">Oct 29, 2026</span> &middot; All prices in CAD</div>
+    </div>
+    <a href="../" class="no-print">Open the live estimator &rarr;</a>
+  </div>
+  <div class="beta-bar">Beta: try it next to the estimator. Nothing here changes the live estimator, its jobs or its inventory.</div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="sec-title">🏷 Sticker job <span class="hint">die-cut, priced by the size of the box around the design</span></div>
+      <div class="job-grid">
+        <div><label class="field-label" for="b-w">Width (in)</label><input type="number" id="b-w" min="0.5" max="48" step="0.25" value="3" inputmode="decimal"></div>
+        <div><label class="field-label" for="b-h">Height (in)</label><input type="number" id="b-h" min="0.5" max="48" step="0.25" value="3" inputmode="decimal"></div>
+        <div><label class="field-label" for="b-q">Quantity</label><input type="number" id="b-q" min="1" max="20000" step="1" value="100" inputmode="numeric"></div>
+        <div class="mat"><label class="field-label" for="b-vinyl">Vinyl</label><select id="b-vinyl"></select></div>
+        <div class="mat"><label class="field-label" for="b-lam">Laminate</label><select id="b-lam"></select></div>
+      </div>
+      <div class="chips" id="size-chips"><span class="lbl">Size</span></div>
+      <div class="chips" id="qty-chips"><span class="lbl">Qty</span></div>
+      <div class="src-note" id="src-note"></div>
+
+      <div class="cards4">
+        <div class="card yourCost"><div class="card-lbl">Your material cost</div><div class="card-num" id="c-cost">$0.00</div><div class="card-sub" id="c-cost-sub">&nbsp;</div></div>
+        <div class="card quote"><div class="card-lbl">Quote before tax</div><div class="card-num" id="c-quote">$0.00</div><div class="card-sub" id="c-quote-sub">&nbsp;</div></div>
+        <div class="card profit"><div class="card-lbl">Over material cost</div><div class="card-num" id="c-profit">$0.00</div><div class="card-sub" id="c-profit-sub">&nbsp;</div></div>
+        <div class="card grand"><div class="card-lbl">Grand total with HST</div><div class="card-num" id="c-total">$0.00</div><div class="card-sub" id="c-total-sub">&nbsp;</div></div>
+      </div>
+      <div class="check none" id="check" role="status">&nbsp;</div>
+
+      <div class="market">
+        <div class="mk-head"><span>Market for this job</span><span>range <strong id="mk-range">-</strong> &middot; middle <strong id="mk-mid">-</strong></span></div>
+        <div class="sellers" id="sellers"></div>
+        <div class="mk-foot"><span id="rule-line"></span><span>Live estimator would quote <strong id="est-price">-</strong></span></div>
+      </div>
+
+      <hr class="divider">
+      <div class="sec-title">Same size, other quantities <span class="hint" id="breaks-hint"></span></div>
+      <div class="scroll-x"><table id="breaks"></table></div>
+
+      <hr class="divider no-print">
+      <div class="no-print">
+        <button type="button" class="settings-btn" id="set-toggle" aria-expanded="false" aria-controls="settings">&#9660; Show pricing settings</button>
+        <div class="settings" id="settings" hidden>
+          <div class="set-head">How the quote is set</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-at">Price at</label>
+              <select id="s-at"><option value="mid">Market middle</option><option value="low">Market low</option><option value="high">Market high</option><option value="sy">Match StickerYou</option><option value="sm">Match Sticker Mule</option><option value="vp">Match VistaPrint</option></select>
+              <div class="help">Which market price the quote starts from.</div></div>
+            <div><label class="field-label" for="s-pct">Adjust (% of that price)</label><input type="number" id="s-pct" min="10" max="300" step="1" value="100">
+              <div class="help">100 = match it. 110 = 10% above. 95 = 5% under.</div></div>
+            <div><label class="field-label" for="s-round">Round the quote to</label>
+              <select id="s-round"><option value="0">The cent</option><option value="0.25">Nearest $0.25</option><option value="0.5">Nearest $0.50</option><option value="1" selected>Nearest $1</option><option value="5">Nearest $5</option></select></div>
+            <div><label class="field-label" for="s-min">Minimum order ($)</label><input type="number" id="s-min" min="0" step="1" value="0">
+              <div class="help">0 = no minimum. Applies before tax.</div></div>
+            <div><label class="field-label" for="s-warn">Warn below (&times; material cost)</label><input type="number" id="s-warn" min="1" max="10" step="0.1" value="1.3">
+              <div class="help">1.3&times; is the lowest markup your estimator uses (1,000+ stickers).</div></div>
+            <div><label class="field-label" for="s-hst">HST (%)</label><input type="number" id="s-hst" min="0" max="25" step="0.5" value="13"></div>
+          </div>
+          <div class="set-head">Material cost (same math as the Vinyl / Roland tab)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-ink">Ink ($ / sq ft)</label><input type="number" id="s-ink" min="0" step="0.05" value="0.50"></div>
+            <div><label class="field-label" for="s-roll">Roll usable width (in)</label><input type="number" id="s-roll" min="1" step="1" value="50"></div>
+            <div><label class="field-label" for="s-over">Cut-mark feed per row (in)</label><input type="number" id="s-over" min="0" step="0.5" value="8">
+              <div class="help">Extra film added for every row of stickers across the roll.</div></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button type="button" class="btn-light" id="s-reset">Reset settings</button>
+            <span class="help" style="font-size:11px;color:#888">Settings are saved on this device only.</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="notes" id="notes">
+        <div><strong>Where the market prices come from.</strong> StickerYou, Sticker Mule and VistaPrint&rsquo;s own price calculators on <span id="mk-date2">Oct 29, 2026</span>, list prices before tax. Sizes or quantities between the captured ones are estimated. VistaPrint only sells squares from 2&Prime; to 5&Prime;, so a 3&Prime; &times; 2&Prime; design is priced as their 3&Prime; &times; 3&Prime;.</div>
+        <div><strong>What&rsquo;s not in &ldquo;material cost&rdquo;.</strong> Design time, setup, weeding, packing and your time at the counter. The &ldquo;over material cost&rdquo; figure has to cover those.</div>
+      </div>
+      <div class="copy-box" id="copy-box" hidden><label class="field-label" for="copy-text">Copy this quote (your browser blocked automatic copying)</label><textarea id="copy-text" rows="6" readonly></textarea></div>
+    </div>
+    <div class="action-bar">
+      <button type="button" class="btn-dark" id="btn-copy">&#128203; Copy quote</button>
+      <button type="button" class="btn-light" id="btn-new">New quote</button>
+      <button type="button" class="btn-light" id="btn-print">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script type="application/json" id="market-data">
+{"captured":"2026-10-29","currency":"CAD","sellers":[
+{"id":"sy","name":"StickerYou","product":"Die-Cut Stickers (white vinyl, semi-gloss, removable)","url":"https://www.stickeryou.com/en-ca/products/die-cut-stickers/623","captured":"2026-10-29","material":"White vinyl, laminated, semi-gloss, removable","shipping":"Shipping extra; standard delivery about 11 days (Nov 9 for an Oct 29 order)","sizing":"area","minQty":1,"sizes":[
+{"w":1,"h":1,"ladder":[[1,6.84],[5,17.26],[10,18.66],[25,37.35],[50,58.64],[100,66.71],[250,103.98],[500,114.81],[1000,164.26],[2000,234.27],[5000,428.81],[10000,689.11],[20000,1134.36]]},
+{"w":1.5,"h":1.5,"ladder":[[1,6.84],[5,18.64],[10,19.84],[25,39.76],[50,62.42],[100,73.17],[250,122.82],[500,146.73],[1000,222.62],[2000,334.83],[5000,682.26],[10000,1135.73],[20000,1923.48]]},
+{"w":2,"h":2,"ladder":[[1,7.31],[5,20.13],[10,21.61],[25,43.38],[50,68.11],[100,75.69],[250,145.56],[500,187.83],[1000,295.1],[2000,460.87],[5000,982.29],[10000,1663.18],[20000,2849.6]]},
+{"w":2.5,"h":2.5,"ladder":[[1,7.31],[5,20.45],[10,23.17],[25,47.44],[50,74.49],[100,85.49],[250,171.87],[500,235.78],[1000,378.8],[2000,608.28],[5000,1328.22],[10000,2274.2],[20000,3926.42]]},
+{"w":3,"h":3,"ladder":[[1,7.31],[5,21.81],[10,25.14],[25,51.81],[50,81.35],[100,109.45],[250,202.73],[500,293.25],[1000,472.38],[2000,775.69],[5000,1639.89],[10000,2827.68],[20000,5189.56]]},
+{"w":3.5,"h":3.5,"ladder":[[1,8.93],[5,25.28],[10,27.99],[25,57.01],[50,89.5],[100,124.35],[250,236.36],[500,352.36],[1000,575.95],[2000,963.11],[5000,2057.74],[10000,3563.37],[20000,6921.24]]},
+{"w":4,"h":4,"ladder":[[1,10.36],[5,26.11],[10,30.43],[25,62.05],[50,97.43],[100,138.63],[250,272.9],[500,418.67],[1000,689.8],[2000,1168.06],[5000,2514.64],[10000,4489.49],[20000,8831.02]]},
+{"w":4.5,"h":4.5,"ladder":[[1,11.98],[5,27.04],[10,33.53],[25,68.38],[50,107.36],[100,156.21],[250,314.52],[500,489.3],[1000,814.46],[2000,1388.91],[5000,2979.75],[10000,5580.01],[20000,11012.06]]},
+{"w":5,"h":5,"ladder":[[1,13.41],[5,28.1],[10,36.63],[25,74.72],[50,117.29],[100,173.78],[250,359.59],[500,565.95],[1000,949.68],[2000,1627.56],[5000,3507.88],[10000,6728.07],[20000,13310.92]]},
+{"w":6,"h":6,"ladder":[[1,15.09],[5,30.51],[10,43.43],[25,88.57],[50,139.03],[100,213.95],[250,454.57],[500,734.39],[1000,1244.78],[2000,2171.72],[5000,4793.63],[10000,9570.82],[20000,18996.42]]},
+{"w":2,"h":1,"ladder":[[1,6.84],[5,18.62],[10,19.79],[25,39.16],[50,61.48],[100,72.5],[250,119.57],[500,140.7],[1000,211.8],[2000,315.92],[5000,650.75],[10000,1079.56],[20000,1822.1]]},
+{"w":3,"h":2,"ladder":[[1,7.31],[5,20.3],[10,22.99],[25,46.99],[50,73.77],[100,84.39],[250,168.96],[500,230.37],[1000,370.17],[2000,592.66],[5000,1291.22],[10000,2209.81],[20000,3811.34]]},
+{"w":4,"h":2,"ladder":[[1,7.31],[5,21.3],[10,24.42],[25,50.01],[50,78.5],[100,93.09],[250,191.05],[500,272.49],[1000,439.22],[2000,715.69],[5000,1582.35],[10000,2720.82],[20000,4751.16]]},
+{"w":4,"h":3,"ladder":[[1,8.84],[5,25.23],[10,27.81],[25,56.63],[50,88.91],[100,123.25],[250,233.93],[500,347.84],[1000,568.41],[2000,949.14],[5000,2026.92],[10000,3508.57],[20000,6789.72]]},
+{"w":5,"h":3,"ladder":[[1,9.98],[5,25.89],[10,29.84],[25,60.86],[50,95.54],[100,135.38],[250,263.18],[500,401.27],[1000,659.52],[2000,1114.08],[5000,2394.76],[10000,4216.86],[20000,8340.56]]},
+{"w":6,"h":4,"ladder":[[1,13.16],[5,27.88],[10,35.94],[25,73.31],[50,115.09],[100,170.21],[250,350.14],[500,549.92],[1000,921.46],[2000,1577.97],[5000,3392.8],[10000,6493.8],[20000,12842.38]]}
+]},
+{"id":"sm","name":"Sticker Mule","product":"Die cut stickers (matte vinyl)","url":"https://www.stickermule.com/ca/products/die-cut-stickers","captured":"2026-10-29","material":"Thick matte vinyl","shipping":"Free shipping included; 4-day turnaround","sizing":"area","minQty":10,"sizes":[
+{"w":1,"h":1,"ladder":[[10,20],[25,39],[50,68],[100,77],[200,91],[250,97],[300,103],[500,126],[1000,174],[2000,256],[3000,329],[5000,460],[10000,743]]},
+{"w":1.5,"h":1.5,"ladder":[[10,21],[25,42],[50,73],[100,86],[200,107],[250,117],[300,126],[500,160],[1000,234],[2000,362],[3000,476],[5000,684],[10000,1138]]},
+{"w":2,"h":2,"ladder":[[10,23],[25,46],[50,80],[100,97],[200,127],[250,140],[300,153],[500,202],[1000,308],[2000,493],[3000,659],[5000,962],[10000,1629]]},
+{"w":2.5,"h":2.5,"ladder":[[10,25],[25,50],[50,87],[100,110],[200,150],[250,168],[300,186],[500,251],[1000,396],[2000,647],[3000,874],[5000,1288],[10000,2206]]},
+{"w":3,"h":3,"ladder":[[10,27],[25,55],[50,96],[100,125],[200,177],[250,200],[300,223],[500,307],[1000,495],[2000,822],[3000,1118],[5000,1659],[10000,2861]]},
+{"w":3.5,"h":3.5,"ladder":[[10,30],[25,60],[50,105],[100,142],[200,206],[250,236],[300,264],[500,370],[1000,605],[2000,1017],[3000,1390],[5000,2072],[10000,3591]]},
+{"w":4,"h":4,"ladder":[[10,32],[25,66],[50,116],[100,160],[200,238],[250,274],[300,309],[500,438],[1000,726],[2000,1231],[3000,1688],[5000,2525],[10000,4412]]},
+{"w":4.5,"h":4.5,"ladder":[[10,35],[25,72],[50,127],[100,180],[200,273],[250,316],[300,358],[500,513],[1000,857],[2000,1462],[3000,2011],[5000,3016],[10000,5497]]},
+{"w":5,"h":5,"ladder":[[10,39],[25,79],[50,139],[100,201],[200,311],[250,362],[300,410],[500,592],[1000,998],[2000,1711],[3000,2357],[5000,3542],[10000,6710]]},
+{"w":6,"h":6,"ladder":[[10,46],[25,94],[50,165],[100,248],[200,394],[250,461],[300,526],[500,768],[1000,1307],[2000,2256],[3000,3118],[5000,4819],[10000,9519]]},
+{"w":2,"h":1,"ladder":[[10,21],[25,42],[50,72],[100,84],[200,104],[250,113],[300,121],[500,153],[1000,223],[2000,342],[3000,448],[5000,642],[10000,1064]]},
+{"w":3,"h":2,"ladder":[[10,25],[25,50],[50,86],[100,109],[200,148],[250,165],[300,182],[500,246],[1000,386],[2000,631],[3000,851],[5000,1253],[10000,2144]]},
+{"w":4,"h":2,"ladder":[[10,26],[25,53],[50,93],[100,120],[200,167],[250,189],[300,210],[500,287],[1000,459],[2000,760],[3000,1031],[5000,1527],[10000,2628]]},
+{"w":4,"h":3,"ladder":[[10,29],[25,60],[50,104],[100,141],[200,204],[250,233],[300,261],[500,365],[1000,597],[2000,1003],[3000,1369],[5000,2042],[10000,3535]]},
+{"w":5,"h":3,"ladder":[[10,32],[25,65],[50,113],[100,155],[200,230],[250,264],[300,297],[500,420],[1000,694],[2000,1175],[3000,1610],[5000,2407],[10000,4180]]},
+{"w":6,"h":4,"ladder":[[10,38],[25,78],[50,136],[100,197],[200,303],[250,352],[300,399],[500,576],[1000,969],[2000,1659],[3000,2285],[5000,3433],[10000,6454]]}
+]},
+{"id":"vp","name":"VistaPrint","product":"Custom Die-Cut Sticker Singles (White Plastic BOPP)","url":"https://www.vistaprint.ca/labels-stickers/die-cut-sticker-singles","captured":"2026-10-29","material":"White plastic (BOPP), coated","shipping":"Free standard shipping (about 11 days); faster delivery extra","sizing":"squares","minQty":10,"sale":"20% off 25+ on capture day","sizes":[
+{"w":2,"h":2,"ladder":[[10,14.99,14.99],[25,34,27.2],[50,61,48.8],[100,95,76],[150,126,100.8],[200,147,117.6],[250,153,122.4],[300,164,131.2],[400,198,158.4],[500,213,170.4],[1000,289,231.2],[1500,387,309.6],[2000,490,392],[2500,576,460.8],[3000,653,522.4],[4000,811,648.8],[5000,980,784]]},
+{"w":2.5,"h":2.5,"ladder":[[10,21.99,21.99],[25,42,33.6],[50,81,64.8],[100,116,92.8],[150,148,118.4],[200,163,130.4],[250,174,139.2],[300,190,152],[400,235,188],[500,245,196],[1000,366,292.8],[1500,485,388],[2000,609,487.2],[2500,714,571.2],[3000,811,648.8],[4000,1001,800.8],[5000,1214,971.2]]},
+{"w":3,"h":3,"ladder":[[10,24.99,24.99],[25,45,36],[50,85,68],[100,132,105.6],[150,158,126.4],[200,179,143.2],[250,198,158.4],[300,229,183.2],[400,278,222.4],[500,289,231.2],[1000,451,360.8],[1500,571,456.8],[2000,734,587.2],[2500,853,682.4],[3000,975,780],[4000,1190,952],[5000,1450,1160]]},
+{"w":3.5,"h":3.5,"ladder":[[10,28.99,28.99],[25,54,43.2],[50,99,79.2],[100,147,117.6],[150,191,152.8],[200,213,170.4],[250,234,187.2],[300,261,208.8],[400,331,264.8],[500,360,288],[1000,549,439.2],[1500,718,574.4],[2000,881,704.8],[2500,1052,841.6],[3000,1225,980],[4000,1545,1236],[5000,1835,1468]]},
+{"w":4,"h":4,"ladder":[[10,31.99,31.99],[25,61,48.8],[50,116,92.8],[100,158,126.4],[150,214,171.2],[200,240,192],[250,273,218.4],[300,305,244],[400,381,304.8],[500,429,343.2],[1000,653,522.4],[1500,853,682.4],[2000,1029,823.2],[2500,1251,1000.8],[3000,1475,1180],[4000,1910,1528],[5000,2220,1776]]},
+{"w":4.5,"h":4.5,"ladder":[[10,34.99,34.99],[25,67,53.6],[50,126,100.8],[100,193,154.4],[150,234,187.2],[200,261,208.8],[250,305,244],[300,336,268.8],[400,424,339.2],[500,485,388],[1000,724,579.2],[1500,1011,808.8],[2000,1250,1000],[2500,1555,1244],[3000,1865,1492],[4000,2330,1864],[5000,2770,2216]]},
+{"w":5,"h":5,"ladder":[[10,39.99,39.99],[25,72,57.6],[50,137,109.6],[100,219,175.2],[150,250,200],[200,283,226.4],[250,342,273.6],[300,371,296.8],[400,462,369.6],[500,544,435.2],[1000,800,640],[1500,1153,922.4],[2000,1460,1168],[2500,1825,1460],[3000,2180,1744],[4000,2720,2176],[5000,3290,2632]]}
+]}
+]}
+</script>
+<script>
+// Sticker price grid logic: competitor lookup (exact or estimated) + Coba estimator port.
+(function (root) {
+  function ladderAt(ladder, q, col) {
+    var first = ladder[0][0], last = ladder[ladder.length - 1][0];
+    if (q < first) return { na: 'min', limit: first };
+    if (q > last) return { na: 'max', limit: last };
+    for (var i = 0; i < ladder.length; i++) {
+      var r = ladder[i], v = r[col] != null ? r[col] : r[1];
+      if (r[0] === q) return { p: v, exact: true };
+      if (r[0] > q) {
+        var a = ladder[i - 1], av = a[col] != null ? a[col] : a[1];
+        var k = Math.log(v / av) / Math.log(r[0] / a[0]);
+        return { p: av * Math.pow(q / a[0], k), exact: false };
+      }
+    }
+    return { na: 'max', limit: last };
+  }
+
+  function norm(s) { var W = Math.max(s.w, s.h), H = Math.min(s.w, s.h); return { W: W, H: H, A: W * H, s: s }; }
+
+  // Returns {p, exact, note} or {na, note}
+  function sellerPrice(seller, w, h, q, useSale) {
+    var col = useSale ? 2 : 1;
+    var W = Math.max(w, h), H = Math.min(w, h), A = W * H;
+    var sizes = seller.sizes.map(norm);
+    if (seller.sizing === 'squares') {
+      var fits = sizes.filter(function (z) { return z.W >= W - 1e-9; }).sort(function (a, b) { return a.W - b.W; });
+      if (!fits.length) return { na: 'size', note: 'Largest size is ' + sizes.reduce(function (m, z) { return Math.max(m, z.W); }, 0) + '"' };
+      var z = fits[0], r = ladderAt(z.s.ladder, q, col);
+      if (r.na) return { na: r.na, note: r.na === 'min' ? 'Minimum ' + r.limit : 'Online max ' + r.limit.toLocaleString() };
+      var same = Math.abs(z.W - W) < 1e-9 && Math.abs(z.H - H) < 1e-9;
+      return { p: r.p, exact: same && r.exact, note: same ? (r.exact ? '' : 'Between quantity tiers') : 'Priced as their ' + z.W + '" x ' + z.W + '"' };
+    }
+    var ex = sizes.filter(function (z) { return Math.abs(z.W - W) < 1e-9 && Math.abs(z.H - H) < 1e-9; })[0];
+    if (ex) {
+      var re = ladderAt(ex.s.ladder, q, col);
+      if (re.na) return { na: re.na, note: re.na === 'min' ? 'Minimum ' + re.limit : 'Online max ' + re.limit.toLocaleString() };
+      return { p: re.p, exact: re.exact, note: re.exact ? '' : 'Between quantity tiers' };
+    }
+    var sorted = sizes.slice().sort(function (a, b) { return a.A - b.A || a.W - b.W; });
+    if (A < sorted[0].A - 1e-9 || A > sorted[sorted.length - 1].A + 1e-9) return { na: 'size', note: 'Outside captured sizes' };
+    var lo = null, hi = null;
+    sorted.forEach(function (z) { if (z.A <= A + 1e-9) lo = z; });
+    for (var i = 0; i < sorted.length; i++) { if (sorted[i].A >= A - 1e-9) { hi = sorted[i]; break; } }
+    var rl = ladderAt(lo.s.ladder, q, col), rh = ladderAt(hi.s.ladder, q, col);
+    if (rl.na || rh.na) { var n = rl.na ? rl : rh; return { na: n.na, note: n.na === 'min' ? 'Minimum ' + n.limit : 'Online max ' + n.limit.toLocaleString() }; }
+    var p = hi.A === lo.A ? (rl.p + rh.p) / 2 : rl.p + (A - lo.A) / (hi.A - lo.A) * (rh.p - rl.p);
+    return { p: p, exact: false, note: 'Estimated from nearby sizes' };
+  }
+
+  // Port of the estimator's sticker math (rCalc + stkTiers), built-in default costs.
+  var STK_TIERS = [
+    { from: 1, to: 1, markup: 1.8, minEach: 12.00, label: 'Single' },
+    { from: 2, to: 12, markup: 3.5, minEach: 2.50, label: 'Small qty' },
+    { from: 13, to: 50, markup: 2.7, minEach: 1.50, label: 'Small run' },
+    { from: 51, to: 100, markup: 2.1, minEach: 1.00, label: 'Medium run' },
+    { from: 101, to: 250, markup: 1.8, minEach: 0.75, label: 'Larger run' },
+    { from: 251, to: 500, markup: 1.5, minEach: 0.60, label: 'Volume' },
+    { from: 501, to: 9999, markup: 1.3, minEach: 0.50, label: 'High volume' }
+  ];
+  var COBA = { rollW: 50, ink: 0.50, vinyl: 0.56, lam: 0.56, overhead: 8 };
+  function cobaPrice(w, h, q, lam) {
+    var mat = COBA.vinyl + COBA.ink + (lam ? COBA.lam : 0);
+    var bigger = Math.max(w, h), smaller = Math.min(w, h);
+    var across = bigger <= COBA.rollW ? bigger : smaller, feed = bigger <= COBA.rollW ? smaller : bigger;
+    var ipp = Math.max(1, Math.floor(COBA.rollW / across));
+    var passes = Math.ceil(q / ipp);
+    var film = passes * (COBA.rollW * (feed + COBA.overhead)) / 144;
+    var cost = film * mat;
+    var tier = STK_TIERS.filter(function (t) { return q >= t.from && q <= t.to; })[0] || STK_TIERS[STK_TIERS.length - 1];
+    var byMarkup = cost * tier.markup, byMin = q * tier.minEach;
+    return { p: Math.max(byMarkup, byMin), cost: cost, tier: tier, minRules: byMin >= byMarkup };
+  }
+
+  function market(sellers, w, h, q) {
+    var vals = [];
+    sellers.forEach(function (s) { var r = sellerPrice(s, w, h, q, false); if (!r.na) vals.push(r.p); });
+    if (!vals.length) return null;
+    vals.sort(function (a, b) { return a - b; });
+    var n = vals.length, med = n % 2 ? vals[(n - 1) / 2] : (vals[n / 2 - 1] + vals[n / 2]) / 2;
+    return { low: vals[0], high: vals[n - 1], median: med, n: n };
+  }
+
+  function position(p, m) {
+    if (!m) return null;
+    if (p > m.high * 1.02) return 'above';
+    if (p < m.low * 0.98) return 'below';
+    return 'in';
+  }
+
+  var api = { ladderAt: ladderAt, sellerPrice: sellerPrice, cobaPrice: cobaPrice, market: market, position: position, STK_TIERS: STK_TIERS, COBA: COBA };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.StickerGrid = api;
+})(this);
+
+</script>
+<script>
+const DEFAULT_VINYL = [
+  {name:"Matte Vinyl",               cost:0.56, code:"MAC-GV528P-W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Gloss Vinyl",               cost:0.56, code:"MAC-GV529P-W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Matte Laminate",            cost:0.56, code:"MAC-LUV8254W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Gloss Laminate",            cost:0.63, code:"MAC-LUV80554-W54L150",  supplier:"Pony Graphics", notes:"54x150ft  - $360/roll  - calc: $360/675sqft x1.18"},
+  {name:"Heat Press Vinyl",          cost:2.69, code:"BFLEX",                 supplier:"Pony Graphics", notes:"20x81ft  - $308.31/roll"},
+  {name:"Perforated Vinyl 60/40",    cost:0.80, code:"VMOWV-UV",              supplier:"Pony Graphics", notes:"54x164ft  - $500/roll"},
+  {name:"Poly Banner",               cost:0.43, code:"VMSMPB",                supplier:"Pony Graphics", notes:"54x100ft  - $163/roll"},
+  {name:"15oz Banner Premium 54in",  cost:0.64, code:"VMPETBO",               supplier:"Pony Graphics", notes:"54x164ft  - $398.50/roll"},
+  {name:"Ultraflex Superprint Plus Matte 13oz 38in", cost:0.35, code:"VMJFM0965050",          supplier:"Pony Graphics", notes:"38x164ft  - $155.21/roll - 519 sqft"},
+  {name:"Vision CANVAS matte/satin", cost:0.75, code:"VMACCF",                supplier:"Pony Graphics", notes:"54x100ft  - $285/roll"},
+  {name:"Mactac M-Dot Removable",    cost:0.66, code:"MAC-MD228",             supplier:"Pony Graphics", notes:"54x150ft  - $380/roll"},
+  {name:"Holographic",               cost:2.01, code:"RESM-HOLO",             supplier:"Pony Graphics", notes:"15x75ft  - $160/roll"},
+  {name:"180gsm Photo Paper",        cost:2.01, code:"VMSMPP",                supplier:"Pony Graphics", notes:"15x75ft  - $160/roll - NOTE: same cost as holographic"},
+  {name:"Strip Mesh Pro LTX 9oz",    cost:0.59, code:"VMSMPLLTX",             supplier:"Pony Graphics", notes:"54x164ft - price not on record"},
+  {name:"MACTAC Frosted Printable",  cost:1.84, code:"MAC-JJ-5796",           supplier:"Pony Graphics", notes:"54x75ft  - $525/roll"},
+  {name:"Removable Interior",        cost:1.00, code:"MAC-RO628",             supplier:"Pony Graphics", notes:"54x100ft  - $380.79/roll"},
+  {name:"Dry Erase Laminate",        cost:0.65, code:"",                      supplier:"",              notes:"No roll price on record - estimate"},
+  {name:"Razor Optically Clear Gloss",cost:0.96,code:"MAC-LF3648G",           supplier:"Pony Graphics", notes:"54x150ft  - $546.38/roll"},
+  {name:"Static Cling",              cost:0.60, code:"MAC-WVC-109",           supplier:"Pony Graphics", notes:"54x150ft  - $344.30/roll"},
+  {name:"Reflective White 24x30",    cost:2.75, code:"Nikkalite Eng. grade",  supplier:"Spicers",       notes:"24x30ft  - $140/roll - lynne.sauve@spicers.ca"},
+  {name:"Reflective White 24x150",   cost:2.01, code:"Nikkalite Eng. grade",  supplier:"Spicers",       notes:"24x150ft  - $510.20/roll"},
+  {name:"Magnetic 30mil 24x50",      cost:1.65, code:"30 mil",                supplier:"Spicers",       notes:"24x50ft  - $140/roll"},
+  {name:"Gold Leaf",                 cost:6.00, code:"",                      supplier:"SignSupply",     notes:"No roll size on record - estimate"},
+  {name:"Wrap Vinyl",                cost:1.05, code:"MAC_GV1029SW5",         supplier:"Pony Graphics", notes:"54x150ft  - $600/roll"},
+  {name:"Wrap Laminate",             cost:1.05, code:"MAC-LF36485415",        supplier:"Pony Graphics", notes:"54x150ft  - $600/roll"},
+  {name:"Eco Matte Laminate",        cost:0.22, code:"Vision",                supplier:"Pony Graphics", notes:"54x150ft  - $125/roll - Vision brand"},
+  {name:"Eco Glossy Laminate",       cost:0.22, code:"Vision",                supplier:"Pony Graphics", notes:"54x150ft  - $125/roll - Vision brand"},
+  {name:"White Backed Opaque",       cost:0.51, code:"Mactac",                supplier:"Pony Graphics", notes:"54x150ft  - $290/roll"},
+  {name:"White Backed Opaque 4mil (Vision)",cost:0.31, code:"VMPVM4P54150",          supplier:"Pony Graphics", notes:"54x150ft  - $175.95/roll - Vision Media Print Vinyl 4mil Matt Permanent"},
+  {name:"Anti Graffiti Laminate",    cost:0.79, code:"MAC-SAG38",             supplier:"Pony Graphics", notes:"54x150ft  - $450/roll"},
+];
+
+</script>
+<script>
+(function(){
+  'use strict';
+  var G = window.StickerGrid;
+  var MARKET = JSON.parse(document.getElementById('market-data').textContent);
+  var SELLERS = MARKET.sellers;
+  var SETTINGS_KEY = 'coba-beta-sticker-v1';      // beta-only key
+  var INVENTORY_KEY = 'coba-inventory-v2';        // live estimator's inventory: READ ONLY, never written here
+  var DEFAULTS = { at:'mid', pct:100, round:1, min:0, warn:1.3, hst:13, ink:0.50, roll:50, over:8, vinyl:'Matte Vinyl', lam:'Matte Laminate' };
+  var SIZE_PRESETS = [[2,2],[3,3],[4,4],[5,5],[3,2],[4,2]];
+  var QTY_PRESETS = [25,50,100,250,500,1000];
+  var BREAK_QTYS = [10,25,50,100,250,500,1000,2500,5000];
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ---------- settings (beta-only storage) ----------
+  var S = loadSettings();
+  function loadSettings(){
+    var s = {}; for (var k in DEFAULTS) s[k] = DEFAULTS[k];
+    try { var raw = localStorage.getItem(SETTINGS_KEY); if (raw) { var o = JSON.parse(raw); for (var j in DEFAULTS) if (o && o[j] != null) s[j] = o[j]; } } catch (e) {}
+    return s;
+  }
+  function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(S)); } catch (e) {} }
+
+  // ---------- materials: saved inventory on this device (read only), else built-in defaults ----------
+  var vinylList = DEFAULT_VINYL, invSource = 'default';
+  try {
+    var inv = JSON.parse(localStorage.getItem(INVENTORY_KEY) || 'null');
+    if (inv && Array.isArray(inv.vinyl) && inv.vinyl.length) { vinylList = inv.vinyl; invSource = 'saved'; }
+  } catch (e) {}
+  vinylList = vinylList.filter(function(v){ return v && typeof v.name === 'string' && isFinite(+v.cost); });
+  var lamList = vinylList.filter(function(v){ return v.name.toLowerCase().indexOf('lam') >= 0; });
+  var printList = vinylList.filter(function(v){ return v.name.toLowerCase().indexOf('lam') < 0; });
+  function fillSelect(sel, list, chosen, withNone){
+    var html = withNone ? '<option value="">None</option>' : '';
+    list.forEach(function(v){ html += '<option value="' + esc(v.name) + '">' + esc(v.name) + ' ($' + (+v.cost).toFixed(2) + '/sqft)</option>'; });
+    sel.innerHTML = html;
+    var names = list.map(function(v){ return v.name; });
+    sel.value = names.indexOf(chosen) >= 0 ? chosen : (withNone ? '' : (names[0] || ''));
+  }
+  function costOf(list, name){ for (var i = 0; i < list.length; i++) if (list[i].name === name) return +list[i].cost; return 0; }
+
+  // ---------- helpers ----------
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function money(v){ return '$' + (+v).toLocaleString('en-CA', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+  function each(v, q){ var e = v / q; return '$' + e.toFixed(e < 0.1 ? 3 : 2) + ' each'; }
+  function num(id, fallback){ var v = parseFloat($(id).value); return isFinite(v) ? v : fallback; }
+  function roundTo(v, step){ return step > 0 ? Math.round(v / step) * step : Math.round(v * 100) / 100; }
+
+  // Same math as the estimator's sticker rows (rCalc), with the chosen materials.
+  var TIERS = G.STK_TIERS;
+  function material(w, h, q){
+    var mat = costOf(printList, $('b-vinyl').value) + S.ink + (lamName() ? costOf(lamList, lamName()) : 0);
+    var bigger = Math.max(w, h), smaller = Math.min(w, h), rollW = S.roll > 0 ? S.roll : 50;
+    var across = bigger <= rollW ? bigger : smaller, feed = bigger <= rollW ? smaller : bigger;
+    var ipp = Math.max(1, Math.floor(rollW / across)), passes = Math.ceil(q / ipp);
+    var film = passes * (rollW * (feed + S.over)) / 144;
+    return { cost: film * mat, film: film, perSqft: mat };
+  }
+  function lamName(){ return $('b-lam').value; }
+  function estimatorPrice(w, h, q, cost){
+    var t = TIERS.filter(function(x){ return q >= x.from && q <= x.to; })[0] || TIERS[TIERS.length - 1];
+    return Math.max(cost * t.markup, q * t.minEach);
+  }
+
+  var RULE_NAMES = { mid:'the market middle', low:'the market low', high:'the market high', sy:'StickerYou', sm:'Sticker Mule', vp:'VistaPrint' };
+  function quote(w, h, q){
+    var prices = {}, m = G.market(SELLERS, w, h, q);
+    SELLERS.forEach(function(s){ prices[s.id] = G.sellerPrice(s, w, h, q, false); });
+    var mat = material(w, h, q), est = estimatorPrice(w, h, q, mat.cost);
+    var base = null, basis = '', fellBack = false;
+    if (S.at === 'mid' || S.at === 'low' || S.at === 'high') {
+      if (m) { base = S.at === 'mid' ? m.median : S.at === 'low' ? m.low : m.high; basis = RULE_NAMES[S.at]; }
+    } else if (prices[S.at] && !prices[S.at].na) { base = prices[S.at].p; basis = RULE_NAMES[S.at]; }
+    else if (m) { base = m.median; basis = 'the market middle'; fellBack = true; }
+    var noMarket = base == null;
+    if (noMarket) { base = est; basis = 'the live estimator (no market data for this job)'; }
+    var raw = noMarket ? base : base * (S.pct / 100);
+    var rounded = roundTo(raw, +S.round);
+    var minApplied = S.min > 0 && rounded < S.min;
+    var qt = minApplied ? S.min : rounded;
+    var x = mat.cost > 0 ? qt / mat.cost : Infinity;
+    var status = qt < mat.cost - 0.005 ? 'loss' : (x < S.warn ? 'thin' : 'ok');
+    return { q:q, m:m, prices:prices, mat:mat, est:est, base:base, basis:basis, fellBack:fellBack, noMarket:noMarket, raw:raw, quote:qt, minApplied:minApplied, x:x, status:status };
+  }
+
+  // ---------- render ----------
+  var state = { w:3, h:3, q:100 };
+  function readJob(){
+    var w = num('b-w', 0), h = num('b-h', 0), q = Math.round(num('b-q', 0));
+    state.w = w > 0 ? w : 0; state.h = h > 0 ? h : 0; state.q = q > 0 ? q : 0;
+  }
+  function chipsOn(){
+    Array.prototype.forEach.call(document.querySelectorAll('#size-chips .chip'), function(b){ b.classList.toggle('on', +b.dataset.w === state.w && +b.dataset.h === state.h); });
+    Array.prototype.forEach.call(document.querySelectorAll('#qty-chips .chip'), function(b){ b.classList.toggle('on', +b.dataset.q === state.q); });
+  }
+  function render(){
+    chipsOn();
+    var w = state.w, h = state.h, q = state.q;
+    if (!(w > 0 && h > 0 && q > 0)) {
+      ['c-cost','c-quote','c-profit','c-total'].forEach(function(id){ $(id).textContent = '$0.00'; });
+      $('check').className = 'check none'; $('check').textContent = 'Enter a width, height and quantity.';
+      $('sellers').innerHTML = ''; $('breaks').innerHTML = ''; return;
+    }
+    var r = quote(w, h, q), hst = r.quote * S.hst / 100;
+    $('c-cost').textContent = money(r.mat.cost);
+    $('c-cost-sub').textContent = r.mat.film.toFixed(1) + ' sq ft of film at $' + r.mat.perSqft.toFixed(2);
+    $('c-quote').textContent = money(r.quote);
+    $('c-quote-sub').textContent = each(r.quote, q) + (r.minApplied ? ' - minimum order' : '');
+    $('c-profit').textContent = money(r.quote - r.mat.cost);
+    $('c-profit-sub').textContent = isFinite(r.x) ? r.x.toFixed(1) + '× material cost' : '';
+    $('c-total').textContent = money(r.quote + hst);
+    $('c-total-sub').textContent = 'incl. HST ' + money(hst);
+    var ck = $('check');
+    ck.className = 'check ' + r.status;
+    if (r.status === 'loss') ck.textContent = '✖ Below your material cost: this quote loses money. Walk away or quote higher.';
+    else if (r.status === 'thin') ck.textContent = '⚠ Thin: ' + r.x.toFixed(2) + '× material cost, under your ' + (+S.warn).toFixed(1) + '× warning line. Fine for a good customer, risky as a habit.';
+    else ck.textContent = '✔ Healthy: ' + r.x.toFixed(1) + '× material cost, ' + money(r.quote - r.mat.cost) + ' over materials to cover your time.';
+
+    // market
+    $('mk-range').textContent = r.m ? (r.m.n > 1 ? money(r.m.low) + ' - ' + money(r.m.high) : money(r.m.low)) : 'n/a';
+    $('mk-mid').textContent = r.m ? money(r.m.median) : 'n/a';
+    $('sellers').innerHTML = SELLERS.map(function(s){
+      var p = r.prices[s.id], used = !r.noMarket && !r.fellBack && S.at === s.id;
+      if (p.na) return '<div class="seller na"><div class="nm">' + esc(s.name) + '</div><div class="pr">Not offered</div><div class="nt">' + esc(p.note) + '</div></div>';
+      var sale = null; if (s.id === 'vp') { var ps = G.sellerPrice(s, w, h, q, true); if (!ps.na && ps.p < p.p - 0.005) sale = ps.p; }
+      var note = [p.note, sale != null ? 'sale today ' + money(sale) : ''].filter(Boolean).join(' - ');
+      return '<div class="seller' + (used ? ' used' : '') + '"><div class="nm">' + esc(s.name) + ' <span class="tag' + (p.exact ? ' ex' : '') + '">' + (p.exact ? 'EXACT' : 'EST.') + '</span></div>' +
+        '<div class="pr">' + money(p.p) + '</div><div class="nt">' + esc(each(p.p, q)) + (note ? ' - ' + esc(note) : '') + '</div></div>';
+    }).join('');
+    var rl = 'Quote = ' + (r.noMarket ? r.basis : (S.pct == 100 ? r.basis : S.pct + '% of ' + r.basis));
+    if (r.fellBack) rl += ' (' + RULE_NAMES[S.at] + ' does not offer this job)';
+    if (+S.round > 0) rl += ', rounded to the nearest $' + (+S.round).toFixed(+S.round < 1 ? 2 : 0);
+    $('rule-line').textContent = rl;
+    $('est-price').textContent = money(r.est);
+
+    // price breaks
+    var qs = BREAK_QTYS.slice(); if (qs.indexOf(q) < 0) qs.push(q); qs.sort(function(a,b){ return a - b; });
+    var t = '<thead><tr><th>Qty</th><th>Market middle</th><th>Your quote</th><th>Each</th><th>Material</th><th>&times; cost</th><th>Live estimator</th></tr></thead><tbody>';
+    qs.forEach(function(qq){
+      var rr = quote(w, h, qq);
+      t += '<tr' + (qq === q ? ' class="cur"' : '') + '><td class="qcell">' + qq.toLocaleString('en-CA') + '</td>' +
+        '<td class="num">' + (rr.m ? money(rr.m.median) : 'n/a') + '</td>' +
+        '<td class="num"><span class="dot ' + rr.status + '"></span>' + money(rr.quote) + '</td>' +
+        '<td class="num">' + each(rr.quote, qq).replace(' each', '') + '</td>' +
+        '<td class="num">' + money(rr.mat.cost) + '</td>' +
+        '<td class="num">' + (isFinite(rr.x) ? rr.x.toFixed(1) + '×' : '') + '</td>' +
+        '<td class="num">' + money(rr.est) + '</td></tr>';
+    });
+    $('breaks').innerHTML = t + '</tbody>';
+    $('breaks-hint').textContent = (w + '" x ' + h + '"') + ' - handy when a customer asks "what if I get more?"';
+  }
+
+  // ---------- copy quote ----------
+  function quoteText(){
+    var r = quote(state.w, state.h, state.q), hst = r.quote * S.hst / 100;
+    var mat = $('b-vinyl').value.toLowerCase() + (lamName() ? ', ' + lamName().toLowerCase() : '');
+    return 'Coba Studios - sticker quote\n' +
+      state.q.toLocaleString('en-CA') + ' die-cut stickers, ' + state.w + '" x ' + state.h + '", ' + mat + '\n' +
+      money(r.quote) + ' before tax (' + each(r.quote, state.q) + ')\n' +
+      'HST ' + S.hst + '%: ' + money(hst) + '\n' +
+      'Total: ' + money(r.quote + hst);
+  }
+  function toast(msg){ var t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(function(){ t.style.display = 'none'; }, 2200); }
+  function showCopyBox(txt){ $('copy-box').hidden = false; var ta = $('copy-text'); ta.value = txt; ta.focus(); ta.select(); }
+
+  // ---------- wire up ----------
+  function buildChips(){
+    SIZE_PRESETS.forEach(function(s){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = s[0] + '×' + s[1]; b.dataset.w = s[0]; b.dataset.h = s[1];
+      b.addEventListener('click', function(){ $('b-w').value = s[0]; $('b-h').value = s[1]; readJob(); render(); }); $('size-chips').appendChild(b); });
+    QTY_PRESETS.forEach(function(q){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = q.toLocaleString('en-CA'); b.dataset.q = q;
+      b.addEventListener('click', function(){ $('b-q').value = q; readJob(); render(); }); $('qty-chips').appendChild(b); });
+  }
+  var SET_FIELDS = { 's-at':'at', 's-pct':'pct', 's-round':'round', 's-min':'min', 's-warn':'warn', 's-hst':'hst', 's-ink':'ink', 's-roll':'roll', 's-over':'over' };
+  function settingsToForm(){ for (var id in SET_FIELDS) $(id).value = S[SET_FIELDS[id]]; }
+  function formToSettings(){
+    S.at = $('s-at').value; S.round = +$('s-round').value;
+    S.pct = Math.max(1, num('s-pct', DEFAULTS.pct)); S.min = Math.max(0, num('s-min', 0)); S.warn = Math.max(0, num('s-warn', DEFAULTS.warn));
+    S.hst = Math.max(0, num('s-hst', DEFAULTS.hst)); S.ink = Math.max(0, num('s-ink', DEFAULTS.ink)); S.roll = Math.max(1, num('s-roll', DEFAULTS.roll)); S.over = Math.max(0, num('s-over', DEFAULTS.over));
+    S.vinyl = $('b-vinyl').value; S.lam = $('b-lam').value;
+    saveSettings();
+  }
+  function init(){
+    var d = new Date(MARKET.captured + 'T12:00:00');
+    var ds = d.toLocaleDateString('en-CA', { month:'short', day:'numeric', year:'numeric' });
+    $('mk-date').textContent = ds; $('mk-date2').textContent = ds;
+    fillSelect($('b-vinyl'), printList, S.vinyl, false);
+    fillSelect($('b-lam'), lamList, S.lam, true);
+    $('src-note').textContent = invSource === 'saved' ? 'Material costs come from the inventory saved on this device (read only).' : 'No saved inventory on this device, so material costs use the estimator\'s built-in defaults.';
+    settingsToForm(); buildChips();
+    ['b-w','b-h','b-q'].forEach(function(id){ $(id).addEventListener('input', function(){ readJob(); render(); }); });
+    ['b-vinyl','b-lam'].forEach(function(id){ $(id).addEventListener('change', function(){ formToSettings(); render(); }); });
+    Object.keys(SET_FIELDS).forEach(function(id){ $(id).addEventListener($(id).tagName === 'SELECT' ? 'change' : 'input', function(){ formToSettings(); render(); }); });
+    $('set-toggle').addEventListener('click', function(){ var open = $('settings').hidden; $('settings').hidden = !open; this.setAttribute('aria-expanded', String(open)); this.innerHTML = open ? '&#9650; Hide pricing settings' : '&#9660; Show pricing settings'; });
+    $('s-reset').addEventListener('click', function(){ for (var k in DEFAULTS) S[k] = DEFAULTS[k]; saveSettings(); settingsToForm(); fillSelect($('b-vinyl'), printList, S.vinyl, false); fillSelect($('b-lam'), lamList, S.lam, true); render(); toast('Settings reset'); });
+    $('btn-new').addEventListener('click', function(){ $('b-w').value = 3; $('b-h').value = 3; $('b-q').value = 100; $('copy-box').hidden = true; readJob(); render(); });
+    $('btn-print').addEventListener('click', function(){ window.print(); });
+    $('btn-copy').addEventListener('click', function(){
+      var txt = quoteText();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function(){ $('copy-box').hidden = true; toast('Quote copied'); }, function(){ showCopyBox(txt); });
+      } else { showCopyBox(txt); }
+    });
+    readJob(); render();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
