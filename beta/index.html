@@ -409,6 +409,8 @@ const DEFAULT_VINYL = [
   var QTY_PRESETS = [25,50,100,250,500,1000];
   var BREAK_QTYS = [10,25,50,100,250,500,1000,2500,5000];
   var $ = function(id){ return document.getElementById(id); };
+  // Symbols built from char codes so the source stays plain ASCII (see CLAUDE.md landmines)
+  var TIMES = String.fromCharCode(215), ICON_LOSS = String.fromCharCode(10006), ICON_WARN = String.fromCharCode(9888), ICON_OK = String.fromCharCode(10004);
 
   // ---------- settings (beta-only storage) ----------
   var S = loadSettings();
@@ -505,14 +507,14 @@ const DEFAULT_VINYL = [
     $('c-quote').textContent = money(r.quote);
     $('c-quote-sub').textContent = each(r.quote, q) + (r.minApplied ? ' - minimum order' : '');
     $('c-profit').textContent = money(r.quote - r.mat.cost);
-    $('c-profit-sub').textContent = isFinite(r.x) ? r.x.toFixed(1) + '× material cost' : '';
+    $('c-profit-sub').textContent = isFinite(r.x) ? r.x.toFixed(1) + TIMES + ' material cost' : '';
     $('c-total').textContent = money(r.quote + hst);
     $('c-total-sub').textContent = 'incl. HST ' + money(hst);
     var ck = $('check');
     ck.className = 'check ' + r.status;
-    if (r.status === 'loss') ck.textContent = '✖ Below your material cost: this quote loses money. Walk away or quote higher.';
-    else if (r.status === 'thin') ck.textContent = '⚠ Thin: ' + r.x.toFixed(2) + '× material cost, under your ' + (+S.warn).toFixed(1) + '× warning line. Fine for a good customer, risky as a habit.';
-    else ck.textContent = '✔ Healthy: ' + r.x.toFixed(1) + '× material cost, ' + money(r.quote - r.mat.cost) + ' over materials to cover your time.';
+    if (r.status === 'loss') ck.textContent = ICON_LOSS + ' Below your material cost: this quote loses money. Walk away or quote higher.';
+    else if (r.status === 'thin') ck.textContent = ICON_WARN + ' Thin: ' + r.x.toFixed(2) + TIMES + ' material cost, under your ' + (+S.warn).toFixed(1) + TIMES + ' warning line. Fine for a good customer, risky as a habit.';
+    else ck.textContent = ICON_OK + ' Healthy: ' + r.x.toFixed(1) + TIMES + ' material cost, ' + money(r.quote - r.mat.cost) + ' over materials to cover your time.';
 
     // market
     $('mk-range').textContent = r.m ? (r.m.n > 1 ? money(r.m.low) + ' - ' + money(r.m.high) : money(r.m.low)) : 'n/a';
@@ -541,7 +543,7 @@ const DEFAULT_VINYL = [
         '<td class="num"><span class="dot ' + rr.status + '"></span>' + money(rr.quote) + '</td>' +
         '<td class="num">' + each(rr.quote, qq).replace(' each', '') + '</td>' +
         '<td class="num">' + money(rr.mat.cost) + '</td>' +
-        '<td class="num">' + (isFinite(rr.x) ? rr.x.toFixed(1) + '×' : '') + '</td>' +
+        '<td class="num">' + (isFinite(rr.x) ? rr.x.toFixed(1) + TIMES : '') + '</td>' +
         '<td class="num">' + money(rr.est) + '</td></tr>';
     });
     $('breaks').innerHTML = t + '</tbody>';
@@ -563,7 +565,7 @@ const DEFAULT_VINYL = [
 
   // ---------- wire up ----------
   function buildChips(){
-    SIZE_PRESETS.forEach(function(s){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = s[0] + '×' + s[1]; b.dataset.w = s[0]; b.dataset.h = s[1];
+    SIZE_PRESETS.forEach(function(s){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = s[0] + TIMES + s[1]; b.dataset.w = s[0]; b.dataset.h = s[1];
       b.addEventListener('click', function(){ $('b-w').value = s[0]; $('b-h').value = s[1]; readJob(); render(); }); $('size-chips').appendChild(b); });
     QTY_PRESETS.forEach(function(q){ var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = q.toLocaleString('en-CA'); b.dataset.q = q;
       b.addEventListener('click', function(){ $('b-q').value = q; readJob(); render(); }); $('qty-chips').appendChild(b); });
