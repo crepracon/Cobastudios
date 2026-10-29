@@ -61,7 +61,12 @@
     .market { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
     .mk-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #666; }
     .mk-head strong { color: #1a1a1a; font-family: monospace; font-size: 14px; }
-    .sellers { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+    .sellers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+    .lam { font-size: 9.5px; font-weight: 700; letter-spacing: .03em; border-radius: 20px; padding: 1px 7px; }
+    .lam.yes { background: #dbeafe; color: #1e40af; }
+    .lam.no { background: #fff; color: #555; border: 1px solid #d4d4d4; }
+    .mk-group { font-weight: 600; color: #1a1a1a; }
+    .mk-note { font-size: 11px; color: #888; }
     .seller { background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 10px; min-width: 0; }
     .seller.used { border-color: #1a1a1a; box-shadow: inset 0 0 0 1px #1a1a1a; }
     .seller .nm { font-size: 11px; color: #666; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -158,8 +163,9 @@
       <div class="check none" id="check" role="status">&nbsp;</div>
 
       <div class="market">
-        <div class="mk-head"><span>Market for this job</span><span>range <strong id="mk-range">-</strong> &middot; middle <strong id="mk-mid">-</strong></span></div>
+        <div class="mk-head"><span>Market for this job &middot; <span class="mk-group" id="mk-group"></span></span><span>range <strong id="mk-range">-</strong> &middot; middle <strong id="mk-mid">-</strong></span></div>
         <div class="sellers" id="sellers"></div>
+        <div class="mk-note" id="mk-note"></div>
         <div class="mk-foot"><span id="rule-line"></span><span>Live estimator would quote <strong id="est-price">-</strong></span></div>
       </div>
 
@@ -174,8 +180,8 @@
           <div class="set-head">How the quote is set</div>
           <div class="set-grid">
             <div><label class="field-label" for="s-at">Price at</label>
-              <select id="s-at"><option value="mid">Market middle</option><option value="low">Market low</option><option value="high">Market high</option><option value="sy">Match StickerYou</option><option value="sm">Match Sticker Mule</option><option value="vp">Match VistaPrint</option></select>
-              <div class="help">Which market price the quote starts from.</div></div>
+              <select id="s-at"><option value="mid">Market middle</option><option value="low">Market low</option><option value="high">Market high</option><option value="sy">Match StickerYou (laminated)</option><option value="sm">Match Sticker Mule (laminated)</option><option value="sme">Match Sticker Mule Economy (not laminated)</option><option value="vp">Match VistaPrint (not laminated)</option></select>
+              <div class="help">Which market price the quote starts from. Only competitors selling the same type as your Laminate choice are compared.</div></div>
             <div><label class="field-label" for="s-pct">Adjust (% of that price)</label><input type="number" id="s-pct" min="10" max="300" step="1" value="100">
               <div class="help">100 = match it. 110 = 10% above. 95 = 5% under.</div></div>
             <div><label class="field-label" for="s-round">Round the quote to</label>
@@ -202,7 +208,8 @@
 
       <hr class="divider">
       <div class="notes" id="notes">
-        <div><strong>Where the market prices come from.</strong> StickerYou, Sticker Mule and VistaPrint&rsquo;s own price calculators on <span id="mk-date2">Oct 29, 2026</span>, list prices before tax. Sizes or quantities between the captured ones are estimated. VistaPrint only sells squares from 2&Prime; to 5&Prime;, so a 3&Prime; &times; 2&Prime; design is priced as their 3&Prime; &times; 3&Prime;.</div>
+        <div><strong>Like for like.</strong> With a laminate picked, your quote is compared only with laminated stickers: StickerYou die-cut and Sticker Mule die-cut. With Laminate set to None, only with unlaminated ones: Sticker Mule Economy and VistaPrint (gloss-coated plastic, no laminate). Each site&rsquo;s own wording is the source for these labels.</div>
+        <div><strong>Where the market prices come from.</strong> Each site&rsquo;s own price calculator on <span id="mk-date2">Oct 29, 2026</span>, list prices before tax. Sizes or quantities between the captured ones are estimated. VistaPrint only sells squares from 2&Prime; to 5&Prime;, so a 3&Prime; &times; 2&Prime; design is priced as their 3&Prime; &times; 3&Prime;.</div>
         <div><strong>What&rsquo;s not in &ldquo;material cost&rdquo;.</strong> Design time, setup, weeding, packing and your time at the counter. The &ldquo;over material cost&rdquo; figure has to cover those.</div>
       </div>
       <div class="copy-box" id="copy-box" hidden><label class="field-label" for="copy-text">Copy this quote (your browser blocked automatic copying)</label><textarea id="copy-text" rows="6" readonly></textarea></div>
@@ -217,8 +224,8 @@
 <div id="toast" role="status"></div>
 
 <script type="application/json" id="market-data">
-{"captured":"2026-10-29","currency":"CAD","sellers":[
-{"id":"sy","name":"StickerYou","product":"Die-Cut Stickers (white vinyl, semi-gloss, removable)","url":"https://www.stickeryou.com/en-ca/products/die-cut-stickers/623","captured":"2026-10-29","material":"White vinyl, laminated, semi-gloss, removable","shipping":"Shipping extra; standard delivery about 11 days (Nov 9 for an Oct 29 order)","sizing":"area","minQty":1,"sizes":[
+{"captured":"2026-10-29","currency":"CAD","version":2,"sellers":[
+{"id":"sy","name":"StickerYou","product":"Die-Cut Stickers (white vinyl, semi-gloss, removable)","url":"https://www.stickeryou.com/en-ca/products/die-cut-stickers/623","captured":"2026-10-29","material":"White vinyl, laminated, semi-gloss, removable","shipping":"Shipping extra; standard delivery about 11 days (Nov 9 for an Oct 29 order)","sizing":"area","minQty":1,"lam":"laminated","lamLabel":"Laminated","lamSource":"StickerYou die-cut page: \"Our custom die-cut stickers have a clear lamination.\"","sizes":[
 {"w":1,"h":1,"ladder":[[1,6.84],[5,17.26],[10,18.66],[25,37.35],[50,58.64],[100,66.71],[250,103.98],[500,114.81],[1000,164.26],[2000,234.27],[5000,428.81],[10000,689.11],[20000,1134.36]]},
 {"w":1.5,"h":1.5,"ladder":[[1,6.84],[5,18.64],[10,19.84],[25,39.76],[50,62.42],[100,73.17],[250,122.82],[500,146.73],[1000,222.62],[2000,334.83],[5000,682.26],[10000,1135.73],[20000,1923.48]]},
 {"w":2,"h":2,"ladder":[[1,7.31],[5,20.13],[10,21.61],[25,43.38],[50,68.11],[100,75.69],[250,145.56],[500,187.83],[1000,295.1],[2000,460.87],[5000,982.29],[10000,1663.18],[20000,2849.6]]},
@@ -236,7 +243,7 @@
 {"w":5,"h":3,"ladder":[[1,9.98],[5,25.89],[10,29.84],[25,60.86],[50,95.54],[100,135.38],[250,263.18],[500,401.27],[1000,659.52],[2000,1114.08],[5000,2394.76],[10000,4216.86],[20000,8340.56]]},
 {"w":6,"h":4,"ladder":[[1,13.16],[5,27.88],[10,35.94],[25,73.31],[50,115.09],[100,170.21],[250,350.14],[500,549.92],[1000,921.46],[2000,1577.97],[5000,3392.8],[10000,6493.8],[20000,12842.38]]}
 ]},
-{"id":"sm","name":"Sticker Mule","product":"Die cut stickers (matte vinyl)","url":"https://www.stickermule.com/ca/products/die-cut-stickers","captured":"2026-10-29","material":"Thick matte vinyl","shipping":"Free shipping included; 4-day turnaround","sizing":"area","minQty":10,"sizes":[
+{"id":"sm","name":"Sticker Mule","product":"Die cut stickers (standard, laminated vinyl)","url":"https://www.stickermule.com/ca/products/die-cut-stickers","captured":"2026-10-29","material":"Thick matte vinyl","shipping":"Free shipping included; 4-day turnaround","sizing":"area","minQty":10,"lam":"laminated","lamLabel":"Laminated","lamSource":"Sticker Mule FAQ: standard stickers are vinyl with a protective laminate (Economy is the unlaminated line).","sizes":[
 {"w":1,"h":1,"ladder":[[10,20],[25,39],[50,68],[100,77],[200,91],[250,97],[300,103],[500,126],[1000,174],[2000,256],[3000,329],[5000,460],[10000,743]]},
 {"w":1.5,"h":1.5,"ladder":[[10,21],[25,42],[50,73],[100,86],[200,107],[250,117],[300,126],[500,160],[1000,234],[2000,362],[3000,476],[5000,684],[10000,1138]]},
 {"w":2,"h":2,"ladder":[[10,23],[25,46],[50,80],[100,97],[200,127],[250,140],[300,153],[500,202],[1000,308],[2000,493],[3000,659],[5000,962],[10000,1629]]},
@@ -254,7 +261,25 @@
 {"w":5,"h":3,"ladder":[[10,32],[25,65],[50,113],[100,155],[200,230],[250,264],[300,297],[500,420],[1000,694],[2000,1175],[3000,1610],[5000,2407],[10000,4180]]},
 {"w":6,"h":4,"ladder":[[10,38],[25,78],[50,136],[100,197],[200,303],[250,352],[300,399],[500,576],[1000,969],[2000,1659],[3000,2285],[5000,3433],[10000,6454]]}
 ]},
-{"id":"vp","name":"VistaPrint","product":"Custom Die-Cut Sticker Singles (White Plastic BOPP)","url":"https://www.vistaprint.ca/labels-stickers/die-cut-sticker-singles","captured":"2026-10-29","material":"White plastic (BOPP), coated","shipping":"Free standard shipping (about 11 days); faster delivery extra","sizing":"squares","minQty":10,"sale":"20% off 25+ on capture day","sizes":[
+{"id":"sme","name":"Sticker Mule Economy","product":"Economy stickers (vinyl, not laminated)","url":"https://www.stickermule.com/ca/products/economy-stickers","captured":"2026-10-29","material":"Lower-cost matte vinyl, not laminated, for indoor or short-term use","shipping":"Free shipping included; 4-day turnaround","sizing":"area","minQty":10,"lam":"none","lamLabel":"Not laminated","lamSource":"Sticker Mule FAQ: economy stickers are not laminated.","sizes":[
+{"w":1,"h":1,"ladder":[[10,15],[25,30],[50,52],[100,59],[200,71],[250,77],[300,82],[500,100],[1000,141],[2000,208],[3000,268],[5000,374],[10000,604]]},
+{"w":1.5,"h":1.5,"ladder":[[10,16],[25,32],[50,56],[100,66],[200,82],[250,90],[300,97],[500,124],[1000,182],[2000,282],[3000,371],[5000,531],[10000,880]]},
+{"w":2,"h":2,"ladder":[[10,17],[25,35],[50,60],[100,73],[200,96],[250,107],[300,117],[500,154],[1000,234],[2000,374],[3000,499],[5000,726],[10000,1224]]},
+{"w":2.5,"h":2.5,"ladder":[[10,19],[25,38],[50,65],[100,83],[200,113],[250,126],[300,139],[500,188],[1000,296],[2000,482],[3000,649],[5000,954],[10000,1628]]},
+{"w":3,"h":3,"ladder":[[10,20],[25,41],[50,71],[100,93],[200,131],[250,149],[300,165],[500,228],[1000,365],[2000,604],[3000,820],[5000,1214],[10000,2087]]},
+{"w":3.5,"h":3.5,"ladder":[[10,22],[25,45],[50,78],[100,105],[200,152],[250,173],[300,194],[500,271],[1000,442],[2000,741],[3000,1011],[5000,1504],[10000,2657]]},
+{"w":4,"h":4,"ladder":[[10,24],[25,49],[50,85],[100,118],[200,174],[250,201],[300,226],[500,319],[1000,527],[2000,891],[3000,1219],[5000,1820],[10000,3376]]},
+{"w":4.5,"h":4.5,"ladder":[[10,26],[25,54],[50,93],[100,132],[200,199],[250,230],[300,260],[500,371],[1000,619],[2000,1053],[3000,1445],[5000,2164],[10000,4190]]},
+{"w":5,"h":5,"ladder":[[10,28],[25,58],[50,101],[100,146],[200,225],[250,262],[300,297],[500,427],[1000,717],[2000,1227],[3000,1688],[5000,2602],[10000,5099]]},
+{"w":6,"h":6,"ladder":[[10,33],[25,69],[50,120],[100,179],[200,283],[250,331],[300,377],[500,550],[1000,934],[2000,1609],[3000,2227],[5000,3656],[10000,7206]]},
+{"w":2,"h":1,"ladder":[[10,16],[25,32],[50,55],[100,64],[200,80],[250,88],[300,94],[500,120],[1000,175],[2000,268],[3000,352],[5000,501],[10000,829]]},
+{"w":3,"h":2,"ladder":[[10,19],[25,38],[50,65],[100,82],[200,111],[250,124],[300,137],[500,185],[1000,289],[2000,470],[3000,633],[5000,930],[10000,1584]]},
+{"w":4,"h":2,"ladder":[[10,20],[25,40],[50,69],[100,89],[200,125],[250,141],[300,156],[500,214],[1000,340],[2000,561],[3000,759],[5000,1121],[10000,1923]]},
+{"w":4,"h":3,"ladder":[[10,22],[25,45],[50,77],[100,104],[200,150],[250,172],[300,192],[500,268],[1000,437],[2000,731],[3000,996],[5000,1482],[10000,2609]]},
+{"w":5,"h":3,"ladder":[[10,24],[25,48],[50,83],[100,114],[200,169],[250,193],[300,217],[500,307],[1000,505],[2000,851],[3000,1164],[5000,1737],[10000,3184]]},
+{"w":6,"h":4,"ladder":[[10,28],[25,57],[50,100],[100,143],[200,220],[250,255],[300,289],[500,416],[1000,697],[2000,1190],[3000,1637],[5000,2506],[10000,4908]]}
+]},
+{"id":"vp","name":"VistaPrint","product":"Custom Die-Cut Sticker Singles (White Plastic BOPP)","url":"https://www.vistaprint.ca/labels-stickers/die-cut-sticker-singles","captured":"2026-10-29","material":"White plastic (BOPP), coated","shipping":"Free standard shipping (about 11 days); faster delivery extra","sizing":"squares","minQty":10,"sale":"20% off 25+ on capture day","lam":"coated","lamLabel":"Not laminated (gloss-coated)","lamSource":"VistaPrint page: plastic stickers are \"coated for durability\"; product options list Finish: Gloss and no laminate.","sizes":[
 {"w":2,"h":2,"ladder":[[10,14.99,14.99],[25,34,27.2],[50,61,48.8],[100,95,76],[150,126,100.8],[200,147,117.6],[250,153,122.4],[300,164,131.2],[400,198,158.4],[500,213,170.4],[1000,289,231.2],[1500,387,309.6],[2000,490,392],[2500,576,460.8],[3000,653,522.4],[4000,811,648.8],[5000,980,784]]},
 {"w":2.5,"h":2.5,"ladder":[[10,21.99,21.99],[25,42,33.6],[50,81,64.8],[100,116,92.8],[150,148,118.4],[200,163,130.4],[250,174,139.2],[300,190,152],[400,235,188],[500,245,196],[1000,366,292.8],[1500,485,388],[2000,609,487.2],[2500,714,571.2],[3000,811,648.8],[4000,1001,800.8],[5000,1214,971.2]]},
 {"w":3,"h":3,"ladder":[[10,24.99,24.99],[25,45,36],[50,85,68],[100,132,105.6],[150,158,126.4],[200,179,143.2],[250,198,158.4],[300,229,183.2],[400,278,222.4],[500,289,231.2],[1000,451,360.8],[1500,571,456.8],[2000,734,587.2],[2500,853,682.4],[3000,975,780],[4000,1190,952],[5000,1450,1160]]},
@@ -462,10 +487,14 @@ const DEFAULT_VINYL = [
     return Math.max(cost * t.markup, q * t.minEach);
   }
 
-  var RULE_NAMES = { mid:'the market middle', low:'the market low', high:'the market high', sy:'StickerYou', sm:'Sticker Mule', vp:'VistaPrint' };
+  var RULE_NAMES = { mid:'the market middle', low:'the market low', high:'the market high', sy:'StickerYou', sm:'Sticker Mule', sme:'Sticker Mule Economy', vp:'VistaPrint' };
+  // Like-for-like: laminated quotes compare only with laminated products, unlaminated with unlaminated.
+  function group(){ var lam = !!lamName(); return SELLERS.filter(function(s){ return lam ? s.lam === 'laminated' : s.lam !== 'laminated'; }); }
+  function otherGroup(){ var lam = !!lamName(); return SELLERS.filter(function(s){ return lam ? s.lam !== 'laminated' : s.lam === 'laminated'; }); }
   function quote(w, h, q){
-    var prices = {}, m = G.market(SELLERS, w, h, q);
-    SELLERS.forEach(function(s){ prices[s.id] = G.sellerPrice(s, w, h, q, false); });
+    var grp = group(), prices = {}, m = G.market(grp, w, h, q);
+    grp.forEach(function(s){ prices[s.id] = G.sellerPrice(s, w, h, q, false); });
+    var otherType = !!RULE_NAMES[S.at] && ['mid','low','high'].indexOf(S.at) < 0 && !prices[S.at];
     var mat = material(w, h, q), est = estimatorPrice(w, h, q, mat.cost);
     var base = null, basis = '', fellBack = false;
     if (S.at === 'mid' || S.at === 'low' || S.at === 'high') {
@@ -480,7 +509,7 @@ const DEFAULT_VINYL = [
     var qt = minApplied ? S.min : rounded;
     var x = mat.cost > 0 ? qt / mat.cost : Infinity;
     var status = qt < mat.cost - 0.005 ? 'loss' : (x < S.warn ? 'thin' : 'ok');
-    return { q:q, m:m, prices:prices, mat:mat, est:est, base:base, basis:basis, fellBack:fellBack, noMarket:noMarket, raw:raw, quote:qt, minApplied:minApplied, x:x, status:status };
+    return { q:q, m:m, grp:grp, prices:prices, otherType:otherType, mat:mat, est:est, base:base, basis:basis, fellBack:fellBack, noMarket:noMarket, raw:raw, quote:qt, minApplied:minApplied, x:x, status:status };
   }
 
   // ---------- render ----------
@@ -519,16 +548,19 @@ const DEFAULT_VINYL = [
     // market
     $('mk-range').textContent = r.m ? (r.m.n > 1 ? money(r.m.low) + ' - ' + money(r.m.high) : money(r.m.low)) : 'n/a';
     $('mk-mid').textContent = r.m ? money(r.m.median) : 'n/a';
-    $('sellers').innerHTML = SELLERS.map(function(s){
+    $('mk-group').textContent = lamName() ? 'laminated stickers only' : 'unlaminated stickers only';
+    $('mk-note').textContent = 'Not compared for this job (' + (lamName() ? 'not laminated' : 'laminated') + '): ' + otherGroup().map(function(s){ return s.name; }).join(', ') + '.';
+    $('sellers').innerHTML = r.grp.map(function(s){
       var p = r.prices[s.id], used = !r.noMarket && !r.fellBack && S.at === s.id;
-      if (p.na) return '<div class="seller na"><div class="nm">' + esc(s.name) + '</div><div class="pr">Not offered</div><div class="nt">' + esc(p.note) + '</div></div>';
+      var badge = '<span class="lam ' + (s.lam === 'laminated' ? 'yes' : 'no') + '">' + esc(s.lamLabel) + '</span>';
+      if (p.na) return '<div class="seller na"><div class="nm">' + esc(s.name) + ' ' + badge + '</div><div class="pr">Not offered</div><div class="nt">' + esc(p.note) + '</div></div>';
       var sale = null; if (s.id === 'vp') { var ps = G.sellerPrice(s, w, h, q, true); if (!ps.na && ps.p < p.p - 0.005) sale = ps.p; }
       var note = [p.note, sale != null ? 'sale today ' + money(sale) : ''].filter(Boolean).join(' - ');
-      return '<div class="seller' + (used ? ' used' : '') + '"><div class="nm">' + esc(s.name) + ' <span class="tag' + (p.exact ? ' ex' : '') + '">' + (p.exact ? 'EXACT' : 'EST.') + '</span></div>' +
+      return '<div class="seller' + (used ? ' used' : '') + '"><div class="nm">' + esc(s.name) + ' ' + badge + ' <span class="tag' + (p.exact ? ' ex' : '') + '">' + (p.exact ? 'EXACT' : 'EST.') + '</span></div>' +
         '<div class="pr">' + money(p.p) + '</div><div class="nt">' + esc(each(p.p, q)) + (note ? ' - ' + esc(note) : '') + '</div></div>';
     }).join('');
     var rl = 'Quote = ' + (r.noMarket ? r.basis : (S.pct == 100 ? r.basis : S.pct + '% of ' + r.basis));
-    if (r.fellBack) rl += ' (' + RULE_NAMES[S.at] + ' does not offer this job)';
+    if (r.fellBack) rl += ' (' + RULE_NAMES[S.at] + (r.otherType ? ' sells the other type, so it is not compared here)' : ' does not offer this job)');
     if (+S.round > 0) rl += ', rounded to the nearest $' + (+S.round).toFixed(+S.round < 1 ? 2 : 0);
     $('rule-line').textContent = rl;
     $('est-price').textContent = money(r.est);
