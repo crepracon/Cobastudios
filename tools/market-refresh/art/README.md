@@ -40,3 +40,14 @@ No automatic hold on big jumps yet; compare with the previous data file by hand.
   (paper M/G, finition NA); `/products/photo-poster.js`; engineering table is drawn by the page script, so the collector
   reads the live page. Order fees: $2.99 (1-hour, same-day) or $1.99 (2-4 day).
 - Monk Office and Newfoundland Canvas: plain text/tables on the page.
+
+## Art & Plans Quick Quote beta (Oct 30 2026)
+`beta/art/index.html`, live at https://crepracon.github.io/Cobastudios/beta/art/. Built from `beta-template.html` by
+`build-beta.js` (never hand-edit the built file): `node tools/market-refresh/art/build-beta.js`. Two tabs, like the
+Epson tab: **Art reproduction** (paper Enhanced Matte / Luster / Glossy, ink colour / B&W) and **Construction plans**
+(bond, ink B&W / colour, compared with Staples at the turnaround picked; Monk always). Quote = market middle (or
+low / high) x adjust %, rounded; minimum is per order (default $25 for art), not per print. When no like-for-like
+seller lists the size (e.g. 5 x 7 on matte), it uses your $ / sq ft rate without the per-print minimum, or (setting)
+the reference market + premium. Cotton rag (above) and poster stock (below) are reference only. Material cost uses
+the Epson tab's math (gang-run across the 36" roll, 1" margin). Writes only `coba-beta-art-v1`; reads
+`coba-inventory-v2` (Epson papers) and never writes it. Test: `node tools/market-refresh/art/smoke-art-beta.js`.

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Coba Studios — Art &amp; Plans Quick Quote (beta)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f0ed; color: #1a1a1a; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
+    .wrapper { max-width: 1040px; margin: 0 auto; }
+    .app-header { background: #1a1a1a; border-radius: 12px 12px 0 0; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .app-header h1 { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .app-header .sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .app-header nav { display: flex; gap: 6px; flex-wrap: wrap; }
+    .app-header a { font-size: 12px; color: #ccc; text-decoration: none; border: 1px solid #444; border-radius: 6px; padding: 6px 10px; }
+    .app-header a:hover { color: #fff; border-color: #777; }
+    .beta-pill { font-size: 10px; font-weight: 800; letter-spacing: .08em; background: #fbbf24; color: #1a1a1a; border-radius: 20px; padding: 2px 8px; }
+    .stale-pill { display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700; background: #fbbf24; color: #1a1a1a; border-radius: 20px; padding: 1px 8px; }
+    .beta-bar { background: #fffbeb; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 1px solid #fde68a; padding: .6rem 1.25rem; font-size: 12px; color: #92400e; }
+    .tabs { display: flex; background: #fff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 1px solid #e5e5e5; padding: 0 1rem; }
+    .tab { background: none; border: none; border-bottom: 3px solid transparent; padding: .75rem 1rem; font-size: 14px; font-weight: 600; color: #888; cursor: pointer; font-family: inherit; }
+    .tab.on { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+    .panel { background: #fff; border-radius: 0 0 12px 12px; border: 1px solid #e0e0e0; border-top: 0; }
+    .panel-body { padding: 1.25rem; }
+    .sec-title { font-size: 13px; font-weight: 600; margin-bottom: .6rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .sec-title .hint { font-weight: 400; color: #888; font-size: 12px; }
+    .divider { border: none; border-top: 1px solid #e5e5e5; margin: 1.25rem 0; }
+    .field-label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; }
+    input[type=number], input[type=text], select { width: 100%; padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; }
+    input:focus, select:focus { outline: none; border-color: #999; }
+    .job-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)) minmax(0,1.6fr) minmax(0,1.4fr); gap: 12px; align-items: end; }
+    .job-grid input[type=number] { font-size: 18px; font-family: monospace; padding: 8px 10px; }
+    .seg { display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .seg button { flex: 1; background: #fff; border: none; border-right: 1px solid #ddd; padding: 9px 6px; font-size: 12px; font-family: inherit; color: #555; cursor: pointer; }
+    .seg button:last-child { border-right: none; }
+    .seg button.on { background: #1a1a1a; color: #fff; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+    .chips .lbl { font-size: 11px; color: #888; min-width: 34px; }
+    .chip { font-size: 12px; font-family: monospace; color: #555; background: #f5f5f2; border: 1px solid #e0e0e0; border-radius: 20px; padding: 4px 10px; cursor: pointer; }
+    .chip:hover { border-color: #999; color: #1a1a1a; }
+    .chip.on { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
+    .src-note { font-size: 11px; color: #888; margin-top: 8px; }
+    .cards4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 1.25rem 0 1rem; }
+    .card { border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e5e5e5; }
+    .card.yourCost { background: #f5f5f2; border-color: #d1d5db; }
+    .card.quote { background: #f0fdf4; border-color: #bbf7d0; }
+    .card.profit { background: #f5f5f2; }
+    .card.grand { background: #fff; border: 2px solid #93c5fd; }
+    .card-lbl { font-size: 11px; margin-bottom: 4px; color: #666; }
+    .card.quote .card-lbl, .card.quote .card-num, .card.quote .card-sub { color: #166534; }
+    .card.grand .card-lbl, .card.grand .card-sub { color: #1e40af; }
+    .card-num { font-size: 20px; font-weight: 700; font-family: monospace; }
+    .card.grand .card-num { font-size: 24px; }
+    .card-sub { font-size: 10px; margin-top: 4px; color: #888; }
+    .check { border-radius: 6px; padding: 10px 14px; margin-bottom: 1rem; font-size: 13px; font-weight: 500; border: 1px solid; }
+    .check.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .check.thin { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .check.loss { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+    .check.none { background: #f5f5f2; border-color: #e5e5e5; color: #555; }
+    .market { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .market.ref { background: #fff; border-style: dashed; }
+    .mk-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #666; }
+    .mk-head strong { color: #1a1a1a; font-family: monospace; font-size: 14px; }
+    .mk-group { font-weight: 600; color: #1a1a1a; }
+    .mk-empty { font-size: 13px; color: #555; }
+    .mk-note { font-size: 11px; color: #888; }
+    .sellers { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+    .seller { background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 10px; min-width: 0; }
+    .seller.used { border-color: #1a1a1a; box-shadow: inset 0 0 0 1px #1a1a1a; }
+    .seller .nm { font-size: 12px; color: #1a1a1a; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .seller .lb { font-size: 11px; color: #666; margin-top: 1px; }
+    .seller .pr { font-family: monospace; font-size: 16px; font-weight: 700; margin-top: 2px; }
+    .seller .sp { font-size: 11px; color: #555; margin-top: 2px; line-height: 1.35; }
+    .seller .nt { font-size: 10.5px; color: #888; margin-top: 3px; line-height: 1.35; }
+    .seller.na .pr { color: #aaa; font-size: 13px; font-weight: 400; font-family: inherit; }
+    .badge { font-size: 9.5px; font-weight: 700; letter-spacing: .03em; border-radius: 20px; padding: 1px 7px; background: #fff; color: #555; border: 1px solid #d4d4d4; }
+    .badge.mine { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .badge.up { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+    .badge.down { background: #f5f5f4; color: #57534e; border-color: #e7e5e4; }
+    .badge.local { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .mk-foot { font-size: 12px; color: #666; display: flex; gap: 6px 16px; flex-wrap: wrap; }
+    .mk-foot strong { color: #1a1a1a; font-family: monospace; }
+    .excl { font-size: 11.5px; color: #777; line-height: 1.5; }
+    .scroll-x { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #e0e0e0; padding: 7px 8px; font-size: 13px; vertical-align: middle; white-space: nowrap; }
+    th { background: #f5f5f2; font-weight: 600; font-size: 12px; color: #555; text-align: center; }
+    td.num { text-align: right; font-family: monospace; }
+    td.qcell { font-family: monospace; font-weight: 600; text-align: right; }
+    tr.cur td { background: #fef3c7; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .dot.ok { background: #16a34a; } .dot.thin { background: #f59e0b; } .dot.loss { background: #dc2626; } .dot.none { background: #bbb; }
+    .settings-btn { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #555; border: 1px solid #ccc; border-radius: 6px; padding: 7px 12px; font-size: 12px; font-family: inherit; cursor: pointer; }
+    .settings-btn:hover { background: #f0f0ed; }
+    .settings { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 8px; padding: 1rem 1.25rem; margin-top: .75rem; }
+    .set-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px 16px; }
+    .help { font-size: 10.5px; color: #888; margin-top: 3px; line-height: 1.35; }
+    .set-head { font-size: 11px; font-weight: 700; color: #888; letter-spacing: .06em; text-transform: uppercase; margin: 14px 0 8px; }
+    .set-head:first-child { margin-top: 0; }
+    .local-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .local-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 6px 10px; font-size: 12px; }
+    .local-form { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr) minmax(0,.8fr) auto; gap: 8px; align-items: end; margin-top: 8px; }
+    .action-bar { background: #f5f5f2; border-top: 1px solid #e5e5e5; padding: .75rem 1.25rem; display: flex; gap: 8px; flex-wrap: wrap; border-radius: 0 0 12px 12px; }
+    .btn-dark { display: inline-flex; align-items: center; gap: 6px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-dark:hover { background: #333; }
+    .btn-light { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #666; border: 1px solid #ccc; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-light:hover { background: #f0f0ed; color: #333; }
+    .btn-x { background: none; border: none; color: #b91c1c; cursor: pointer; font-size: 13px; padding: 2px 6px; }
+    button:focus-visible, .chip:focus-visible, a:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+    .copy-box { margin-top: 10px; }
+    .copy-box textarea { width: 100%; font-family: monospace; font-size: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+    .notes { font-size: 12px; color: #777; line-height: 1.55; display: flex; flex-direction: column; gap: 4px; }
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 999; }
+    [hidden] { display: none !important; }
+    @media (max-width: 820px) {
+      .job-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .job-grid .wide { grid-column: span 3; }
+      .cards4 { grid-template-columns: 1fr 1fr; }
+      .sellers { grid-template-columns: minmax(0,1fr); }
+      .set-grid { grid-template-columns: 1fr 1fr; }
+      .local-form { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 460px) {
+      .set-grid { grid-template-columns: 1fr; }
+      .card-num { font-size: 17px; } .card.grand .card-num { font-size: 20px; }
+      .tab { padding: .7rem .6rem; font-size: 13px; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .beta-bar, .tabs, .action-bar, .no-print, .chips, .src-note, .market, #breaks-wrap { display: none !important; }
+      .app-header { background: #fff; border-radius: 0; } .app-header h1 { color: #1a1a1a; } .app-header nav { display: none; }
+      .panel { border: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="app-header">
+    <div>
+      <h1>Coba Studios — Art &amp; Plans Quick Quote <span class="beta-pill">BETA</span></h1>
+      <div class="sub">Epson prints priced against the market, paper for paper &middot; Market data <span id="mk-date">-</span><span id="mk-age"></span> &middot; All prices in CAD <span class="stale-pill" id="stale-pill" hidden>Prices due for a refresh</span></div>
+    </div>
+    <nav class="no-print"><a href="../">Stickers</a><a href="../signs/">Signs &amp; banners</a><a href="../../">Live estimator &rarr;</a></nav>
+  </div>
+  <div class="beta-bar">Beta: try it next to the estimator. Nothing here changes the live estimator, its jobs or its inventory.</div>
+  <div class="tabs no-print" role="tablist">
+    <button type="button" class="tab on" id="tab-art" role="tab" aria-selected="true" data-p="art">&#127912; Art reproduction</button>
+    <button type="button" class="tab" id="tab-plan" role="tab" aria-selected="false" data-p="plan">&#128208; Construction plans</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="sec-title" id="job-title"></div>
+      <div class="job-grid">
+        <div><label class="field-label" for="j-w">Width (in)</label><input type="number" id="j-w" min="1" step="0.5" inputmode="decimal"></div>
+        <div><label class="field-label" for="j-h">Height (in)</label><input type="number" id="j-h" min="1" step="0.5" inputmode="decimal"></div>
+        <div><label class="field-label" for="j-q">Quantity</label><input type="number" id="j-q" min="1" max="1000" step="1" inputmode="numeric"></div>
+        <div class="wide" id="opt-a-wrap"><span class="field-label" id="opt-a-lbl"></span><div class="seg" id="opt-a"></div></div>
+        <div class="wide" id="opt-b-wrap"><span class="field-label" id="opt-b-lbl"></span><div class="seg" id="opt-b"></div></div>
+      </div>
+      <div class="chips" id="size-chips"></div>
+      <div class="chips" id="qty-chips"></div>
+      <div class="src-note" id="src-note"></div>
+
+      <div class="cards4">
+        <div class="card yourCost"><div class="card-lbl">Your material cost</div><div class="card-num" id="c-cost">$0.00</div><div class="card-sub" id="c-cost-sub">&nbsp;</div></div>
+        <div class="card quote"><div class="card-lbl">Quote before tax</div><div class="card-num" id="c-quote">$0.00</div><div class="card-sub" id="c-quote-sub">&nbsp;</div></div>
+        <div class="card profit"><div class="card-lbl">Over material cost</div><div class="card-num" id="c-profit">$0.00</div><div class="card-sub" id="c-profit-sub">&nbsp;</div></div>
+        <div class="card grand"><div class="card-lbl">Grand total with HST</div><div class="card-num" id="c-total">$0.00</div><div class="card-sub" id="c-total-sub">&nbsp;</div></div>
+      </div>
+      <div class="check none" id="check" role="status">&nbsp;</div>
+
+      <div class="market" id="mk-main">
+        <div class="mk-head"><span>Market for this job &middot; <span class="mk-group" id="mk-group"></span></span><span id="mk-stats">range <strong id="mk-range">-</strong> &middot; middle <strong id="mk-mid">-</strong></span></div>
+        <div class="mk-empty" id="mk-empty" hidden></div>
+        <div class="sellers" id="sellers"></div>
+        <div class="excl" id="mk-excl"></div>
+        <div class="mk-foot"><span id="rule-line"></span><span>Your estimator now: <strong id="est-price">-</strong></span></div>
+      </div>
+      <div id="refs"></div>
+      <div class="market ref" id="mk-local" hidden>
+        <div class="mk-head"><span>Local prices you entered &middot; same job type and size</span></div>
+        <div class="sellers" id="local-sellers"></div>
+      </div>
+
+      <div id="breaks-wrap">
+        <hr class="divider">
+        <div class="sec-title">Same size, other quantities <span class="hint" id="breaks-hint"></span></div>
+        <div class="scroll-x"><table id="breaks"></table></div>
+      </div>
+
+      <hr class="divider no-print">
+      <div class="no-print">
+        <div class="sec-title">Add a local competitor's price <span class="hint">for this exact job type and size; shown next to the market, not mixed into it</span></div>
+        <div class="local-form">
+          <div><label class="field-label" for="lp-name">Shop</label><input type="text" id="lp-name" maxlength="60" placeholder="e.g. a local print shop (phone quote)"></div>
+          <div><label class="field-label" for="lp-price">Their total price ($, before tax)</label><input type="number" id="lp-price" min="0" step="0.01"></div>
+          <div><label class="field-label" for="lp-q">For quantity</label><input type="number" id="lp-q" min="1" step="1"></div>
+          <div><button type="button" class="btn-dark" id="lp-add">Add</button></div>
+        </div>
+        <div class="local-list" id="local-list"></div>
+      </div>
+
+      <hr class="divider no-print">
+      <div class="no-print">
+        <button type="button" class="settings-btn" id="set-toggle" aria-expanded="false" aria-controls="settings">&#9660; Show pricing settings</button>
+        <div class="settings" id="settings" hidden>
+          <div class="set-head">How the quote is set (when like-for-like market prices exist)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-at">Price at</label><select id="s-at"><option value="mid">Market middle</option><option value="low">Market low</option><option value="high">Market high</option></select>
+              <div class="help">Only sellers using the same kind of paper are compared.</div></div>
+            <div><label class="field-label" for="s-pct">Adjust (% of that price)</label><input type="number" id="s-pct" min="10" max="400" step="1"><div class="help">100 = match it. 110 = 10% above.</div></div>
+            <div><label class="field-label" for="s-round">Round the quote to</label><select id="s-round"><option value="0">The cent</option><option value="0.5">Nearest $0.50</option><option value="1">Nearest $1</option><option value="5">Nearest $5</option></select></div>
+            <div><label class="field-label" for="s-minart">Art: minimum order ($)</label><input type="number" id="s-minart" min="0" step="1"><div class="help">Once per order, not per print. Your estimator today charges $25 / $35 per print on small prints.</div></div>
+            <div><label class="field-label" for="s-minplan">Plans: minimum order ($)</label><input type="number" id="s-minplan" min="0" step="1"></div>
+            <div><label class="field-label" for="s-nomk">When no like-for-like seller sells the size</label><select id="s-nomk"><option value="rate">Use your $ / sq ft rate</option><option value="ref">Use the reference market + premium</option></select><div class="help">E.g. a 5 x 7 on Enhanced Matte: no matte seller lists it online. Your rate is used without the per-print minimum; the minimum order covers small jobs.</div></div>
+            <div><label class="field-label" for="s-prem">Premium over the reference market (%)</label><input type="number" id="s-prem" min="-90" max="500" step="5"></div>
+          </div>
+          <div class="set-head">Your estimator's current rates (for comparison)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-artrate">Art retail ($ / sq ft)</label><input type="number" id="s-artrate" min="0" step="0.5"><div class="help">Epson tab: $14, with $25 per print up to 12 x 18 and $35 up to 18 x 24.</div></div>
+            <div><label class="field-label" for="s-bwrate">Plans B&amp;W ($ / sq ft)</label><input type="number" id="s-bwrate" min="0" step="0.05"></div>
+            <div><label class="field-label" for="s-colrate">Plans colour ($ / sq ft)</label><input type="number" id="s-colrate" min="0" step="0.25"></div>
+          </div>
+          <div class="set-head">Material cost (same math as the Epson tab)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-inkcol">Ink, colour ($ / sq ft)</label><input type="number" id="s-inkcol" min="0" step="0.01"></div>
+            <div><label class="field-label" for="s-inkbw">Ink, B&amp;W ($ / sq ft)</label><input type="number" id="s-inkbw" min="0" step="0.01"></div>
+            <div><label class="field-label" for="s-roll">Roll width (in)</label><input type="number" id="s-roll" min="10" step="1"><div class="help">Art prints are ganged across the roll.</div></div>
+            <div><label class="field-label" for="s-margin">Print margin (in, each side)</label><input type="number" id="s-margin" min="0" step="0.5"></div>
+            <div><label class="field-label" for="s-warn">Warn below (&times; material cost)</label><input type="number" id="s-warn" min="1" max="20" step="0.1"></div>
+            <div><label class="field-label" for="s-hst">HST (%)</label><input type="number" id="s-hst" min="0" max="25" step="0.5"></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button type="button" class="btn-light" id="s-reset">Reset settings</button>
+            <span class="help" id="inv-note">Settings are saved on this device only.</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="notes">
+        <div><strong>Paper for paper.</strong> Enhanced Matte is compared with sellers using a similar heavyweight matte inkjet paper (Monk Office prints posters on Enhanced Matte; Newfoundland Canvas uses a 230 gsm fine art matte). Luster and Glossy are compared with photo paper prints. Plans are compared with bond prints of the same ink, and Staples by the turnaround you pick.</div>
+        <div><strong>Reference only.</strong> Cotton rag fine art (Posterjack, Newfoundland Canvas) is a premium paper above Enhanced Matte, and poster stock (Staples, VistaPrint) is a cheaper non-giclee paper below it. They are shown so you can see where you sit, but never used for the quote unless you choose the reference option in the settings.</div>
+        <div><strong>Where the prices come from.</strong> Each seller's own online prices on <span id="mk-date2">-</span>, before tax and shipping. Sizes between listed ones are estimated by area. Most sellers charge the same per print at any quantity; VistaPrint gives quantity discounts. Posterjack often runs coupon codes; regular prices are used.</div>
+        <div><strong>What's not in material cost.</strong> Waste, test prints, trimming, packaging, file prep and your time. "Over material cost" has to cover those.</div>
+      </div>
+      <div class="copy-box" id="copy-box" hidden><label class="field-label" for="copy-text">Copy this quote (your browser blocked automatic copying)</label><textarea id="copy-text" rows="6" readonly></textarea></div>
+    </div>
+    <div class="action-bar">
+      <button type="button" class="btn-dark" id="btn-copy">&#128203; Copy quote</button>
+      <button type="button" class="btn-light" id="btn-new">New quote</button>
+      <button type="button" class="btn-light" id="btn-print">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script type="application/json" id="art-data">
+__ART_DATA__
+</script>
+<script>
+// Art and plans market engine: price lookup (listed size, between sizes by area, per sq ft where published) and stats.
+(function (root) {
+  function ladderAt(ladder, q, flat) {
+    if (!ladder || !ladder.length) return { na: 'none' };
+    var first = ladder[0][0], last = ladder[ladder.length - 1][0];
+    if (q < first) return { na: 'min', limit: first };
+    for (var i = 0; i < ladder.length; i++) {
+      var r = ladder[i];
+      if (r[0] === q) return { p: r[1], exact: true };
+      if (r[0] > q) {
+        var a = ladder[i - 1];
+        if (flat) return { p: a[1] / a[0] * q, exact: true };
+        var k = Math.log(r[1] / a[1]) / Math.log(r[0] / a[0]);
+        return { p: a[1] * Math.pow(q / a[0], k), exact: false };
+      }
+    }
+    if (flat) { var l = ladder[ladder.length - 1]; return { p: l[1] / l[0] * q, exact: true }; }
+    return { na: 'max', limit: last };
+  }
+  function norm(z) { var W = Math.max(z.w, z.h), H = Math.min(z.w, z.h); return { W: W, H: H, A: W * H, z: z }; }
+  function naNote(r) { return r.na === 'min' ? 'Minimum ' + r.limit : r.na === 'max' ? 'Online max ' + r.limit : 'No price'; }
+  function dimTxt(z) { return z.W + ' x ' + z.H; }
+  // {p, exact, note} or {na, note}. w, h in inches.
+  function sellerPrice(s, w, h, q) {
+    var W = Math.max(w, h), H = Math.min(w, h), A = W * H, sqft = A / 144, sizes = s.sizes.map(norm), flat = !!s.flat;
+    var ex = sizes.filter(function (z) { return Math.abs(z.W - W) < 0.01 && Math.abs(z.H - H) < 0.01; })[0];
+    if (ex) { var r = ladderAt(ex.z.ladder, q, flat); return r.na ? { na: r.na, note: naNote(r) } : { p: r.p, exact: r.exact, note: r.exact ? '' : 'Between quantity tiers' }; }
+    if (s.perSqftUse === 'custom' && s.perSqft) return { p: s.perSqft * sqft * q, exact: false, note: 'Custom size: $' + s.perSqft.toFixed(2) + '/sq ft (in store)' };
+    var sorted = sizes.slice().sort(function (a, b) { return a.A - b.A; });
+    var small = sorted[0], big = sorted[sorted.length - 1];
+    if (A > big.A + 0.01) {
+      if (s.perSqftUse === 'larger' && s.perSqft) return { p: s.perSqft * sqft * q, exact: false, note: '$' + s.perSqft + '/sq ft above their ' + dimTxt(big) };
+      return { na: 'size', note: 'Largest size ' + dimTxt(big) };
+    }
+    if (A < small.A - 0.01) return { na: 'size', note: 'Smallest size ' + dimTxt(small) };
+    var lo = null, hi = null;
+    sorted.forEach(function (z) { if (z.A <= A + 0.01) lo = z; });
+    for (var i = 0; i < sorted.length; i++) if (sorted[i].A >= A - 0.01) { hi = sorted[i]; break; }
+    var rl = ladderAt(lo.z.ladder, q, flat), rh = ladderAt(hi.z.ladder, q, flat);
+    if (rl.na || rh.na) { var n = rl.na ? rl : rh; return { na: n.na, note: naNote(n) }; }
+    var p = hi.A === lo.A ? (rl.p + rh.p) / 2 : rl.p + (A - lo.A) / (hi.A - lo.A) * (rh.p - rl.p);
+    return { p: p, exact: false, note: 'Estimated from their ' + dimTxt(lo) + ' and ' + dimTxt(hi) };
+  }
+  function priceList(list, w, h, q) {
+    return list.map(function (s) { var r = sellerPrice(s, w, h, q); return { s: s, r: r, total: r.na ? null : r.p }; });
+  }
+  function stats(rows) {
+    var v = rows.filter(function (x) { return x.total != null; }).map(function (x) { return x.total; }).sort(function (a, b) { return a - b; });
+    if (!v.length) return null;
+    var n = v.length;
+    return { low: v[0], high: v[n - 1], mid: n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2, n: n };
+  }
+  var api = { ladderAt: ladderAt, sellerPrice: sellerPrice, priceList: priceList, stats: stats };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ArtMarket = api;
+})(this);
+</script>
+<script>
+var DEFAULT_EPSON_PAPERS = __DEFAULT_EPSON_PAPERS__;
+</script>
+<script>
+(function () {
+  'use strict';
+  var M = window.ArtMarket;
+  var DATA = JSON.parse(document.getElementById('art-data').textContent);
+  var SETTINGS_KEY = 'coba-beta-art-v1';       // beta-only key
+  var INVENTORY_KEY = 'coba-inventory-v2';     // live estimator's inventory: READ ONLY, never written here
+  var DEFAULTS = { at: 'mid', pct: 100, round: 1, minart: 25, minplan: 0, nomk: 'rate', prem: 0, artrate: 14, bwrate: 0.90, colrate: 3.50,
+    inkcol: 0.41, inkbw: 0.04, roll: 36, margin: 1, warn: 2, hst: 13 };
+  var JOB_DEFAULTS = { art: { w: 24, h: 18, q: 1, paper: 'em', ink: 'colour' }, plan: { w: 36, h: 24, q: 5, ink: 'bw', turn: 'sd' } };
+  var SIZE_CHIPS = { art: [[7, 5], [10, 8], [14, 11], [18, 12], [20, 16], [24, 18], [30, 20], [36, 24], [48, 36]], plan: [[17, 11], [24, 18], [36, 24], [42, 30], [48, 36]] };
+  var QTY_CHIPS = { art: [1, 2, 5, 10, 25], plan: [1, 5, 10, 25, 50] };
+  var BREAKS = { art: [1, 2, 5, 10, 25, 50], plan: [1, 5, 10, 25, 50, 100] };
+  var PAPERS = { em: { label: 'Enhanced Matte', inv: /enhanced matte/i, group: 'em' }, luster: { label: 'Luster', inv: /luster|lustre/i, group: 'photo' }, glossy: { label: 'Glossy', inv: /gloss/i, group: 'photo' } };
+  var GROUP_LABEL = { em: 'matte inkjet art paper (like your Enhanced Matte)', photo: 'photo paper (satin, luster, gloss)', rag: 'cotton rag fine art', poster: 'economy poster stock (not giclee)', bond: 'bond' };
+  var BADGE = { em: 'Matte art paper', photo: 'Photo paper', rag: 'Cotton rag', poster: 'Poster stock', bond: 'Bond' };
+  var TURN = { cs: '2-4 days', sd: 'Same day', '1h': '1 hour' };
+  var TIMES = String.fromCharCode(215), ICON_LOSS = String.fromCharCode(10006), ICON_WARN = String.fromCharCode(9888), ICON_OK = String.fromCharCode(10004), DASH = String.fromCharCode(8212), DOT = String.fromCharCode(183);
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- storage (beta-only key) ----------
+  var store = { s: {}, jobs: {}, local: [], product: 'art' };
+  try { var raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); if (raw && typeof raw === 'object') { store.s = raw.s || {}; store.jobs = raw.jobs || {}; store.local = Array.isArray(raw.local) ? raw.local : []; store.product = raw.product === 'plan' ? 'plan' : 'art'; } } catch (e) {}
+  var S = {}; Object.keys(DEFAULTS).forEach(function (k) { S[k] = store.s[k] != null ? store.s[k] : DEFAULTS[k]; });
+  var JOBS = {}; ['art', 'plan'].forEach(function (p) { JOBS[p] = {}; var d = JOB_DEFAULTS[p], o = store.jobs[p] || {}; Object.keys(d).forEach(function (k) { JOBS[p][k] = o[k] != null ? o[k] : d[k]; }); });
+  var P = store.product;
+  function save() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ s: S, jobs: JOBS, local: store.local, product: P })); } catch (e) {} }
+
+  // ---------- paper costs: saved inventory on this device (read only), else built-in defaults ----------
+  var papers = DEFAULT_EPSON_PAPERS, invSource = 'built-in defaults';
+  try { var inv = JSON.parse(localStorage.getItem(INVENTORY_KEY) || 'null'); if (inv && Array.isArray(inv.epsonPapers) && inv.epsonPapers.length) { papers = inv.epsonPapers; invSource = 'your saved inventory'; } } catch (e) {}
+  papers = papers.filter(function (v) { return v && typeof v.name === 'string' && isFinite(+v.cost); });
+  function paperCost(re) { for (var i = 0; i < papers.length; i++) if (re.test(papers[i].name)) return { cost: +papers[i].cost, name: papers[i].name }; return { cost: 0, name: 'not in inventory' }; }
+
+  // ---------- helpers ----------
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function money(v) { return '$' + (+v).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(id, f) { var v = parseFloat($(id).value); return isFinite(v) ? v : f; }
+  function roundTo(v, step) { return step > 0 ? Math.round(v / step) * step : Math.round(v * 100) / 100; }
+  function fmtDate(d) { return new Date(d + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.style.display = 'none'; }, 2200); }
+  function dimTxt(w, h) { return +Math.max(w, h).toFixed(2) + ' ' + TIMES + ' ' + +Math.min(w, h).toFixed(2) + ' in'; }
+
+  // ---------- current job ----------
+  function job() {
+    var J = JOBS[P];
+    var j = { product: P, w: Math.max(0, +J.w), h: Math.max(0, +J.h), q: Math.max(1, Math.round(+J.q || 1)), ink: J.ink };
+    if (P === 'art') { j.paper = J.paper; j.group = PAPERS[J.paper].group; } else { j.turn = J.turn; j.group = 'bond'; }
+    return j;
+  }
+  function groupName(j) {
+    if (j.product === 'art') return PAPERS[j.paper].label + ' ' + DASH + ' ' + GROUP_LABEL[j.group] + (j.ink === 'bw' ? ', B&W' : '');
+    return (j.ink === 'bw' ? 'B&W' : 'colour') + ' on bond, Staples ' + TURN[j.turn].toLowerCase() + ' service';
+  }
+  // Like-for-like split
+  function groups(j) {
+    var inG = [], out = [], refs = {};
+    DATA.sellers.forEach(function (s) {
+      if (j.product === 'plan') {
+        if (s.group !== 'bond') return;
+        if (s.ink !== j.ink) return;                       // other ink: not shown
+        if (/^stp-eng-/.test(s.id) && s.id.split('-').pop() !== j.turn) { out.push({ s: s, why: TURN[s.id.split('-').pop()].toLowerCase() + ' service' }); return; }
+        inG.push(s); return;
+      }
+      if (s.group === 'bond') return;
+      if (s.group === j.group) inG.push(s);
+      else if (s.group === 'rag' || s.group === 'poster' || (j.group === 'photo' && s.group === 'em') || (j.group === 'em' && s.group === 'photo')) (refs[s.group] = refs[s.group] || []).push(s);
+    });
+    return { inG: inG, out: out, refs: refs };
+  }
+  // Your per sq ft rate with no per-print minimum (the beta's minimum is per order)
+  function sqftRate(j) { return j.w * j.h / 144 * (j.product === 'plan' ? (j.ink === 'bw' ? S.bwrate : S.colrate) : S.artrate) * j.q; }
+  // Your estimator's price for this job today (Epson tab)
+  function yourRate(j) {
+    var sqft = j.w * j.h / 144;
+    if (j.product === 'plan') return sqft * (j.ink === 'bw' ? S.bwrate : S.colrate) * j.q;
+    var minPer = j.w * j.h <= 216 ? 25 : (j.w * j.h <= 432 ? 35 : 0);
+    return Math.max(sqft * S.artrate, minPer) * j.q;
+  }
+  function yourRateNote(j) {
+    if (j.product === 'plan') return '';
+    var minPer = j.w * j.h <= 216 ? 25 : (j.w * j.h <= 432 ? 35 : 0), sqft = j.w * j.h / 144;
+    return minPer > sqft * S.artrate ? ' ($' + minPer + ' minimum per print)' : '';
+  }
+  // Material cost, same math as the Epson tab
+  function materialCost(j) {
+    var ink = j.ink === 'bw' ? S.inkbw : S.inkcol;
+    if (j.product === 'plan') { var b = paperCost(/bond/i); return { cost: (b.cost + ink) * j.w * j.h / 144 * j.q, parts: b.name + ' + ink' }; }
+    var pc = paperCost(PAPERS[j.paper].inv), W = Math.max(j.w, j.h), H = Math.min(j.w, j.h), roll = S.roll, m = S.margin;
+    var across = W <= roll ? W : H, feed = W <= roll ? H : W;
+    var ipp = Math.max(1, Math.floor(roll / (across + m * 2))), passes = Math.ceil(j.q / ipp);
+    var film = passes * roll * (feed + m * 2) / 144;
+    return { cost: film * (pc.cost + ink), parts: pc.name + ' + ink, ' + ipp + ' across the ' + roll + '" roll' };
+  }
+  function quoteFor(j) {
+    var G = groups(j), rows = M.priceList(G.inG, j.w, j.h, j.q), st = M.stats(rows);
+    var refRows = {}, refSt = {};
+    Object.keys(G.refs).forEach(function (g) { refRows[g] = M.priceList(G.refs[g], j.w, j.h, j.q); refSt[g] = M.stats(refRows[g]); });
+    var base, basis, refG = j.group === 'em' ? 'rag' : 'poster';
+    if (st) { base = (S.at === 'low' ? st.low : S.at === 'high' ? st.high : st.mid) * S.pct / 100; basis = { kind: 'market', label: { mid: 'market middle', low: 'market low', high: 'market high' }[S.at] }; }
+    else if (S.nomk === 'ref' && (refSt[refG] || refSt.photo || refSt.em)) { var rs = refSt[refG] || refSt.photo || refSt.em; base = rs.mid * (1 + S.prem / 100); basis = { kind: 'ref', label: 'reference middle ' + (S.prem >= 0 ? '+ ' : '') + S.prem + '%' }; }
+    else { base = sqftRate(j); basis = { kind: 'rate', label: j.product === 'art' ? 'your $' + S.artrate + '/sq ft rate' : 'your $' + (j.ink === 'bw' ? S.bwrate : S.colrate) + '/sq ft rate' }; }
+    var q = roundTo(base, S.round), min = j.product === 'art' ? S.minart : S.minplan;
+    var minHit = min > 0 && q < min; if (minHit) q = min;
+    return { G: G, rows: rows, st: st, refRows: refRows, refSt: refSt, base: base, basis: basis, quote: q, minHit: minHit };
+  }
+  function status(quote, cost) { if (!(cost > 0)) return 'none'; var x = quote / cost; return x < 1 ? 'loss' : x < S.warn ? 'thin' : 'ok'; }
+
+  // ---------- render ----------
+  function sellerCard(x, j, used) {
+    var s = x.s, r = x.r, badge = s.group === 'bond' ? s.paper : BADGE[s.group];
+    var cls = s.group === j.group ? 'mine' : s.group === 'rag' ? 'up' : 'down';
+    var pr = r.na ? esc(r.note) : money(x.total);
+    var sub = []; if (!r.na) { sub.push(money(x.total / j.q) + ' each'); if (r.note) sub.push(r.note); }
+    return '<div class="seller' + (r.na ? ' na' : '') + (used ? ' used' : '') + '"><div class="nm">' + esc(s.name) + '<span class="badge ' + cls + '">' + esc(badge) + '</span></div>' +
+      '<div class="lb">' + esc(s.label) + '</div><div class="pr">' + pr + '</div>' + (sub.length ? '<div class="sp">' + esc(sub.join(' ' + DOT + ' ')) + '</div>' : '') +
+      '<div class="nt">' + esc(s.paper) + '. ' + esc(s.note || '') + (s.note ? '. ' : '') + esc(s.ship) + '</div></div>';
+  }
+  function setSeg(id, label, opts, val) {
+    $(id + '-lbl').textContent = label;
+    $(id).innerHTML = opts.map(function (o) { return '<button type="button" data-v="' + o[0] + '" class="' + (String(val) === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('');
+  }
+  function render() {
+    var J = JOBS[P], j = job();
+    document.querySelectorAll('.tab').forEach(function (t) { var on = t.getAttribute('data-p') === P; t.classList.toggle('on', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    if (P === 'art') {
+      $('job-title').innerHTML = '&#127912; Art reproduction <span class="hint">Epson giclee prints, priced per print</span>';
+      setSeg('opt-a', 'Paper', [['em', 'Enhanced Matte'], ['luster', 'Luster'], ['glossy', 'Glossy']], J.paper);
+      setSeg('opt-b', 'Ink', [['colour', 'Colour'], ['bw', 'B&amp;W']], J.ink);
+    } else {
+      $('job-title').innerHTML = '&#128208; Construction plans <span class="hint">bond, priced per sheet</span>';
+      setSeg('opt-a', 'Ink', [['bw', 'B&amp;W'], ['colour', 'Colour']], J.ink);
+      setSeg('opt-b', 'Compare with Staples turnaround', [['cs', '2-4 days'], ['sd', 'Same day'], ['1h', '1 hour']], J.turn);
+    }
+    $('size-chips').innerHTML = '<span class="lbl">Size</span>' + SIZE_CHIPS[P].map(function (z) { var on = Math.abs(Math.max(j.w, j.h) - z[0]) < 0.01 && Math.abs(Math.min(j.w, j.h) - z[1]) < 0.01; return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-w="' + z[0] + '" data-h="' + z[1] + '">' + z[1] + ' ' + TIMES + ' ' + z[0] + '</button>'; }).join('');
+    $('qty-chips').innerHTML = '<span class="lbl">Qty</span>' + QTY_CHIPS[P].map(function (q) { return '<button type="button" class="chip' + (q === j.q ? ' on' : '') + '" data-q="' + q + '">' + q + '</button>'; }).join('');
+    $('src-note').textContent = 'Paper costs from ' + invSource + ' (read only).';
+    if (!(j.w > 0 && j.h > 0)) return;
+
+    var Q = quoteFor(j), mc = materialCost(j), st = status(Q.quote, mc.cost), hst = S.hst / 100;
+    $('c-cost').textContent = money(mc.cost); $('c-cost-sub').textContent = mc.parts;
+    $('c-quote').textContent = money(Q.quote); $('c-quote-sub').textContent = money(Q.quote / j.q) + ' each' + (Q.minHit ? ' (minimum order)' : '');
+    $('c-profit').textContent = money(Q.quote - mc.cost); $('c-profit-sub').textContent = mc.cost > 0 ? (Q.quote / mc.cost).toFixed(1) + TIMES + ' material cost' : '';
+    $('c-total').textContent = money(Q.quote * (1 + hst)); $('c-total-sub').textContent = 'HST ' + money(Q.quote * hst);
+    var chk = $('check'); chk.className = 'check ' + st;
+    chk.textContent = st === 'loss' ? ICON_LOSS + ' Below material cost. Raise the price.' : st === 'thin' ? ICON_WARN + ' Thin: only ' + (Q.quote / mc.cost).toFixed(2) + TIMES + ' material cost (warning below ' + S.warn + TIMES + ').' : st === 'ok' ? ICON_OK + ' Covers material ' + (Q.quote / mc.cost).toFixed(1) + TIMES + ' over.' : 'No material cost to check.';
+
+    $('mk-group').textContent = groupName(j);
+    $('mk-stats').hidden = !Q.st;
+    if (Q.st) { $('mk-range').textContent = Q.st.high > Q.st.low ? money(Q.st.low) + ' - ' + money(Q.st.high) : money(Q.st.low); $('mk-mid').textContent = money(Q.st.mid); }
+    var used = Q.basis.kind === 'market';
+    $('sellers').innerHTML = Q.rows.map(function (x) { return sellerCard(x, j, used && x.total != null); }).join('');
+    var empty = $('mk-empty');
+    if (!Q.st) { empty.hidden = false; empty.innerHTML = '<strong>No like-for-like seller lists this size online.</strong> The quote uses ' + esc(Q.basis.label) + '. The reference prices below show what customers can find.'; }
+    else empty.hidden = true;
+    $('mk-excl').innerHTML = Q.G.out.length ? 'Not compared: ' + Q.G.out.map(function (o) { return esc(o.s.name + ' ' + o.why); }).join(', ') + '.' : '';
+    $('rule-line').innerHTML = 'Quote = <strong>' + esc(Q.basis.label) + '</strong>' + (Q.basis.kind === 'market' && S.pct !== 100 ? ' ' + TIMES + ' ' + S.pct + '%' : '') + ', rounded' + (Q.minHit ? ', raised to the minimum order' : '');
+    $('est-price').textContent = money(yourRate(j)) + yourRateNote(j);
+
+    // reference boxes
+    var order = j.group === 'em' ? ['rag', 'poster', 'photo'] : ['rag', 'em', 'poster'];
+    var title = { rag: 'Above your paper ' + DASH + ' cotton rag fine art (premium)', poster: 'Below your paper ' + DASH + ' poster stock (not giclee)', photo: 'Other paper ' + DASH + ' photo paper', em: 'Other paper ' + DASH + ' matte art paper' };
+    $('refs').innerHTML = order.filter(function (g) { return Q.refRows[g]; }).map(function (g) {
+      var stt = Q.refSt[g];
+      return '<div class="market ref"><div class="mk-head"><span>Reference only ' + DOT + ' <span class="mk-group">' + esc(title[g]) + '</span></span>' + (stt ? '<span>range <strong>' + (stt.high > stt.low ? money(stt.low) + ' - ' + money(stt.high) : money(stt.low)) + '</strong> ' + DOT + ' middle <strong>' + money(stt.mid) + '</strong></span>' : '<span>not sold in this size</span>') + '</div>' +
+        '<div class="sellers">' + Q.refRows[g].map(function (x) { return sellerCard(x, j, Q.basis.kind === 'ref' && false); }).join('') + '</div></div>';
+    }).join('');
+
+    var loc = store.local.filter(function (e) { return sameKind(e, j); });
+    $('mk-local').hidden = !loc.length;
+    $('local-sellers').innerHTML = loc.map(function (e) { var each = e.price / e.q; return '<div class="seller"><div class="nm">' + esc(e.name) + '<span class="badge local">You entered</span></div><div class="pr">' + money(each * j.q) + '</div><div class="sp">' + money(each) + ' each, from their ' + money(e.price) + ' for ' + e.q + '</div><div class="nt">Entered ' + esc(e.date) + '</div></div>'; }).join('');
+    renderLocalList();
+    renderBreaks(j);
+    save();
+  }
+  function kindKey(j) { return j.product === 'art' ? ['art', j.paper, j.ink].join('|') : ['plan', j.ink].join('|'); }
+  function sameKind(e, j) { return e.kind === kindKey(j) && Math.abs(Math.max(e.w, e.h) - Math.max(j.w, j.h)) < 0.01 && Math.abs(Math.min(e.w, e.h) - Math.min(j.w, j.h)) < 0.01; }
+  function renderLocalList() {
+    $('local-list').innerHTML = store.local.map(function (e, i) { return '<div class="local-row"><span>' + esc(e.name) + ': ' + money(e.price) + ' for ' + e.q + ' ' + DOT + ' ' + esc(e.desc) + ' ' + DOT + ' ' + esc(e.date) + '</span><button type="button" class="btn-x" data-del="' + i + '" aria-label="Remove">' + ICON_LOSS + '</button></div>'; }).join('');
+  }
+  function renderBreaks(j) {
+    var qs = BREAKS[P].slice(); if (qs.indexOf(j.q) < 0) { qs.push(j.q); qs.sort(function (a, b) { return a - b; }); }
+    var head = '<tr><th>Qty</th><th>Market middle</th><th>Quote</th><th>Each</th><th>Estimator now</th><th>Your cost</th><th>' + TIMES + ' cost</th></tr>';
+    $('breaks').innerHTML = head + qs.map(function (q) {
+      var jj = Object.assign({}, j, { q: q }), Q = quoteFor(jj), mc = materialCost(jj).cost, st = status(Q.quote, mc);
+      return '<tr' + (q === j.q ? ' class="cur"' : '') + '><td class="qcell">' + q + '</td><td class="num">' + (Q.st ? money(Q.st.mid) : DASH) + '</td><td class="num"><span class="dot ' + st + '"></span>' + money(Q.quote) + '</td><td class="num">' + money(Q.quote / q) + '</td><td class="num">' + money(yourRate(jj)) + '</td><td class="num" style="color:#888">' + money(mc) + '</td><td class="num">' + (mc > 0 ? (Q.quote / mc).toFixed(1) + TIMES : DASH) + '</td></tr>';
+    }).join('');
+    $('breaks-hint').textContent = dimTxt(j.w, j.h) + ', ' + groupName(j);
+  }
+
+  // ---------- inputs ----------
+  function loadInputs() { var J = JOBS[P]; $('j-w').value = J.w; $('j-h').value = J.h; $('j-q').value = J.q; }
+  function readJob() { var J = JOBS[P]; J.w = num('j-w', J.w); J.h = num('j-h', J.h); J.q = Math.max(1, Math.round(num('j-q', J.q))); }
+  ['j-w', 'j-h', 'j-q'].forEach(function (id) { $(id).addEventListener('input', function () { readJob(); render(); }); });
+  $('opt-a').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; JOBS[P][P === 'art' ? 'paper' : 'ink'] = b.getAttribute('data-v'); render(); });
+  $('opt-b').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; JOBS[P][P === 'art' ? 'ink' : 'turn'] = b.getAttribute('data-v'); render(); });
+  $('size-chips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (!b) return; JOBS[P].w = +b.getAttribute('data-h'); JOBS[P].h = +b.getAttribute('data-w'); loadInputs(); render(); });
+  $('qty-chips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (!b) return; JOBS[P].q = +b.getAttribute('data-q'); loadInputs(); render(); });
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { P = t.getAttribute('data-p'); loadInputs(); render(); }); });
+
+  var NUM_SETTINGS = ['pct', 'minart', 'minplan', 'prem', 'artrate', 'bwrate', 'colrate', 'inkcol', 'inkbw', 'roll', 'margin', 'warn', 'hst'];
+  function loadSettingsUI() { NUM_SETTINGS.forEach(function (k) { $('s-' + k).value = S[k]; }); $('s-at').value = S.at; $('s-round').value = String(S.round); $('s-nomk').value = S.nomk; }
+  NUM_SETTINGS.forEach(function (k) { $('s-' + k).addEventListener('input', function () { var v = parseFloat($('s-' + k).value); if (isFinite(v)) { S[k] = v; render(); } }); });
+  $('s-at').addEventListener('change', function () { S.at = $('s-at').value; render(); });
+  $('s-round').addEventListener('change', function () { S.round = parseFloat($('s-round').value); render(); });
+  $('s-nomk').addEventListener('change', function () { S.nomk = $('s-nomk').value; render(); });
+  $('s-reset').addEventListener('click', function () { Object.keys(DEFAULTS).forEach(function (k) { S[k] = DEFAULTS[k]; }); loadSettingsUI(); render(); toast('Settings reset'); });
+  $('set-toggle').addEventListener('click', function () { var s = $('settings'), open = s.hidden; s.hidden = !open; this.setAttribute('aria-expanded', open ? 'true' : 'false'); this.innerHTML = (open ? '&#9650; Hide' : '&#9660; Show') + ' pricing settings'; });
+
+  $('lp-add').addEventListener('click', function () {
+    var j = job(), name = $('lp-name').value.trim(), price = parseFloat($('lp-price').value), q = Math.max(1, Math.round(parseFloat($('lp-q').value) || j.q));
+    if (!name || !(price > 0)) { toast('Enter the shop and their price'); return; }
+    var d = new Date(), date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    store.local.push({ kind: kindKey(j), w: j.w, h: j.h, name: name.slice(0, 60), price: price, q: q, date: date, desc: dimTxt(j.w, j.h) + ', ' + groupName(j) });
+    $('lp-name').value = ''; $('lp-price').value = ''; render(); toast('Local price added');
+  });
+  $('local-list').addEventListener('click', function (e) { var b = e.target.closest('[data-del]'); if (!b) return; store.local.splice(+b.getAttribute('data-del'), 1); render(); });
+
+  function quoteText() {
+    var j = job(), Q = quoteFor(j), hst = S.hst / 100;
+    var what = j.product === 'art' ? 'Art print ' + dimTxt(j.w, j.h) + ', ' + PAPERS[j.paper].label + ' paper, ' + (j.ink === 'bw' ? 'black and white' : 'full colour') + ' archival pigment ink' : 'Plan prints ' + dimTxt(j.w, j.h) + ', bond, ' + (j.ink === 'bw' ? 'black and white' : 'colour');
+    return ['Coba Studios quote', what, 'Quantity: ' + j.q, 'Price: ' + money(Q.quote) + ' (' + money(Q.quote / j.q) + ' each)', 'HST ' + S.hst + '%: ' + money(Q.quote * hst), 'Total: ' + money(Q.quote * (1 + hst))].join('\n');
+  }
+  $('btn-copy').addEventListener('click', function () { var t = quoteText(); var fb = function () { $('copy-box').hidden = false; $('copy-text').value = t; $('copy-text').select(); }; try { navigator.clipboard.writeText(t).then(function () { toast('Quote copied'); }, fb); } catch (e) { fb(); } });
+  $('btn-new').addEventListener('click', function () { var d = JOB_DEFAULTS[P]; Object.keys(d).forEach(function (k) { JOBS[P][k] = d[k]; }); loadInputs(); render(); });
+  $('btn-print').addEventListener('click', function () { window.print(); });
+
+  var age = Math.max(0, Math.floor((Date.now() - new Date(DATA.captured + 'T12:00:00').getTime()) / 86400000));
+  $('mk-date').textContent = fmtDate(DATA.captured); $('mk-date2').textContent = fmtDate(DATA.captured);
+  $('mk-age').textContent = ' (' + age + ' day' + (age === 1 ? '' : 's') + ' old)';
+  $('stale-pill').hidden = age <= 150;
+  loadInputs(); loadSettingsUI(); render();
+})();
+</script>
+</body>
+</html>

@@ -60,12 +60,17 @@ for (const f of fs.readdirSync(IN).filter(f => f.endsWith('.json'))) {
     const s = j.sellers[id];
     if (!META[id]) { errors.push('no metadata for ' + id + ' (skipped)'); continue; }
     const sizes = s.rows.map(r => ({ w: r[0], h: r[1], ladder: s.q.map((q, i) => s.cols === 2 ? [q, r[2][i], r[3][i]] : [q, r[2][i]]).filter(x => x[1] != null) }));
-    sellers.push(Object.assign({ id, captured: DATE, sizing: 'exact', flat: !/^vp-/.test(id) }, META[id], { sizes }));
+    const o = Object.assign({ id, captured: DATE, sizing: 'area', flat: !/^vp-/.test(id) }, META[id], { sizes });
+    // per sq ft rates: Monk's art and poster rates apply above its largest size; Monk's plan rate ("other sizes") and
+    // Staples' engineering rate (custom sizes, in store) apply to any size not listed
+    const ps = (j.perSqft || {})[id];
+    if (ps) { o.perSqft = ps; o.perSqftUse = /^stp-|^monk-bond/.test(id) ? 'custom' : 'larger'; }
+    sellers.push(o);
   }
 }
 const order = Object.keys(META);
 sellers.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-const data = { captured: DATE, currency: 'CAD', note: 'Prices before tax and shipping. Rows: [qty, price] or [qty, list, sale]. sizing exact = only listed sizes are sold online; area = custom sizes priced between.', groups: {
+const data = { captured: DATE, currency: 'CAD', note: 'Prices before tax and shipping. Rows: [qty, price] or [qty, list, sale]. Sizes between listed ones are estimated by area; perSqft (larger = above the largest listed size, custom = any unlisted size, in store) when the seller publishes one.', groups: {
   em: 'Matte inkjet art paper (your Epson Enhanced Matte and similar)', rag: 'Cotton rag fine art (premium)', photo: 'Photo paper: satin / luster / semi-gloss / glossy', poster: 'Economy poster paper (not giclee)', bond: 'Bond for plans and CAD (20-24 lb)' }, extras, sellers };
 const txt = JSON.stringify(data).replace(/[^\x00-\x7F]/g, '');
 fs.writeFileSync(OUT, txt + '\n');
