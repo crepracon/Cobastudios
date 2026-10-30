@@ -7,7 +7,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f0ed; color: #1a1a1a; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
-    .wrapper { max-width: 960px; margin: 0 auto; }
+    .wrapper { max-width: 1280px; margin: 0 auto; } /* v31: was 960px; all tabs now sit inside (a stray closing div in Paper had pushed them out since v20) */
 
     .app-header { background: #1a1a1a; border-radius: 12px 12px 0 0; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .app-header h1 { font-size: 16px; font-weight: 700; color: #fff; }
@@ -481,8 +481,6 @@
           <div class="card-num" id="p-grand">$0.00</div>
           <div class="card-sub" id="p-tax-line">Tax: $0.00</div>
         </div>
-      </div>
-
       </div>
 
       <!-- MARKET REFERENCE CHECK -->
@@ -1704,7 +1702,17 @@ function snapRestore(tab, snap){
     const el = els[i]; if(!el) return;
     if('c' in f){ el.checked = !!f.c; } else { el.value = f.v; }
   });
+  if(tab==='paper') pPanelRepair();
   (SNAP_CALCS[tab]||[]).forEach(fn=>{ try{ window[fn] ? window[fn]() : eval(fn+'()'); }catch(e){ console.error(fn, e); } });
+}
+// v31: Paper jobs saved before v31 were captured from a broken layout (a stray </div> left the market check, tiers
+// and notes outside .panel-body and the action bar outside the panel). Moving the nodes keeps their values and order.
+const P_ACTION_BAR = (()=>{ const a=document.querySelector('#panel-paper > .action-bar'); return a ? a.outerHTML : ''; })();
+function pPanelRepair(){
+  const panel=document.getElementById('panel-paper'); if(!panel) return;
+  const body=panel.querySelector(':scope > .panel-body'); if(!body) return;
+  Array.from(panel.children).forEach(el=>{ if(el!==body && !el.classList.contains('action-bar')) body.appendChild(el); });
+  if(!panel.querySelector(':scope > .action-bar') && P_ACTION_BAR) panel.insertAdjacentHTML('beforeend', P_ACTION_BAR);
 }
 
 // --- save flow ---
