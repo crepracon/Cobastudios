@@ -36,6 +36,7 @@ Chris is a hobbyist developer learning as he builds. Pragmatic and iterative: ge
 3. **No new dependencies.** The file must stay self-contained and offline-capable. (Deliberate exception: Firebase for Jobs cloud sync, loaded only when configured.) If something truly can't be done in plain HTML/CSS/JS, explain the trade-off first.
 4. **Small steps, verified.** One change at a time. Multi-section changes: state the plan first.
 5. **Git:** commit at every working state with a short message. Tag milestones (`v23`, `v24`, ...). Never edit the only working copy. No secrets in the repo — the file is client-side and publicly hosted.
+   - Tags/releases: Claude's cloud sessions can push branches but not tags (refused by the session's git proxy). Publish milestones from GitHub's **New release** page in the Claude desktop app's built-in browser, which is signed in as crepracon: `https://github.com/crepracon/Cobastudios/releases/new?tag=vNN&target=<full commit sha>&title=...&body=...`, then **Publish release**. Releases are public, so ask Chris first (a "publish the release" in his request counts).
 6. **Pricing integrity:** saved estimates deliberately reopen with the rates in effect when quoted. Don't "fix" that. Validated real-world costs (from invoices/job logs) beat assumed defaults — flag before changing any calibrated number.
 7. **Flag regressions and drift.** If a request contradicts an earlier decision or these rules, say so before doing it.
 
@@ -47,7 +48,7 @@ Run validation → commit and push → tag if milestone → recap what changed i
 - VersaWorks CSV import — back-calculate real Roland ink cost/sqft and waste from job logs
 - QuickBooks Online integration (needs OAuth + small backend — this is the phase where the single-file constraint gets revisited, deliberately)
 - Market pricing strategy: defend/compete guidance in market-check bars (added v26); backed by a separate market pricing reference doc to be refreshed quarterly
-- Market-anchored quoting: stickers live in v28 (Vinyl / Roland, Pricing: Market) with a scheduled refresh. Next: extend the same approach to other products (banners, posters/canvas via Posterjack, Staples, more VistaPrint), each as a beta first
+- Market-anchored quoting: stickers live in v28 (Vinyl / Roland, Pricing: Market) with a scheduled refresh. In progress: signs & banners (phase 1 data collected Oct 29 2026 in `tools/market-refresh/signs/`: lawn signs, banners, large stickers, A-frames from VistaPrint, Staples Canada's print shop, Sticker Mule, BannerBuzz; like-for-like rules in that README). Next: a signs/banners beta page, then the Banners and Signage sections; later posters/canvas via Posterjack
 
 Current version: **v28** (sticker market pricing in Vinyl / Roland: like-for-like competitor quotes with Classic switch; saved quotes kept through refreshes; fixed Roland settings button)
 Previous: v27 (Jobs cloud sync via Firebase: shared live jobs list across computers, survives app updates)
