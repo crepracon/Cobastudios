@@ -35,6 +35,11 @@ The browser tool stops waiting after 45 seconds, so these collectors start in th
   Mule and Kelly Signs say so; Staples doesn't say and offers no laminate). They are tagged `method: 'direct'` and are
   shown for reference only, never mixed into a vinyl + laminate comparison. Quote then comes from the estimator rate,
   or (if Chris picks it) the direct-print middle plus a premium %.
+- **Outsourcing (Chris, Oct 29 2026):** lawn sign jobs over about 20 signs are outsourced, not made in-house. The beta's
+  "Auto" method (default) treats up to 20 signs (setting) as in-house vinyl + laminate and anything bigger as outsourced
+  direct print: compared like for like with the direct-print sellers, with the cost = what the cheapest seller (or a
+  chosen one) charges, plus optional inbound shipping.
+- **2 sided** (same as the estimator's Signage since v29): 2 faces of vinyl + ink + laminate on 1 board.
 - **Lawn signs:** 1 sided and 2 sided are separate groups. Stakes are an add-on: compare sign-only prices, and add each
   seller's own stake price only when the quote includes stakes. Sticker Mule always includes an H-stake (and only
   sells 2 sided 24 x 18), so it is compared only when the quote includes stakes.

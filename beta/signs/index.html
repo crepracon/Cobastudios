@@ -164,19 +164,20 @@
         <div></div>
       </div>
       <div class="opt-grid" id="opts-lawn" hidden>
-        <div><span class="field-label">How it's made</span><div class="seg" id="o-meth"><button type="button" data-v="vinyl" class="on">Vinyl + laminate</button><button type="button" data-v="direct">Direct print</button></div></div>
+        <div><span class="field-label">How it's made</span><div class="seg" id="o-meth"><button type="button" data-v="auto" class="on">Auto</button><button type="button" data-v="vinyl">Vinyl + lam</button><button type="button" data-v="direct">Outsource</button></div></div>
         <div><span class="field-label">Sides</span><div class="seg" id="o-sides"><button type="button" data-v="1" class="on">1 sided</button><button type="button" data-v="2">2 sided</button></div></div>
         <div><span class="field-label">Stakes</span><div class="seg" id="o-stake"><button type="button" data-v="0" class="on">No stake</button><button type="button" data-v="1">1 stake each</button></div></div>
         <div><label class="field-label" for="o-sub">Board (cost)</label><select id="o-sub"></select></div>
       </div>
+      <div class="src-note" id="meth-note" hidden></div>
       <div class="chips" id="size-chips"></div>
       <div class="chips" id="qty-chips"></div>
       <div class="src-note" id="src-note"></div>
 
       <div class="cards4">
-        <div class="card yourCost"><div class="card-lbl">Your material cost</div><div class="card-num" id="c-cost">$0.00</div><div class="card-sub" id="c-cost-sub">&nbsp;</div></div>
+        <div class="card yourCost"><div class="card-lbl" id="c-cost-lbl">Your material cost</div><div class="card-num" id="c-cost">$0.00</div><div class="card-sub" id="c-cost-sub">&nbsp;</div></div>
         <div class="card quote"><div class="card-lbl">Quote before tax</div><div class="card-num" id="c-quote">$0.00</div><div class="card-sub" id="c-quote-sub">&nbsp;</div></div>
-        <div class="card profit"><div class="card-lbl">Over material cost</div><div class="card-num" id="c-profit">$0.00</div><div class="card-sub" id="c-profit-sub">&nbsp;</div></div>
+        <div class="card profit"><div class="card-lbl" id="c-profit-lbl">Over material cost</div><div class="card-num" id="c-profit">$0.00</div><div class="card-sub" id="c-profit-sub">&nbsp;</div></div>
         <div class="card grand"><div class="card-lbl">Grand total with HST</div><div class="card-num" id="c-total">$0.00</div><div class="card-sub" id="c-total-sub">&nbsp;</div></div>
       </div>
       <div class="check none" id="check" role="status">&nbsp;</div>
@@ -240,8 +241,14 @@
           <div class="set-grid">
             <div><label class="field-label" for="s-banrate">Banner rate ($ / sq ft)</label><input type="number" id="s-banrate" min="0" step="0.25"><div class="help">Vinyl / Roland &rsaquo; Banners. Default $6.00 incl. print, hems, grommets.</div></div>
             <div><label class="field-label" for="s-sgnrate">Signage rate ($ / sq ft)</label><input type="number" id="s-sgnrate" min="0" step="0.25"><div class="help">Vinyl / Roland &rsaquo; Signage. Default $12.00.</div></div>
-            <div><label class="field-label" for="s-side2">2nd side adds (%)</label><input type="number" id="s-side2" min="0" max="200" step="5"><div class="help">Your estimator charges the same for 2 sided today (0%).</div></div>
+            <div><span class="field-label">2 sided signs</span><div class="help" style="font-size:12px;color:#555">Priced like your estimator (v29): rate &times; (2 faces + board) &divide; (1 face + board), from the material costs below.</div></div>
             <div><label class="field-label" for="s-stakeprice">Stake price you charge ($ each)</label><input type="number" id="s-stakeprice" min="0" step="0.25"><div class="help">Staples $2.49, Kelly Signs $2.50, VistaPrint $4-5.</div></div>
+          </div>
+          <div class="set-head">Outsourcing (lawn signs)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-outsrc">Outsource lawn signs above (signs)</label><input type="number" id="s-outsrc" min="0" step="1"><div class="help">With "Auto", jobs up to this many signs are made in-house (vinyl + laminate); bigger jobs are priced as outsourced direct print.</div></div>
+            <div><label class="field-label" for="s-buyfrom">Buy outsourced signs from</label><select id="s-buyfrom"><option value="cheapest">Cheapest seller for the job</option><option value="vp">VistaPrint</option><option value="stp">Staples</option><option value="sm">Sticker Mule</option><option value="ks">Kelly Signs</option></select><div class="help">Their price is your cost for outsourced jobs.</div></div>
+            <div><label class="field-label" for="s-shipin">Shipping to you per order ($)</label><input type="number" id="s-shipin" min="0" step="1"><div class="help">Added to the outsourcing cost. VistaPrint and Staples charge about $10 under $75-100; Sticker Mule ships free.</div></div>
           </div>
           <div class="set-head">Material cost</div>
           <div class="set-grid">
@@ -262,7 +269,7 @@
       <hr class="divider">
       <div class="notes">
         <div><strong>Like for like.</strong> Banners are compared by material weight (13 oz vs heavy 15-18 oz) and by edges (hemmed + grommets vs grommets only). Lawn signs are compared by how they're made, by sides, and by stakes. A seller that differs on any of these is listed as not compared, with the reason.</div>
-        <div><strong>Vinyl + laminate vs direct print.</strong> Every lawn sign seller found (VistaPrint, Staples, Sticker Mule, Kelly Signs) prints straight onto the coroplast with no laminate. Your printed vinyl + laminate signs are a different, longer-lasting product, so their prices are shown for reference only.</div>
+        <div><strong>Vinyl + laminate vs direct print.</strong> Every lawn sign seller found (VistaPrint, Staples, Sticker Mule, Kelly Signs) prints straight onto the coroplast with no laminate. Your printed vinyl + laminate signs are a different, longer-lasting product, so their prices are shown for reference only. Jobs you outsource (Auto: over 20 signs) are direct print, so those are compared with them like for like, and your cost is what you'd pay the seller.</div>
         <div><strong>Where the prices come from.</strong> Each seller's own online prices on <span id="mk-date2">-</span>, before tax and before shipping (each seller's shipping is noted). Sizes between captured ones are estimated by area. Staples and Kelly Signs charge the same per sign at any quantity.</div>
         <div><strong>What's not in material cost.</strong> Waste, grommets, hemming tape, design, setup, cutting, mounting and your time. "Over material cost" has to cover those.</div>
       </div>
@@ -445,11 +452,11 @@ var DEFAULT_SUBSTRATES = [
   DATA.sellers.forEach(function (s) { if (/^(stp|ks)-/.test(s.id)) s.flat = true; });
   var SETTINGS_KEY = 'coba-beta-signs-v1';     // beta-only key
   var INVENTORY_KEY = 'coba-inventory-v2';     // live estimator's inventory: READ ONLY, never written here
-  var DEFAULTS = { at: 'mid', pct: 100, round: 1, nomk: 'rate', prem: 50, min: 0, banrate: 6, sgnrate: 12, side2: 0, stakeprice: 2.5, stakecost: 0,
+  var DEFAULTS = { at: 'mid', pct: 100, round: 1, nomk: 'rate', prem: 50, min: 0, banrate: 6, sgnrate: 12, stakeprice: 2.5, stakecost: 0, outsrc: 20, buyfrom: 'cheapest', shipin: 0,
     vinyl: 'Matte Vinyl', lam: 'Matte Laminate', ink: 0.5, warn: 1.3, hst: 13, media13: 'Ultraflex Superprint Plus Matte 13oz 38in', mediaHeavy: '15oz Banner Premium 54in', sub: '4mm Coroplast' };
   var JOB_DEFAULTS = {
     banner: { w: 4, h: 2, unit: 'ft', q: 1, mat: '13oz', hem: 1 },
-    lawn: { w: 24, h: 18, unit: 'in', q: 10, method: 'vinyl', sides: 1, stakes: 0 }
+    lawn: { w: 24, h: 18, unit: 'in', q: 10, method: 'auto', sides: 1, stakes: 0 }
   };
   var SIZE_CHIPS = { banner: [[48, 24], [72, 24], [72, 36], [96, 36], [96, 48], [120, 48]], lawn: [[18, 12], [24, 18], [24, 24], [36, 24], [48, 48], [96, 48]] }; // inches
   var QTY_CHIPS = { banner: [1, 2, 3, 5, 10], lawn: [1, 5, 10, 25, 50, 100] };
@@ -493,22 +500,41 @@ var DEFAULT_SUBSTRATES = [
   function job() {
     var J = JOBS[P], f = J.unit === 'ft' ? 12 : 1;
     var j = { product: P, w: Math.max(0, +J.w) * f, h: Math.max(0, +J.h) * f, q: Math.max(1, Math.round(+J.q || 1)), unit: J.unit };
-    if (P === 'banner') { j.mat = J.mat; j.hem = !!+J.hem; } else { j.method = J.method; j.sides = +J.sides; j.stakes = !!+J.stakes; }
+    if (P === 'banner') { j.mat = J.mat; j.hem = !!+J.hem; } else { j.methodPick = J.method; j.sides = +J.sides; j.stakes = !!+J.stakes; }
+    return withMethod(j);
+  }
+  // Auto: in-house vinyl + laminate up to the outsourcing limit, outsourced direct print above it
+  function withMethod(j) {
+    if (j.product !== 'lawn') return j;
+    j.method = j.methodPick === 'auto' ? (j.q > S.outsrc ? 'direct' : 'vinyl') : (j.methodPick || 'vinyl');
+    j.outsourced = j.method === 'direct';
     return j;
   }
   function groupName(j) {
     if (j.product === 'banner') return (j.mat === '13oz' ? '13 oz vinyl' : 'heavy 15-18 oz vinyl') + ', ' + (j.hem ? 'hemmed + grommets' : 'grommets only');
-    return (j.method === 'vinyl' ? 'vinyl + laminate on coroplast' : 'printed straight onto coroplast') + ', ' + j.sides + ' sided, ' + (j.stakes ? 'with stakes' : 'no stakes');
+    return (j.method === 'vinyl' ? 'vinyl + laminate on coroplast (in-house)' : 'printed straight onto coroplast (outsourced)') + ', ' + j.sides + ' sided, ' + (j.stakes ? 'with stakes' : 'no stakes');
   }
   // Your estimator's way of pricing this job today
   function yourRate(j) {
     var sqft = j.w * j.h / 144;
     if (j.product === 'banner') return sqft * S.banrate * j.q;
-    var per = sqft * S.sgnrate * (j.sides === 2 ? 1 + S.side2 / 100 : 1);
+    var per = sqft * S.sgnrate * (j.sides === 2 ? side2x() : 1);
     return per * j.q + (j.stakes ? S.stakeprice * j.q : 0);
   }
-  function materialCost(j) {
+  // Same as the estimator's Signage (v29): a 2 sided sign is 2 faces (vinyl + ink + laminate) on 1 board
+  function side2x() {
+    var F = costOf(vinylList, S.vinyl) + S.ink + costOf(vinylList, S.lam), B = costOf(subList, S.sub);
+    return F + B > 0 ? (2 * F + B) / (F + B) : 2;
+  }
+  function materialCost(j, Q) {
     var sqft = j.w * j.h / 144;
+    if (j.product === 'lawn' && j.outsourced) {
+      var rows = (Q || quoteFor(j)).rows.filter(function (x) { return x.total != null && (S.buyfrom === 'cheapest' || x.s.id.indexOf(S.buyfrom + '-') === 0); });
+      if (rows.length) {
+        var best = rows.reduce(function (a, b) { return b.total < a.total ? b : a; });
+        return { cost: best.total + S.shipin, parts: 'buy from ' + best.s.name + (S.shipin ? ' + shipping' : ''), out: true };
+      }
+    }
     if (j.product === 'banner') { var media = costOf(vinylList, $('o-media').value); return { cost: (media + S.ink) * sqft * j.q, parts: 'media + ink' }; }
     var face = costOf(vinylList, S.vinyl) + S.ink + (j.method === 'vinyl' ? costOf(vinylList, S.lam) : 0);
     var board = costOf(subList, $('o-sub').value);
@@ -536,7 +562,7 @@ var DEFAULT_SUBSTRATES = [
   function sellerCard(x, j, used, refMode) {
     var s = x.s, r = x.r, badges = '';
     if (s.local) badges += '<span class="badge local">Local</span>';
-    if (j.product === 'lawn') badges += '<span class="badge ' + (s.method === 'vinyl' ? 'mine' : 'meth') + '">' + esc(s.method === 'vinyl' ? 'Vinyl + laminate' : 'No laminate') + '</span>';
+    if (j.product === 'lawn') badges += '<span class="badge' + (s.method === 'vinyl' ? ' mine' : s.method !== j.method ? ' meth' : '') + '">' + esc(s.method === 'vinyl' ? 'Vinyl + laminate' : 'No laminate') + '</span>';
     if (j.product === 'lawn' && s.stake === 'included') badges += '<span class="badge">Stake included</span>';
     var pr = r.na ? esc(r.note) : money(x.total) + (x.sale != null ? ' <span style="font-size:11px;font-weight:400;color:#166534">(' + money(x.sale) + ' on sale now)</span>' : '');
     var sub = [];
@@ -561,13 +587,19 @@ var DEFAULT_SUBSTRATES = [
     $('src-note').textContent = 'Material costs from ' + invSource + ' (read only).';
     if (!(j.w > 0 && j.h > 0)) return;
 
-    var Q = quoteFor(j), mc = materialCost(j), st = status(Q.quote, mc.cost), hst = S.hst / 100;
+    var Q = quoteFor(j), mc = materialCost(j, Q), st = status(Q.quote, mc.cost), hst = S.hst / 100;
+    $('c-cost-lbl').textContent = mc.out ? 'Your outsourcing cost' : 'Your material cost';
     $('c-cost').textContent = money(mc.cost); $('c-cost-sub').textContent = mc.parts;
+    var mn = $('meth-note');
+    mn.hidden = P !== 'lawn';
+    if (P === 'lawn') mn.textContent = (j.methodPick === 'auto' ? 'Auto: ' : '') + (j.outsourced ? 'outsourced direct print' + (j.methodPick === 'auto' ? ' (over ' + S.outsrc + ' signs)' : '') + ', compared like for like with direct-print sellers.' : 'made in-house, printed vinyl + laminate' + (j.methodPick === 'auto' ? ' (' + S.outsrc + ' signs or fewer)' : '') + '.');
     $('c-quote').textContent = money(Q.quote); $('c-quote-sub').textContent = money(Q.quote / j.q) + ' each' + (Q.minHit ? ' (minimum order)' : '');
-    $('c-profit').textContent = money(Q.quote - mc.cost); $('c-profit-sub').textContent = mc.cost > 0 ? (Q.quote / mc.cost).toFixed(1) + TIMES + ' material cost' : '';
+    $('c-profit-lbl').textContent = mc.out ? 'Over outsourcing cost' : 'Over material cost';
+    $('c-profit').textContent = money(Q.quote - mc.cost); $('c-profit-sub').textContent = mc.cost > 0 ? (Q.quote / mc.cost).toFixed(1) + TIMES + (mc.out ? ' outsourcing cost' : ' material cost') : '';
     $('c-total').textContent = money(Q.quote * (1 + hst)); $('c-total-sub').textContent = 'HST ' + money(Q.quote * hst);
     var chk = $('check'); chk.className = 'check ' + st;
-    chk.textContent = st === 'loss' ? ICON_LOSS + ' Below material cost. Raise the price.' : st === 'thin' ? ICON_WARN + ' Thin: only ' + (Q.quote / mc.cost).toFixed(2) + TIMES + ' material cost (warning below ' + S.warn + TIMES + ').' : st === 'ok' ? ICON_OK + ' Covers material ' + (Q.quote / mc.cost).toFixed(1) + TIMES + ' over.' : 'No material cost to check.';
+    var what = mc.out ? 'outsourcing cost' : 'material cost';
+    chk.textContent = st === 'loss' ? ICON_LOSS + ' Below ' + what + '. Raise the price.' : st === 'thin' ? ICON_WARN + ' Thin: only ' + (Q.quote / mc.cost).toFixed(2) + TIMES + ' ' + what + ' (warning below ' + S.warn + TIMES + ').' : st === 'ok' ? ICON_OK + ' Covers ' + what + ' ' + (Q.quote / mc.cost).toFixed(1) + TIMES + ' over.' : 'No cost to check.';
 
     // main market box
     $('mk-group').textContent = groupName(j);
@@ -583,7 +615,7 @@ var DEFAULT_SUBSTRATES = [
     else empty.hidden = true;
     $('mk-excl').innerHTML = Q.G.out.length ? 'Not compared: ' + Q.G.out.map(function (o) { return esc(o.s.name + ' (' + o.why + ')'); }).join(', ') + '.' : '';
     $('rule-line').innerHTML = 'Quote = <strong>' + esc(Q.basis.label) + '</strong>' + (Q.basis.kind === 'market' && S.pct !== 100 ? ' ' + TIMES + ' ' + S.pct + '%' : '') + ', rounded';
-    $('est-price').textContent = money(yourRate(j)) + (j.product === 'lawn' && j.sides === 2 && !S.side2 ? ' (same as 1 sided)' : '');
+    $('est-price').textContent = money(yourRate(j));
 
     // reference box (other print method)
     var refBox = $('mk-ref');
@@ -610,14 +642,15 @@ var DEFAULT_SUBSTRATES = [
   }
   function renderBreaks(j) {
     var qs = BREAKS[P].slice(); if (qs.indexOf(j.q) < 0) { qs.push(j.q); qs.sort(function (a, b) { return a - b; }); }
-    var G0 = M.groups(DATA, j), useRef = !G0.inG.length && G0.ref.length > 0;
-    var head = '<tr><th>Qty</th><th>' + (useRef ? 'Direct-print middle (reference)' : 'Like-for-like middle') + '</th><th>Quote</th><th>Each</th><th>Estimator now</th><th>Your cost</th><th>' + TIMES + ' cost</th></tr>';
+    var lawn = P === 'lawn';
+    var head = '<tr><th>Qty</th>' + (lawn ? '<th>Made</th>' : '') + '<th>Market middle</th><th>Quote</th><th>Each</th><th>Estimator now</th><th>Your cost</th><th>' + TIMES + ' cost</th></tr>';
     var body = qs.map(function (q) {
-      var jj = Object.assign({}, j, { q: q }), Q = quoteFor(jj), mc = materialCost(jj).cost, st = status(Q.quote, mc), mid = useRef ? Q.refSt : Q.st;
-      return '<tr' + (q === j.q ? ' class="cur"' : '') + '><td class="qcell">' + q + '</td><td class="num"' + (useRef ? ' style="color:#888"' : '') + '>' + (mid ? money(mid.mid) : DASH) + '</td><td class="num"><span class="dot ' + st + '"></span>' + money(Q.quote) + '</td><td class="num">' + money(Q.quote / q) + '</td><td class="num">' + money(yourRate(jj)) + '</td><td class="num" style="color:#888">' + money(mc) + '</td><td class="num">' + (mc > 0 ? (Q.quote / mc).toFixed(1) + TIMES : DASH) + '</td></tr>';
+      var jj = withMethod(Object.assign({}, j, { q: q })), Q = quoteFor(jj), mc = materialCost(jj, Q).cost, st = status(Q.quote, mc);
+      var useRef = !Q.G.inG.length && Q.G.ref.length > 0, mid = useRef ? Q.refSt : Q.st;
+      return '<tr' + (q === j.q ? ' class="cur"' : '') + '><td class="qcell">' + q + '</td>' + (lawn ? '<td>' + (jj.outsourced ? 'Outsourced' : 'In-house') + '</td>' : '') + '<td class="num"' + (useRef ? ' style="color:#888" title="Direct-print reference only"' : '') + '>' + (mid ? money(mid.mid) + (useRef ? '*' : '') : DASH) + '</td><td class="num"><span class="dot ' + st + '"></span>' + money(Q.quote) + '</td><td class="num">' + money(Q.quote / q) + '</td><td class="num">' + money(yourRate(jj)) + '</td><td class="num" style="color:#888">' + money(mc) + '</td><td class="num">' + (mc > 0 ? (Q.quote / mc).toFixed(1) + TIMES : DASH) + '</td></tr>';
     }).join('');
     $('breaks').innerHTML = head + body;
-    $('breaks-hint').textContent = dimTxt(j.w, j.h, j.unit) + ', ' + groupName(j);
+    $('breaks-hint').textContent = dimTxt(j.w, j.h, j.unit) + (lawn ? ', ' + j.sides + ' sided, ' + (j.stakes ? 'with stakes' : 'no stakes') + (j.methodPick === 'auto' ? ', Auto (outsourced above ' + S.outsrc + '). * = direct-print reference, not like for like' : '') : ', ' + groupName(j));
   }
 
   // ---------- inputs ----------
@@ -649,10 +682,10 @@ var DEFAULT_SUBSTRATES = [
   document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { P = t.getAttribute('data-p'); loadInputs(); fillJobSelects(); render(); }); });
 
   // settings
-  var NUM_SETTINGS = ['pct', 'prem', 'min', 'banrate', 'sgnrate', 'side2', 'stakeprice', 'stakecost', 'ink', 'warn', 'hst'];
+  var NUM_SETTINGS = ['pct', 'prem', 'min', 'banrate', 'sgnrate', 'stakeprice', 'stakecost', 'ink', 'warn', 'hst', 'outsrc', 'shipin'];
   function loadSettingsUI() {
     NUM_SETTINGS.forEach(function (k) { $('s-' + k).value = S[k]; });
-    $('s-at').value = S.at; $('s-round').value = String(S.round); $('s-nomk').value = S.nomk;
+    $('s-at').value = S.at; $('s-round').value = String(S.round); $('s-nomk').value = S.nomk; $('s-buyfrom').value = S.buyfrom;
     fill($('s-vinyl'), printList.length ? printList : vinylList, S.vinyl); fill($('s-lam'), lamList.length ? lamList : vinylList, S.lam);
   }
   function fillJobSelects() {
@@ -663,6 +696,7 @@ var DEFAULT_SUBSTRATES = [
   $('s-at').addEventListener('change', function () { S.at = $('s-at').value; render(); });
   $('s-round').addEventListener('change', function () { S.round = parseFloat($('s-round').value); render(); });
   $('s-nomk').addEventListener('change', function () { S.nomk = $('s-nomk').value; render(); });
+  $('s-buyfrom').addEventListener('change', function () { S.buyfrom = $('s-buyfrom').value; render(); });
   $('s-vinyl').addEventListener('change', function () { S.vinyl = $('s-vinyl').value; render(); });
   $('s-lam').addEventListener('change', function () { S.lam = $('s-lam').value; render(); });
   $('s-reset').addEventListener('click', function () { Object.keys(DEFAULTS).forEach(function (k) { S[k] = DEFAULTS[k]; }); loadSettingsUI(); fillJobSelects(); render(); toast('Settings reset'); });
@@ -681,7 +715,7 @@ var DEFAULT_SUBSTRATES = [
   // actions
   function quoteText() {
     var j = job(), Q = quoteFor(j), hst = S.hst / 100;
-    var what = j.product === 'banner' ? 'Vinyl banner ' + dimTxt(j.w, j.h, j.unit) + ', ' + (j.mat === '13oz' ? '13 oz' : 'heavy') + ' vinyl, ' + (j.hem ? 'hemmed with grommets' : 'grommets') : 'Lawn sign ' + dimTxt(j.w, j.h, j.unit) + ', 4 mm coroplast, ' + (j.method === 'vinyl' ? 'printed vinyl with protective laminate' : 'printed') + ', ' + j.sides + ' sided' + (j.stakes ? ', with stakes' : '');
+    var what = j.product === 'banner' ? 'Vinyl banner ' + dimTxt(j.w, j.h, j.unit) + ', ' + (j.mat === '13oz' ? '13 oz' : 'heavy') + ' vinyl, ' + (j.hem ? 'hemmed with grommets' : 'grommets') : 'Lawn sign ' + dimTxt(j.w, j.h, j.unit) + ', 4 mm coroplast, ' + (j.method === 'vinyl' ? 'printed vinyl with protective laminate' : 'printed direct') + ', ' + j.sides + ' sided' + (j.stakes ? ', with stakes' : '');
     return ['Coba Studios quote', what, 'Quantity: ' + j.q, 'Price: ' + money(Q.quote) + ' (' + money(Q.quote / j.q) + ' each)', 'HST ' + S.hst + '%: ' + money(Q.quote * hst), 'Total: ' + money(Q.quote * (1 + hst))].join('\n');
   }
   $('btn-copy').addEventListener('click', function () {

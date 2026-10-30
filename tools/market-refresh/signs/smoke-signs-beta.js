@@ -59,11 +59,24 @@ const args = process.argv.slice(2), shots = args.indexOf('--shots') >= 0 ? args[
   ok(JSON.stringify(lawnNames) === JSON.stringify(['VistaPrint', 'Staples', 'Sticker Mule', 'Kelly Signs']), 'direct 2 sided sellers: ' + lawnNames);
   ok(money(await T('mk-mid')) === 330, 'direct 2 sided + stakes middle $330: ' + await T('mk-mid'));
   ok(money(await T('c-quote')) === 330, 'quote at the middle $330');
+  ok((await T('c-cost-lbl')) === 'Your outsourcing cost' && money(await T('c-cost')) === 99 && /Sticker Mule/.test(await T('c-cost-sub')), 'outsourced cost = cheapest seller (Sticker Mule $99): ' + await T('c-cost') + ' ' + await T('c-cost-sub'));
   // back to vinyl + laminate; quote from direct-print middle + 50%
   await seg('o-meth', 'vinyl');
   await p.click('#set-toggle'); await p.selectOption('#s-nomk', 'ref'); await p.waitForTimeout(40);
   ok(money(await T('c-quote')) === 495, 'direct-print middle $330 + 50% = $495: ' + await T('c-quote'));
   await p.selectOption('#s-nomk', 'rate');
+  // Auto: 20 signs or fewer in-house (vinyl + laminate), more than 20 outsourced (direct print, like for like)
+  await seg('o-meth', 'auto'); await seg('o-sides', '1'); await seg('o-stake', '0'); await set(24, 18, 20);
+  ok(/in-house/.test(await T('mk-group')) && money(await T('c-quote')) === 720, 'Auto, 20 signs: in-house at the estimator rate ($720): ' + await T('c-quote'));
+  await set(24, 18, 25);
+  ok(/outsourced/.test(await T('mk-group')) && /over 20 signs/.test(await T('meth-note')), 'Auto, 25 signs: outsourced');
+  ok(money(await T('mk-mid')) === 487.5 && money(await T('c-quote')) === 488, 'outsourced quote = direct-print middle (Kelly $487.50) -> $488: ' + await T('c-quote'));
+  ok((await T('c-cost-lbl')) === 'Your outsourcing cost' && /VistaPrint/.test(await T('c-cost-sub')), 'outsourced cost from the cheapest seller (VistaPrint): ' + await T('c-cost-sub'));
+  const made = await p.$$eval('#breaks tr', trs => trs.slice(1).map(tr => tr.children[0].textContent + ':' + tr.children[1].textContent));
+  ok(made.indexOf('10:In-house') >= 0 && made.indexOf('50:Outsourced') >= 0, 'quantity table shows In-house / Outsourced: ' + made.join(' '));
+  await p.fill('#s-outsrc', '30'); await p.waitForTimeout(40);
+  ok(/in-house/.test(await T('mk-group')), 'raising the limit to 30 brings 25 signs in-house');
+  await p.fill('#s-outsrc', '20'); await seg('o-meth', 'vinyl'); await set(24, 18, 10);
 
   // local prices
   await seg('o-sides', '1'); await seg('o-stake', '0');
