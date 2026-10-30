@@ -1,8 +1,9 @@
 # Signs & banners market data (phase 1, Oct 2026)
 
 Competitor price grids for lawn signs, vinyl banners, large stickers and A-frames, collected the same way as the
-sticker prices (from inside a real browser tab on each site, using the requests the pages make). Not wired into the
-estimator yet: the next step is a beta page, then the Vinyl / Roland Banners and Signage sections after Chris approves.
+sticker prices (from inside a real browser tab on each site, using the requests the pages make). Used by the
+**Signs & Banners Quick Quote beta** at `beta/signs/` (https://crepracon.github.io/Cobastudios/beta/signs/). Not in the
+live estimator yet: the Vinyl / Roland Banners and Signage sections come after Chris approves the beta.
 
 ## Files
 | File | What it does |
@@ -11,8 +12,12 @@ estimator yet: the next step is a beta page, then the Vinyl / Roland Banners and
 | `collect-staples-signs.js` | shop.staplescopyandprint.ca (Staples Canada's print shop): yard signs 1/2 sided + stake add-on, outdoor banners 13 oz and 18 oz, A-frames. Flat price per unit. |
 | `collect-stickermule-signs.js` | stickermule.com/ca: rigid yard signs (24 x 18, 2 sided, stake included) and laminated die cut stickers 8-24 in. |
 | `collect-bannerbuzz-signs.js` | bannerbuzz.ca: custom vinyl banners 13 oz (grommets, flush cut), with quantity discounts. |
+| `collect-kellysigns-signs.js` | kellysigns.ca (Ottawa): real estate / commercial coroplast signs, fixed sizes, step stakes (WooCommerce store API). |
 | `collect-result.js` | Fetches a collector's result (see below). |
 | `build-data.js` | Verifies checksums and builds `data/signs-market-<date>.json` with like-for-like tags per seller. |
+| `beta-template.html` | Source of the Signs & Banners beta page (engine + UI). Edit this, not `beta/signs/index.html`. |
+| `build-beta.js` | Builds `beta/signs/index.html` from the template + newest data file + the estimator's default materials. |
+| `smoke-signs-beta.js` | Checks the beta: like-for-like groups, quotes, reference-only direct print, local prices, inventory never written, phone layout. |
 
 ## Running a collector
 The browser tool stops waiting after 45 seconds, so these collectors start in the background:
@@ -20,8 +25,16 @@ The browser tool stops waiting after 45 seconds, so these collectors start in th
 2. Run the collector file's full text with `javascript_tool`; it returns `started`.
 3. Run `collect-result.js` in the same tab until it returns the JSON (VistaPrint takes about a minute).
 4. Save each result to a folder, then `node tools/market-refresh/signs/build-data.js --in <folder> --out tools/market-refresh/signs/data/signs-market-<date>.json --date <date>`.
+5. `node tools/market-refresh/signs/build-beta.js` then `node tools/market-refresh/signs/smoke-signs-beta.js` (must pass).
+   Compare the new data file with the previous one before committing; there is no automatic hold on big jumps for
+   signs yet (the sticker `apply.js` has one), so check any price that moved more than about 30% by hand.
 
 ## Like-for-like rules (Chris, Oct 29 2026)
+- **How the sign is made comes first.** Coba's signs are printed vinyl + laminate mounted on coroplast (longer lasting,
+  more expensive). Every lawn sign seller found prints straight onto the coroplast with no laminate (VistaPrint, Sticker
+  Mule and Kelly Signs say so; Staples doesn't say and offers no laminate). They are tagged `method: 'direct'` and are
+  shown for reference only, never mixed into a vinyl + laminate comparison. Quote then comes from the estimator rate,
+  or (if Chris picks it) the direct-print middle plus a premium %.
 - **Lawn signs:** 1 sided and 2 sided are separate groups. Stakes are an add-on: compare sign-only prices, and add each
   seller's own stake price only when the quote includes stakes. Sticker Mule always includes an H-stake (and only
   sells 2 sided 24 x 18), so it is compared only when the quote includes stakes.

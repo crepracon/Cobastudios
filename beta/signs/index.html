@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Coba Studios — Signs &amp; Banners Quick Quote (beta)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f0ed; color: #1a1a1a; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
+    .wrapper { max-width: 980px; margin: 0 auto; }
+    .app-header { background: #1a1a1a; border-radius: 12px 12px 0 0; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .app-header h1 { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .app-header .sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .app-header nav { display: flex; gap: 6px; flex-wrap: wrap; }
+    .app-header a { font-size: 12px; color: #ccc; text-decoration: none; border: 1px solid #444; border-radius: 6px; padding: 6px 10px; }
+    .app-header a:hover { color: #fff; border-color: #777; }
+    .beta-pill { font-size: 10px; font-weight: 800; letter-spacing: .08em; background: #fbbf24; color: #1a1a1a; border-radius: 20px; padding: 2px 8px; }
+    .stale-pill { display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700; background: #fbbf24; color: #1a1a1a; border-radius: 20px; padding: 1px 8px; }
+    .stale-pill[hidden] { display: none; }
+    .beta-bar { background: #fffbeb; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 1px solid #fde68a; padding: .6rem 1.25rem; font-size: 12px; color: #92400e; }
+    .tabs { display: flex; gap: 0; background: #fff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 1px solid #e5e5e5; padding: 0 1rem; }
+    .tab { background: none; border: none; border-bottom: 3px solid transparent; padding: .75rem 1rem; font-size: 14px; font-weight: 600; color: #888; cursor: pointer; font-family: inherit; }
+    .tab.on { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+    .panel { background: #fff; border-radius: 0 0 12px 12px; border: 1px solid #e0e0e0; border-top: 0; }
+    .panel-body { padding: 1.25rem; }
+    .sec-title { font-size: 13px; font-weight: 600; margin-bottom: .6rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .sec-title .hint { font-weight: 400; color: #888; font-size: 12px; }
+    .divider { border: none; border-top: 1px solid #e5e5e5; margin: 1.25rem 0; }
+    .field-label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; }
+    input[type=number], input[type=text], select { width: 100%; padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; }
+    input:focus, select:focus { outline: none; border-color: #999; }
+    .job-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr); gap: 12px; align-items: end; }
+    .job-grid input[type=number] { font-size: 18px; font-family: monospace; padding: 8px 10px; }
+    .opt-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-top: 12px; align-items: end; }
+    .seg { display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .seg button { flex: 1; background: #fff; border: none; border-right: 1px solid #ddd; padding: 8px 6px; font-size: 12px; font-family: inherit; color: #555; cursor: pointer; }
+    .seg button:last-child { border-right: none; }
+    .seg button.on { background: #1a1a1a; color: #fff; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+    .chips .lbl { font-size: 11px; color: #888; min-width: 34px; }
+    .chip { font-size: 12px; font-family: monospace; color: #555; background: #f5f5f2; border: 1px solid #e0e0e0; border-radius: 20px; padding: 4px 10px; cursor: pointer; }
+    .chip:hover { border-color: #999; color: #1a1a1a; }
+    .chip.on { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
+    .src-note { font-size: 11px; color: #888; margin-top: 8px; }
+    .cards4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 1.25rem 0 1rem; }
+    .card { border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e5e5e5; }
+    .card.yourCost { background: #f5f5f2; border-color: #d1d5db; }
+    .card.quote { background: #f0fdf4; border-color: #bbf7d0; }
+    .card.profit { background: #f5f5f2; }
+    .card.grand { background: #fff; border: 2px solid #93c5fd; }
+    .card-lbl { font-size: 11px; margin-bottom: 4px; color: #666; }
+    .card.quote .card-lbl, .card.quote .card-num, .card.quote .card-sub { color: #166534; }
+    .card.grand .card-lbl, .card.grand .card-sub { color: #1e40af; }
+    .card-num { font-size: 20px; font-weight: 700; font-family: monospace; }
+    .card.grand .card-num { font-size: 24px; }
+    .card-sub { font-size: 10px; margin-top: 4px; color: #888; }
+    .check { border-radius: 6px; padding: 10px 14px; margin-bottom: 1rem; font-size: 13px; font-weight: 500; border: 1px solid; }
+    .check.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .check.thin { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .check.loss { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+    .check.none { background: #f5f5f2; border-color: #e5e5e5; color: #555; }
+    .market { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .market.ref { background: #fff; border-style: dashed; }
+    .mk-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #666; }
+    .mk-head strong { color: #1a1a1a; font-family: monospace; font-size: 14px; }
+    .mk-group { font-weight: 600; color: #1a1a1a; }
+    .mk-empty { font-size: 13px; color: #555; }
+    .mk-note { font-size: 11px; color: #888; }
+    .sellers { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+    .seller { background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 8px 10px; min-width: 0; }
+    .seller.used { border-color: #1a1a1a; box-shadow: inset 0 0 0 1px #1a1a1a; }
+    .seller .nm { font-size: 12px; color: #1a1a1a; font-weight: 600; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .seller .pr { font-family: monospace; font-size: 16px; font-weight: 700; margin-top: 2px; }
+    .seller .sp { font-size: 11px; color: #555; margin-top: 2px; line-height: 1.35; }
+    .seller .nt { font-size: 10.5px; color: #888; margin-top: 3px; line-height: 1.35; }
+    .seller.na .pr { color: #aaa; font-size: 13px; font-weight: 400; font-family: inherit; }
+    .badge { font-size: 9.5px; font-weight: 700; letter-spacing: .03em; border-radius: 20px; padding: 1px 7px; background: #fff; color: #555; border: 1px solid #d4d4d4; }
+    .badge.meth { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .badge.mine { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .badge.local { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .mk-foot { font-size: 12px; color: #666; display: flex; gap: 6px 16px; flex-wrap: wrap; }
+    .mk-foot strong { color: #1a1a1a; font-family: monospace; }
+    .excl { font-size: 11.5px; color: #777; line-height: 1.5; }
+    .scroll-x { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #e0e0e0; padding: 7px 8px; font-size: 13px; vertical-align: middle; white-space: nowrap; }
+    th { background: #f5f5f2; font-weight: 600; font-size: 12px; color: #555; text-align: center; }
+    td.num { text-align: right; font-family: monospace; }
+    td.qcell { font-family: monospace; font-weight: 600; text-align: right; }
+    tr.cur td { background: #fef3c7; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .dot.ok { background: #16a34a; } .dot.thin { background: #f59e0b; } .dot.loss { background: #dc2626; } .dot.none { background: #bbb; }
+    .settings-btn { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #555; border: 1px solid #ccc; border-radius: 6px; padding: 7px 12px; font-size: 12px; font-family: inherit; cursor: pointer; }
+    .settings-btn:hover { background: #f0f0ed; }
+    .settings { background: #f5f5f2; border: 1px solid #e5e5e5; border-radius: 8px; padding: 1rem 1.25rem; margin-top: .75rem; }
+    .set-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px 16px; }
+    .help { font-size: 10.5px; color: #888; margin-top: 3px; line-height: 1.35; }
+    .set-head { font-size: 11px; font-weight: 700; color: #888; letter-spacing: .06em; text-transform: uppercase; margin: 14px 0 8px; }
+    .set-head:first-child { margin-top: 0; }
+    .local-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .local-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; padding: 6px 10px; font-size: 12px; }
+    .local-form { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr) minmax(0,.8fr) auto; gap: 8px; align-items: end; margin-top: 8px; }
+    .action-bar { background: #f5f5f2; border-top: 1px solid #e5e5e5; padding: .75rem 1.25rem; display: flex; gap: 8px; flex-wrap: wrap; border-radius: 0 0 12px 12px; }
+    .btn-dark { display: inline-flex; align-items: center; gap: 6px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-dark:hover { background: #333; }
+    .btn-light { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: #666; border: 1px solid #ccc; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-family: inherit; cursor: pointer; }
+    .btn-light:hover { background: #f0f0ed; color: #333; }
+    .btn-x { background: none; border: none; color: #b91c1c; cursor: pointer; font-size: 13px; padding: 2px 6px; }
+    button:focus-visible, .chip:focus-visible, a:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+    .copy-box { margin-top: 10px; }
+    .copy-box textarea { width: 100%; font-family: monospace; font-size: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+    .notes { font-size: 12px; color: #777; line-height: 1.55; display: flex; flex-direction: column; gap: 4px; }
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 999; }
+    [hidden] { display: none !important; }
+    @media (max-width: 760px) {
+      .job-grid, .opt-grid { grid-template-columns: 1fr 1fr; }
+      .cards4 { grid-template-columns: 1fr 1fr; }
+      .sellers { grid-template-columns: minmax(0,1fr); }
+      .set-grid { grid-template-columns: 1fr 1fr; }
+      .local-form { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 460px) {
+      .set-grid { grid-template-columns: 1fr; }
+      .card-num { font-size: 17px; } .card.grand .card-num { font-size: 20px; }
+      .tab { padding: .7rem .6rem; font-size: 13px; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .beta-bar, .tabs, .action-bar, .no-print, .chips, .src-note, .market, #breaks-wrap { display: none !important; }
+      .app-header { background: #fff; border-radius: 0; } .app-header h1 { color: #1a1a1a; } .app-header nav { display: none; }
+      .panel { border: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="app-header">
+    <div>
+      <h1>Coba Studios — Signs &amp; Banners Quick Quote <span class="beta-pill">BETA</span></h1>
+      <div class="sub">Banners and lawn signs priced against the market, like for like &middot; Market data <span id="mk-date">-</span><span id="mk-age"></span> &middot; All prices in CAD <span class="stale-pill" id="stale-pill" hidden>Prices due for a refresh</span></div>
+    </div>
+    <nav class="no-print"><a href="../">Sticker quick quote</a><a href="../../">Open the live estimator &rarr;</a></nav>
+  </div>
+  <div class="beta-bar">Beta: try it next to the estimator. Nothing here changes the live estimator, its jobs or its inventory.</div>
+  <div class="tabs no-print" role="tablist">
+    <button type="button" class="tab on" id="tab-banner" role="tab" aria-selected="true" data-p="banner">&#128681; Banners</button>
+    <button type="button" class="tab" id="tab-lawn" role="tab" aria-selected="false" data-p="lawn">&#129703; Lawn signs</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="sec-title" id="job-title"></div>
+      <div class="job-grid">
+        <div><label class="field-label" for="j-w" id="l-w">Width</label><input type="number" id="j-w" min="0.25" step="0.25" inputmode="decimal"></div>
+        <div><label class="field-label" for="j-h" id="l-h">Height</label><input type="number" id="j-h" min="0.25" step="0.25" inputmode="decimal"></div>
+        <div><label class="field-label" for="j-unit">Units</label><select id="j-unit"><option value="ft">feet</option><option value="in">inches</option></select></div>
+        <div><label class="field-label" for="j-q">Quantity</label><input type="number" id="j-q" min="1" max="1000" step="1" inputmode="numeric"></div>
+      </div>
+      <div class="opt-grid" id="opts-banner">
+        <div><span class="field-label">Material</span><div class="seg" id="o-mat"><button type="button" data-v="13oz" class="on">13 oz</button><button type="button" data-v="heavy">Heavy 15-18 oz</button></div></div>
+        <div><span class="field-label">Edges</span><div class="seg" id="o-hem"><button type="button" data-v="1" class="on">Hemmed + grommets</button><button type="button" data-v="0">Grommets only</button></div></div>
+        <div><label class="field-label" for="o-media">Your banner media (cost)</label><select id="o-media"></select></div>
+        <div></div>
+      </div>
+      <div class="opt-grid" id="opts-lawn" hidden>
+        <div><span class="field-label">How it's made</span><div class="seg" id="o-meth"><button type="button" data-v="vinyl" class="on">Vinyl + laminate</button><button type="button" data-v="direct">Direct print</button></div></div>
+        <div><span class="field-label">Sides</span><div class="seg" id="o-sides"><button type="button" data-v="1" class="on">1 sided</button><button type="button" data-v="2">2 sided</button></div></div>
+        <div><span class="field-label">Stakes</span><div class="seg" id="o-stake"><button type="button" data-v="0" class="on">No stake</button><button type="button" data-v="1">1 stake each</button></div></div>
+        <div><label class="field-label" for="o-sub">Board (cost)</label><select id="o-sub"></select></div>
+      </div>
+      <div class="chips" id="size-chips"></div>
+      <div class="chips" id="qty-chips"></div>
+      <div class="src-note" id="src-note"></div>
+
+      <div class="cards4">
+        <div class="card yourCost"><div class="card-lbl">Your material cost</div><div class="card-num" id="c-cost">$0.00</div><div class="card-sub" id="c-cost-sub">&nbsp;</div></div>
+        <div class="card quote"><div class="card-lbl">Quote before tax</div><div class="card-num" id="c-quote">$0.00</div><div class="card-sub" id="c-quote-sub">&nbsp;</div></div>
+        <div class="card profit"><div class="card-lbl">Over material cost</div><div class="card-num" id="c-profit">$0.00</div><div class="card-sub" id="c-profit-sub">&nbsp;</div></div>
+        <div class="card grand"><div class="card-lbl">Grand total with HST</div><div class="card-num" id="c-total">$0.00</div><div class="card-sub" id="c-total-sub">&nbsp;</div></div>
+      </div>
+      <div class="check none" id="check" role="status">&nbsp;</div>
+
+      <div class="market" id="mk-main">
+        <div class="mk-head"><span>Market for this job &middot; <span class="mk-group" id="mk-group"></span></span><span id="mk-stats">range <strong id="mk-range">-</strong> &middot; middle <strong id="mk-mid">-</strong></span></div>
+        <div class="mk-empty" id="mk-empty" hidden></div>
+        <div class="sellers" id="sellers"></div>
+        <div class="excl" id="mk-excl"></div>
+        <div class="mk-foot"><span id="rule-line"></span><span>Your estimator now: <strong id="est-price">-</strong></span></div>
+      </div>
+      <div class="market ref" id="mk-ref" hidden style="margin-top:10px">
+        <div class="mk-head"><span>Reference only &middot; <span class="mk-group" id="ref-group"></span></span><span>range <strong id="ref-range">-</strong> &middot; middle <strong id="ref-mid">-</strong></span></div>
+        <div class="sellers" id="ref-sellers"></div>
+        <div class="mk-note" id="ref-note"></div>
+      </div>
+      <div class="market ref" id="mk-local" hidden style="margin-top:10px">
+        <div class="mk-head"><span>Local prices you entered &middot; same job type and size</span></div>
+        <div class="sellers" id="local-sellers"></div>
+      </div>
+
+      <div id="breaks-wrap">
+        <hr class="divider">
+        <div class="sec-title">Same size, other quantities <span class="hint" id="breaks-hint"></span></div>
+        <div class="scroll-x"><table id="breaks"></table></div>
+      </div>
+
+      <hr class="divider no-print">
+      <div class="no-print">
+        <div class="sec-title">Add a local competitor's price <span class="hint">for this exact job type and size; shown next to the market, not mixed into it</span></div>
+        <div class="local-form">
+          <div><label class="field-label" for="lp-name">Shop</label><input type="text" id="lp-name" maxlength="60" placeholder="e.g. Kelly Signs (phone quote)"></div>
+          <div><label class="field-label" for="lp-price">Their total price ($, before tax)</label><input type="number" id="lp-price" min="0" step="0.01"></div>
+          <div><label class="field-label" for="lp-q">For quantity</label><input type="number" id="lp-q" min="1" step="1"></div>
+          <div><button type="button" class="btn-dark" id="lp-add">Add</button></div>
+        </div>
+        <div class="local-list" id="local-list"></div>
+      </div>
+
+      <hr class="divider no-print">
+      <div class="no-print">
+        <button type="button" class="settings-btn" id="set-toggle" aria-expanded="false" aria-controls="settings">&#9660; Show pricing settings</button>
+        <div class="settings" id="settings" hidden>
+          <div class="set-head">How the quote is set (when like-for-like market prices exist)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-at">Price at</label><select id="s-at"><option value="mid">Market middle</option><option value="low">Market low</option><option value="high">Market high</option></select>
+              <div class="help">Only sellers making the same product are compared.</div></div>
+            <div><label class="field-label" for="s-pct">Adjust (% of that price)</label><input type="number" id="s-pct" min="10" max="400" step="1">
+              <div class="help">100 = match it. 110 = 10% above.</div></div>
+            <div><label class="field-label" for="s-round">Round the quote to</label><select id="s-round"><option value="0">The cent</option><option value="0.5">Nearest $0.50</option><option value="1">Nearest $1</option><option value="5">Nearest $5</option></select></div>
+          </div>
+          <div class="set-head">When no one sells the same product (your vinyl + laminate signs)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-nomk">Quote from</label><select id="s-nomk"><option value="rate">Your estimator rate</option><option value="ref">Direct-print market + premium</option></select>
+              <div class="help">Direct-print prices are never used unless you pick this.</div></div>
+            <div><label class="field-label" for="s-prem">Premium over direct print (%)</label><input type="number" id="s-prem" min="0" max="500" step="5">
+              <div class="help">Used only with "Direct-print market + premium". Laminated vinyl lasts years; direct print about 1 year (VistaPrint's own wording).</div></div>
+            <div><label class="field-label" for="s-min">Minimum order ($)</label><input type="number" id="s-min" min="0" step="1"><div class="help">0 = none. Applies to every quote.</div></div>
+          </div>
+          <div class="set-head">Your estimator's current rates (for comparison)</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-banrate">Banner rate ($ / sq ft)</label><input type="number" id="s-banrate" min="0" step="0.25"><div class="help">Vinyl / Roland &rsaquo; Banners. Default $6.00 incl. print, hems, grommets.</div></div>
+            <div><label class="field-label" for="s-sgnrate">Signage rate ($ / sq ft)</label><input type="number" id="s-sgnrate" min="0" step="0.25"><div class="help">Vinyl / Roland &rsaquo; Signage. Default $12.00.</div></div>
+            <div><label class="field-label" for="s-side2">2nd side adds (%)</label><input type="number" id="s-side2" min="0" max="200" step="5"><div class="help">Your estimator charges the same for 2 sided today (0%).</div></div>
+            <div><label class="field-label" for="s-stakeprice">Stake price you charge ($ each)</label><input type="number" id="s-stakeprice" min="0" step="0.25"><div class="help">Staples $2.49, Kelly Signs $2.50, VistaPrint $4-5.</div></div>
+          </div>
+          <div class="set-head">Material cost</div>
+          <div class="set-grid">
+            <div><label class="field-label" for="s-vinyl">Sign vinyl</label><select id="s-vinyl"></select></div>
+            <div><label class="field-label" for="s-lam">Sign laminate</label><select id="s-lam"></select></div>
+            <div><label class="field-label" for="s-ink">Ink ($ / sq ft)</label><input type="number" id="s-ink" min="0" step="0.05"></div>
+            <div><label class="field-label" for="s-stakecost">Stake cost to you ($ each)</label><input type="number" id="s-stakecost" min="0" step="0.05"><div class="help">0 = not counted.</div></div>
+            <div><label class="field-label" for="s-warn">Warn below (&times; material cost)</label><input type="number" id="s-warn" min="1" max="10" step="0.1"></div>
+            <div><label class="field-label" for="s-hst">HST (%)</label><input type="number" id="s-hst" min="0" max="25" step="0.5"></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button type="button" class="btn-light" id="s-reset">Reset settings</button>
+            <span class="help" id="inv-note">Settings are saved on this device only.</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="notes">
+        <div><strong>Like for like.</strong> Banners are compared by material weight (13 oz vs heavy 15-18 oz) and by edges (hemmed + grommets vs grommets only). Lawn signs are compared by how they're made, by sides, and by stakes. A seller that differs on any of these is listed as not compared, with the reason.</div>
+        <div><strong>Vinyl + laminate vs direct print.</strong> Every lawn sign seller found (VistaPrint, Staples, Sticker Mule, Kelly Signs) prints straight onto the coroplast with no laminate. Your printed vinyl + laminate signs are a different, longer-lasting product, so their prices are shown for reference only.</div>
+        <div><strong>Where the prices come from.</strong> Each seller's own online prices on <span id="mk-date2">-</span>, before tax and before shipping (each seller's shipping is noted). Sizes between captured ones are estimated by area. Staples and Kelly Signs charge the same per sign at any quantity.</div>
+        <div><strong>What's not in material cost.</strong> Waste, grommets, hemming tape, design, setup, cutting, mounting and your time. "Over material cost" has to cover those.</div>
+      </div>
+      <div class="copy-box" id="copy-box" hidden><label class="field-label" for="copy-text">Copy this quote (your browser blocked automatic copying)</label><textarea id="copy-text" rows="6" readonly></textarea></div>
+    </div>
+    <div class="action-bar">
+      <button type="button" class="btn-dark" id="btn-copy">&#128203; Copy quote</button>
+      <button type="button" class="btn-light" id="btn-new">New quote</button>
+      <button type="button" class="btn-light" id="btn-print">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script type="application/json" id="signs-data">
+{"captured":"2026-10-29","currency":"CAD","note":"Prices before tax and before shipping. Rows: [qty, price] or [qty, list, sale].","addons":{"bb-tiers":[[2,10,20],[11,25,22],[26,50,25],[51,100,28],[100,null,30]],"ks-stake":2.5,"stp-stake":{"12x12":[1,2.49],"18x12":[1,2.49],"24x12":[1,2.49],"24x18":[1,2.49],"28x22":[2,4.99],"36x24":[2,4.99]},"stp-af-parts":[["18x24","2",[59.99,64.99]],["24x36","2",[109.99,93.99]]],"vp-stake":[[1,4.99,4.99],[2,8,8],[5,20,20],[10,40,40],[15,60,60],[20,80,80],[30,120,120],[50,200,200],[100,400,400]]},"sellers":[
+{"id":"vp-ls1","captured":"2026-10-29","sizing":"area","name":"VistaPrint","product":"lawn","sides":1,"stake":"addon","stakeId":"vp-stake","method":"direct","methodLabel":"Printed straight onto coroplast, no laminate","methodSource":"VistaPrint: \"printed on 4 mm UV-resistant corrugated plastic\", lasts \"around 1 year outdoors\"; optional glossy coating, no laminate","label":"Lawn sign, 4 mm coroplast, 1 sided","url":"https://www.vistaprint.ca/signs-posters/yard-signs","ship":"Shipping extra (about $6-$35 by size and speed; free over $100)","sizes":[{"w":18,"h":12,"ladder":[[1,14.99,14.99],[2,25,25],[5,61,61],[10,119,119],[15,168,168],[20,224,224],[30,322,322],[50,406,406],[100,504,504]]},{"w":24,"h":18,"ladder":[[1,24.99,24.99],[2,38,38],[5,92,92],[10,182,182],[15,266,266],[20,294,294],[30,406,406],[50,518,518],[100,630,630]]},{"w":24,"h":24,"ladder":[[1,33.99,33.99],[2,60,60],[5,148,148],[10,280,280],[15,350,350],[20,392,392],[30,532,532],[50,672,672],[100,840,840]]},{"w":36,"h":24,"ladder":[[1,39.99,39.99],[2,76,76],[5,187,187],[10,357,357],[15,532,532],[20,588,588],[30,798,798],[50,1022,1022],[100,1260,1260]]},{"w":48,"h":48,"ladder":[[1,139.99,139.99],[2,252,252],[5,630,630],[10,1197,1197],[15,1372,1372],[20,1540,1540],[30,2100,2100],[50,2660,2660],[100,3304,3304]]},{"w":96,"h":48,"ladder":[[1,279.99,279.99],[2,504,504],[5,1260,1260],[10,2394,2394],[15,3122,3122],[20,3514,3514],[30,4788,4788],[50,6076,6076],[100,7532,7532]]}]},
+{"id":"vp-ls2","captured":"2026-10-29","sizing":"area","name":"VistaPrint","product":"lawn","sides":2,"stake":"addon","stakeId":"vp-stake","method":"direct","methodLabel":"Printed straight onto coroplast, no laminate","methodSource":"VistaPrint: \"printed on 4 mm UV-resistant corrugated plastic\", lasts \"around 1 year outdoors\"; optional glossy coating, no laminate","label":"Lawn sign, 4 mm coroplast, 2 sided","url":"https://www.vistaprint.ca/signs-posters/yard-signs","ship":"Shipping extra (about $6-$35 by size and speed; free over $100)","sizes":[{"w":18,"h":12,"ladder":[[1,27.99,27.99],[2,46,46],[5,106,106],[10,189,189],[15,266,266],[20,340,340],[30,455,455],[50,580,580],[100,690,690]]},{"w":24,"h":18,"ladder":[[1,38.99,38.99],[2,66,66],[5,159,159],[10,290,290],[15,416,416],[20,472,472],[30,609,609],[50,785,785],[100,931,931]]},{"w":24,"h":24,"ladder":[[1,57.99,57.99],[2,102,102],[5,236,236],[10,420,420],[15,545,545],[20,624,624],[30,797,797],[50,1019,1019],[100,1219,1219]]},{"w":36,"h":24,"ladder":[[1,71.99,71.99],[2,132,132],[5,305,305],[10,543,543],[15,792,792],[20,897,897],[30,1151,1151],[50,1485,1485],[100,1754,1754]]},{"w":48,"h":48,"ladder":[[1,202.99,202.99],[2,374,374],[5,918,918],[10,1753,1753],[15,2160,2160],[20,2590,2590],[30,3675,3675],[50,5193,5193],[100,7008,7008]]},{"w":96,"h":48,"ladder":[[1,422.99,422.99],[2,783,783],[5,1921,1921],[10,3672,3672],[15,4932,4932],[20,5929,5929],[30,8410,8410],[50,11899,11899],[100,16052,16052]]}]},
+{"id":"stp-ls1","captured":"2026-10-29","sizing":"area","name":"Staples","product":"lawn","sides":1,"stake":"addon","stakeId":"stp-stake","method":"direct","methodLabel":"Printed coroplast, no laminate offered","methodSource":"Staples: 4mm Coroplast; print method not stated, no laminate option","label":"Yard sign, 4 mm coroplast, 1 sided","url":"https://shop.staplescopyandprint.ca/products/yard-sign","ship":"Shipping $9.99 (free over $75) or free pickup at a Staples store; up to $2.99 service fee per order","note":"Same price per sign at any quantity","sizes":[{"w":12,"h":12,"ladder":[[1,18.99],[2,37.98],[5,94.95],[10,189.9],[25,474.75],[50,949.5],[100,1899]]},{"w":18,"h":12,"ladder":[[1,24.99],[2,49.98],[5,124.95],[10,249.9],[25,624.75],[50,1249.5],[100,2499]]},{"w":24,"h":12,"ladder":[[1,30.99],[2,61.98],[5,154.95],[10,309.9],[25,774.75],[50,1549.5],[100,3099]]},{"w":24,"h":18,"ladder":[[1,40.99],[2,81.98],[5,204.95],[10,409.9],[25,1024.75],[50,2049.5],[100,4099]]},{"w":28,"h":22,"ladder":[[1,58.99],[2,117.98],[5,294.95],[10,589.9],[25,1474.75],[50,2949.5],[100,5899]]},{"w":36,"h":24,"ladder":[[1,91.99],[2,183.98],[5,459.95],[10,919.9],[25,2299.75],[50,4599.5],[100,9199]]}]},
+{"id":"stp-ls2","captured":"2026-10-29","sizing":"area","name":"Staples","product":"lawn","sides":2,"stake":"addon","stakeId":"stp-stake","method":"direct","methodLabel":"Printed coroplast, no laminate offered","methodSource":"Staples: 4mm Coroplast; print method not stated, no laminate option","label":"Yard sign, 4 mm coroplast, 2 sided","url":"https://shop.staplescopyandprint.ca/products/yard-sign","ship":"Shipping $9.99 (free over $75) or free pickup at a Staples store; up to $2.99 service fee per order","note":"Same price per sign at any quantity","sizes":[{"w":12,"h":12,"ladder":[[1,28.99],[2,57.98],[5,144.95],[10,289.9],[25,724.75],[50,1449.5],[100,2899]]},{"w":18,"h":12,"ladder":[[1,37.99],[2,75.98],[5,189.95],[10,379.9],[25,949.75],[50,1899.5],[100,3799]]},{"w":24,"h":12,"ladder":[[1,45.99],[2,91.98],[5,229.95],[10,459.9],[25,1149.75],[50,2299.5],[100,4599]]},{"w":24,"h":18,"ladder":[[1,60.99],[2,121.98],[5,304.95],[10,609.9],[25,1524.75],[50,3049.5],[100,6099]]},{"w":28,"h":22,"ladder":[[1,87.99],[2,175.98],[5,439.95],[10,879.9],[25,2199.75],[50,4399.5],[100,8799]]},{"w":36,"h":24,"ladder":[[1,105.99],[2,211.98],[5,529.95],[10,1059.9],[25,2649.75],[50,5299.5],[100,10599]]}]},
+{"id":"sm-ls2","captured":"2026-10-29","sizing":"area","name":"Sticker Mule","product":"lawn","sides":2,"stake":"included","method":"direct","methodLabel":"Printed straight onto coroplast, no laminate","methodSource":"Sticker Mule: \"printed in full colour on a 4 mm thick corrugated plastic\"; no laminate mentioned (their stickers say laminate)","label":"Rigid yard sign, 4 mm coroplast, 2 sided, H-stake included","url":"https://www.stickermule.com/ca/products/rigid-yard-signs","ship":"Free shipping","note":"One size only: 24 x 18 in","sizes":[{"w":24,"h":18,"ladder":[[1,25],[2,36],[5,63],[10,99],[25,211],[50,410],[100,803]]}]},
+{"id":"ks-ls1","captured":"2026-10-29","sizing":"exact","name":"Kelly Signs","product":"lawn","sides":1,"stake":"addon","stakeId":"ks-stake","local":true,"method":"direct","methodLabel":"Printed straight onto coroplast, no laminate","methodSource":"Kelly Signs: \"All commercial signs are printed directly onto the material chosen\"","label":"Real estate / commercial signs, 4 mm coroplast, 1 sided","url":"https://kellysigns.ca/real-estate-2/","ship":"Local pickup in Ottawa or shipping; minimum quantities on many items","note":"Fixed sizes. Open house signs sold in sets, minimum 6 signs. Large site signs: sides not stated, priced as 1 sided","sizes":[{"w":24,"h":12,"ladder":[[1,30],[2,60],[5,150],[6,180],[10,300],[25,750],[50,1500],[100,3000]]},{"w":24,"h":18,"ladder":[[6,117],[10,195],[25,487.5],[50,975],[100,1950]]},{"w":24,"h":24,"ladder":[[6,132],[10,220],[25,550],[50,1100],[100,2200]]},{"w":32,"h":24,"ladder":[[6,148.5],[10,247.5],[25,618.75],[50,1237.5],[100,2475]]},{"w":48,"h":48,"ladder":[[1,119],[2,238],[5,595],[6,714],[10,1190],[25,2975],[50,5950],[100,11900]]},{"w":72,"h":48,"ladder":[[1,139],[2,278],[5,695],[6,834],[10,1390],[25,3475],[50,6950],[100,13900]]},{"w":96,"h":48,"ladder":[[1,165],[2,330],[5,825],[6,990],[10,1650],[25,4125],[50,8250],[100,16500]]}]},
+{"id":"ks-ls2","captured":"2026-10-29","sizing":"exact","name":"Kelly Signs","product":"lawn","sides":2,"stake":"addon","stakeId":"ks-stake","local":true,"method":"direct","methodLabel":"Printed straight onto coroplast, no laminate","methodSource":"Kelly Signs: \"All commercial signs are printed directly onto the material chosen\"","label":"For Sale insert sign, 4 mm coroplast, 2 sided","url":"https://kellysigns.ca/real-estate-2/","ship":"Local pickup in Ottawa or shipping; minimum quantities on many items","note":"Fixed size 24 x 32 in, minimum 6; shop shows the lowest (largest quantity) price","sizes":[{"w":32,"h":24,"ladder":[[6,196.5],[10,327.5],[25,818.75],[50,1637.5],[100,3275]]}]},
+{"id":"vp-b13","captured":"2026-10-29","sizing":"area","name":"VistaPrint","product":"banner","material":"13oz","hem":true,"label":"\"Indoor\" 13 oz vinyl, reinforced (welded) edges + grommets","url":"https://www.vistaprint.ca/signs-posters/vinyl-banners","ship":"Shipping extra (about $6-$35 by size and speed; free over $100)","note":"VistaPrint calls its 13 oz material Indoor; Outdoor is 15 oz","sizes":[{"w":48,"h":24,"ladder":[[1,45.25,36.2],[2,85.83,68.66],[5,214.59,171.67],[10,429.17,343.33]]},{"w":72,"h":24,"ladder":[[1,56.42,45.13],[2,106.89,85.51],[5,267.21,213.76],[10,534.44,427.55]]},{"w":96,"h":24,"ladder":[[1,84.28,67.42],[2,160.52,128.41],[5,401.31,321.04],[10,802.62,642.09]]},{"w":72,"h":36,"ladder":[[1,89.19,71.35],[2,169.84,135.87],[5,424.6,339.68],[10,849.17,679.33]]},{"w":96,"h":36,"ladder":[[1,108,86.4],[2,205.21,164.16],[5,513.03,410.42],[10,1026.06,820.84]]},{"w":72,"h":48,"ladder":[[1,108,86.4],[2,205.21,164.16],[5,513.03,410.42],[10,1026.06,820.84]]},{"w":96,"h":48,"ladder":[[1,147.2,117.76],[2,279.69,223.75],[5,699.23,559.38],[10,1398.46,1118.76]]},{"w":120,"h":48,"ladder":[[1,182.28,145.82],[2,346.72,277.37],[5,866.81,693.44],[10,1733.62,1386.89]]}]},
+{"id":"vp-b13n","captured":"2026-10-29","sizing":"area","name":"VistaPrint","product":"banner","material":"13oz","hem":false,"label":"\"Indoor\" 13 oz vinyl, grommets, no reinforced edges","url":"https://www.vistaprint.ca/signs-posters/vinyl-banners","ship":"Shipping extra (about $6-$35 by size and speed; free over $100)","sizes":[{"w":48,"h":24,"ladder":[[1,37.64,30.11],[2,71.37,57.09],[5,178.44,142.75],[10,356.87,285.49]]},{"w":72,"h":24,"ladder":[[1,46.41,37.12],[2,87.87,70.29],[5,219.67,175.73],[10,439.35,351.48]]},{"w":96,"h":24,"ladder":[[1,69.23,55.38],[2,131.93,105.54],[5,329.84,263.87],[10,659.68,527.74]]},{"w":72,"h":36,"ladder":[[1,73.26,58.6],[2,139.58,111.66],[5,348.96,279.16],[10,697.9,558.32]]},{"w":96,"h":36,"ladder":[[1,88.75,71],[2,168.64,134.91],[5,421.61,337.28],[10,843.22,674.57]]},{"w":72,"h":48,"ladder":[[1,88.75,71],[2,168.64,134.91],[5,421.61,337.28],[10,843.22,674.57]]},{"w":96,"h":48,"ladder":[[1,120.95,96.76],[2,229.82,183.85],[5,574.56,459.64],[10,1149.12,919.29]]},{"w":120,"h":48,"ladder":[[1,149.73,119.78],[2,284.87,227.89],[5,712.18,569.74],[10,1424.36,1139.48]]}]},
+{"id":"vp-b15","captured":"2026-10-29","sizing":"area","name":"VistaPrint","product":"banner","material":"heavy","weight":"15 oz","hem":true,"label":"\"Outdoor\" 15 oz vinyl, reinforced (welded) edges + grommets","url":"https://www.vistaprint.ca/signs-posters/vinyl-banners","ship":"Shipping extra (about $6-$35 by size and speed; free over $100)","sizes":[{"w":48,"h":24,"ladder":[[1,55.9,44.72],[2,106.06,84.84],[5,265.16,212.12],[10,530.31,424.24]]},{"w":72,"h":24,"ladder":[[1,70.43,56.34],[2,133.51,106.8],[5,333.75,267],[10,667.52,534.01]]},{"w":96,"h":24,"ladder":[[1,105.35,84.28],[2,200.53,160.42],[5,501.34,401.07],[10,1002.68,802.14]]},{"w":72,"h":36,"ladder":[[1,111.49,89.19],[2,212.19,169.75],[5,530.48,424.38],[10,1060.92,848.73]]},{"w":96,"h":36,"ladder":[[1,134.95,107.96],[2,256.39,205.11],[5,640.99,512.79],[10,1281.98,1025.58]]},{"w":72,"h":48,"ladder":[[1,134.95,107.96],[2,256.39,205.11],[5,640.99,512.79],[10,1281.98,1025.58]]},{"w":96,"h":48,"ladder":[[1,183.95,147.16],[2,349.49,279.59],[5,873.74,698.99],[10,1747.48,1397.98]]},{"w":120,"h":48,"ladder":[[1,227.85,182.28],[2,433.3,346.64],[5,1083.25,866.6],[10,2166.5,1733.2]]}]},
+{"id":"stp-b13","captured":"2026-10-29","sizing":"area","name":"Staples","product":"banner","material":"13oz","hem":true,"label":"Outdoor banner, 13 oz super smooth vinyl, 1 in sewn edge + grommets every 2 ft","url":"https://shop.staplescopyandprint.ca/products/outdoor-banners","ship":"Shipping $9.99 (free over $75) or free pickup at a Staples store; up to $2.99 service fee per order","note":"Same price per banner at any quantity","sizes":[{"w":120,"h":24,"ladder":[[1,169.99],[2,339.98],[5,849.95],[10,1699.9]]},{"w":48,"h":24,"ladder":[[1,84.99],[2,169.98],[5,424.95],[10,849.9]]},{"w":60,"h":24,"ladder":[[1,99.99],[2,199.98],[5,499.95],[10,999.9]]},{"w":72,"h":24,"ladder":[[1,114.99],[2,229.98],[5,574.95],[10,1149.9]]},{"w":84,"h":24,"ladder":[[1,134.99],[2,269.98],[5,674.95],[10,1349.9]]},{"w":96,"h":24,"ladder":[[1,139.99],[2,279.98],[5,699.95],[10,1399.9]]},{"w":120,"h":36,"ladder":[[1,195.99],[2,391.98],[5,979.95],[10,1959.9]]},{"w":48,"h":36,"ladder":[[1,99.99],[2,199.98],[5,499.95],[10,999.9]]},{"w":60,"h":36,"ladder":[[1,114.99],[2,229.98],[5,574.95],[10,1149.9]]},{"w":72,"h":36,"ladder":[[1,134.99],[2,269.98],[5,674.95],[10,1349.9]]},{"w":84,"h":36,"ladder":[[1,144.99],[2,289.98],[5,724.95],[10,1449.9]]},{"w":96,"h":36,"ladder":[[1,159.99],[2,319.98],[5,799.95],[10,1599.9]]},{"w":120,"h":48,"ladder":[[1,260.99],[2,521.98],[5,1304.95],[10,2609.9]]},{"w":60,"h":48,"ladder":[[1,149.99],[2,299.98],[5,749.95],[10,1499.9]]},{"w":72,"h":48,"ladder":[[1,179.99],[2,359.98],[5,899.95],[10,1799.9]]},{"w":84,"h":48,"ladder":[[1,189.99],[2,379.98],[5,949.95],[10,1899.9]]},{"w":96,"h":48,"ladder":[[1,208.99],[2,417.98],[5,1044.95],[10,2089.9]]}]},
+{"id":"stp-b18","captured":"2026-10-29","sizing":"area","name":"Staples","product":"banner","material":"heavy","weight":"18 oz","hem":true,"label":"Outdoor banner, 18 oz heavy duty vinyl, 1 in sewn edge + grommets every 2 ft","url":"https://shop.staplescopyandprint.ca/products/outdoor-banners","ship":"Shipping $9.99 (free over $75) or free pickup at a Staples store; up to $2.99 service fee per order","note":"Same price per banner at any quantity","sizes":[{"w":120,"h":24,"ladder":[[1,194.99],[2,389.98],[5,974.95],[10,1949.9]]},{"w":48,"h":24,"ladder":[[1,114.99],[2,229.98],[5,574.95],[10,1149.9]]},{"w":60,"h":24,"ladder":[[1,129.99],[2,259.98],[5,649.95],[10,1299.9]]},{"w":72,"h":24,"ladder":[[1,149.99],[2,299.98],[5,749.95],[10,1499.9]]},{"w":84,"h":24,"ladder":[[1,164.99],[2,329.98],[5,824.95],[10,1649.9]]},{"w":96,"h":24,"ladder":[[1,169.99],[2,339.98],[5,849.95],[10,1699.9]]},{"w":120,"h":36,"ladder":[[1,205.99],[2,411.98],[5,1029.95],[10,2059.9]]},{"w":48,"h":36,"ladder":[[1,129.99],[2,259.98],[5,649.95],[10,1299.9]]},{"w":60,"h":36,"ladder":[[1,134.99],[2,269.98],[5,674.95],[10,1349.9]]},{"w":72,"h":36,"ladder":[[1,154.99],[2,309.98],[5,774.95],[10,1549.9]]},{"w":84,"h":36,"ladder":[[1,159.99],[2,319.98],[5,799.95],[10,1599.9]]},{"w":96,"h":36,"ladder":[[1,174.99],[2,349.98],[5,874.95],[10,1749.9]]},{"w":120,"h":48,"ladder":[[1,290.99],[2,581.98],[5,1454.95],[10,2909.9]]},{"w":60,"h":48,"ladder":[[1,169.99],[2,339.98],[5,849.95],[10,1699.9]]},{"w":72,"h":48,"ladder":[[1,199.99],[2,399.98],[5,999.95],[10,1999.9]]},{"w":84,"h":48,"ladder":[[1,221.99],[2,443.98],[5,1109.95],[10,2219.9]]},{"w":96,"h":48,"ladder":[[1,238.99],[2,477.98],[5,1194.95],[10,2389.9]]}]},
+{"id":"bb-b13","captured":"2026-10-29","sizing":"area","name":"BannerBuzz","product":"banner","material":"13oz","hem":false,"label":"Custom vinyl banner, 13 oz, metal grommets, flush cut (no hem)","url":"https://www.bannerbuzz.ca/custom-vinyl-banners/p","ship":"Free standard shipping","note":"Always shown about 40% off a crossed-out price; this is the price customers pay","sizes":[{"w":36,"h":24,"ladder":[[1,8.74],[2,13.98],[5,34.96],[10,69.92]]},{"w":48,"h":24,"ladder":[[1,21.37],[2,34.19],[5,85.48],[10,170.96]]},{"w":48,"h":36,"ladder":[[1,32.05],[2,51.28],[5,128.2],[10,256.4]]},{"w":72,"h":24,"ladder":[[1,32.05],[2,51.28],[5,128.2],[10,256.4]]},{"w":72,"h":36,"ladder":[[1,48.08],[2,76.93],[5,192.32],[10,384.64]]},{"w":72,"h":48,"ladder":[[1,64.1],[2,102.56],[5,256.4],[10,512.8]]},{"w":96,"h":48,"ladder":[[1,85.47],[2,136.75],[5,341.88],[10,683.76]]},{"w":120,"h":48,"ladder":[[1,106.84],[2,170.94],[5,427.36],[10,854.72]]},{"w":96,"h":72,"ladder":[[1,128.21],[2,205.14],[5,512.84],[10,1025.68]]},{"w":120,"h":72,"ladder":[[1,160.26],[2,256.42],[5,641.04],[10,1282.08]]}]},
+{"id":"sm-big","captured":"2026-10-29","sizing":"area","name":"Sticker Mule","product":"bigsticker","lam":"laminated","label":"Die cut stickers, laminated vinyl, 8 to 24 in","url":"https://www.stickermule.com/ca/products/die-cut-stickers","ship":"Free shipping","sizes":[{"w":8,"h":8,"ladder":[[1,10],[2,16],[5,36],[10,62],[25,129],[50,227],[100,357]]},{"w":10,"h":10,"ladder":[[1,13],[2,22],[5,47],[10,82],[25,170],[50,300],[100,486]]},{"w":12,"h":12,"ladder":[[1,16],[2,28],[5,59],[10,104],[25,217],[50,382],[100,631]]},{"w":18,"h":18,"ladder":[[1,28],[2,49],[5,105],[10,184],[25,388],[50,684],[100,1164]]},{"w":24,"h":24,"ladder":[[1,43],[2,76],[5,161],[10,284],[25,600],[50,1059],[100,1826]]},{"w":12,"h":6,"ladder":[[1,10],[2,18],[5,38],[10,67],[25,139],[50,244],[100,387]]},{"w":18,"h":12,"ladder":[[1,21],[2,37],[5,78],[10,137],[25,289],[50,508],[100,854]]},{"w":24,"h":12,"ladder":[[1,26],[2,45],[5,96],[10,169],[25,356],[50,627],[100,1063]]},{"w":24,"h":18,"ladder":[[1,35],[2,61],[5,130],[10,228],[25,482],[50,850],[100,1456]]}]},
+{"id":"stp-af","captured":"2026-10-29","sizing":"area","name":"Staples","product":"aframe","sides":2,"frame":true,"method":"direct","methodLabel":"Printed coroplast, no laminate offered","label":"A-frame sign: 2 coroplast prints + plastic A-frame holder","url":"https://shop.staplescopyandprint.ca/products/a-frame-signs","ship":"Shipping $9.99 (free over $75) or free pickup at a Staples store; up to $2.99 service fee per order","sizes":[{"w":24,"h":18,"ladder":[[1,124.98],[2,249.96],[5,624.9],[10,1249.8]]},{"w":36,"h":24,"ladder":[[1,203.98],[2,407.96],[5,1019.9],[10,2039.8]]}]}
+]}
+</script>
+<script>
+// Signs and banners market engine: like-for-like groups, price lookup (exact, between quantities, between sizes), stakes.
+(function (root) {
+  function ladderAt(ladder, q, col, flat) {
+    if (!ladder || !ladder.length) return { na: 'none' };
+    var first = ladder[0][0], last = ladder[ladder.length - 1][0];
+    var val = function (r) { return r[col] != null ? r[col] : r[1]; };
+    if (q < first) return { na: 'min', limit: first };
+    if (q > last) { if (flat) return { p: val(ladder[ladder.length - 1]) / last * q, exact: true }; return { na: 'max', limit: last }; }
+    for (var i = 0; i < ladder.length; i++) {
+      var r = ladder[i];
+      if (r[0] === q) return { p: val(r), exact: true };
+      if (r[0] > q) {
+        var a = ladder[i - 1];
+        if (flat) return { p: val(a) / a[0] * q, exact: true };
+        var k = Math.log(val(r) / val(a)) / Math.log(r[0] / a[0]);
+        return { p: val(a) * Math.pow(q / a[0], k), exact: false };
+      }
+    }
+    return { na: 'max', limit: last };
+  }
+  function norm(z) { var W = Math.max(z.w, z.h), H = Math.min(z.w, z.h); return { W: W, H: H, A: W * H, z: z }; }
+  function naNote(r) { return r.na === 'min' ? 'Minimum ' + r.limit : r.na === 'max' ? 'Online max ' + r.limit : 'No price'; }
+  // {p, exact, note} or {na, note}. w, h in inches. col 1 = list price, 2 = sale price when stored.
+  function sellerPrice(s, w, h, q, col) {
+    col = col || 1;
+    var W = Math.max(w, h), H = Math.min(w, h), A = W * H, sizes = s.sizes.map(norm), flat = !!s.flat;
+    var ex = sizes.filter(function (z) { return Math.abs(z.W - W) < 0.01 && Math.abs(z.H - H) < 0.01; })[0];
+    if (ex) { var r = ladderAt(ex.z.ladder, q, col, flat); return r.na ? { na: r.na, note: naNote(r) } : { p: r.p, exact: r.exact, note: r.exact ? '' : 'Between quantity tiers' }; }
+    if (s.sizing === 'exact') return { na: 'size', note: 'Sizes sold: ' + sizes.map(function (z) { return z.W + ' x ' + z.H; }).join(', ') + ' in' };
+    var sorted = sizes.slice().sort(function (a, b) { return a.A - b.A; });
+    if (A < sorted[0].A - 0.01 || A > sorted[sorted.length - 1].A + 0.01) return { na: 'size', note: 'Outside their sizes (' + sorted[0].W + ' x ' + sorted[0].H + ' to ' + sorted[sorted.length - 1].W + ' x ' + sorted[sorted.length - 1].H + ' in)' };
+    var lo = null, hi = null;
+    sorted.forEach(function (z) { if (z.A <= A + 0.01) lo = z; });
+    for (var i = 0; i < sorted.length; i++) if (sorted[i].A >= A - 0.01) { hi = sorted[i]; break; }
+    var rl = ladderAt(lo.z.ladder, q, col, flat), rh = ladderAt(hi.z.ladder, q, col, flat);
+    if (rl.na || rh.na) { var n = rl.na ? rl : rh; return { na: n.na, note: naNote(n) }; }
+    var p = hi.A === lo.A ? (rl.p + rh.p) / 2 : rl.p + (A - lo.A) / (hi.A - lo.A) * (rh.p - rl.p);
+    return { p: p, exact: false, note: 'Estimated from nearby sizes' };
+  }
+  // Each seller's own stake price for q signs (0 if included). null if unknown.
+  function stakeCost(s, addons, w, h, q) {
+    if (s.stake === 'included') return 0;
+    var a = addons[s.stakeId];
+    if (a == null) return null;
+    if (typeof a === 'number') return a * q;
+    if (Array.isArray(a)) { var r = ladderAt(a, q, 1, true); return r.na ? null : r.p; }
+    var A = Math.max(w, h) * Math.min(w, h), best = null, bigA = -1, big = null;
+    Object.keys(a).forEach(function (k) {
+      var d = k.split('x').map(Number), ka = d[0] * d[1];
+      if (ka >= A - 0.01 && (!best || ka < best.A)) best = { A: ka, v: a[k] };
+      if (ka > bigA) { bigA = ka; big = a[k]; }
+    });
+    var v = (best || { v: big }).v;
+    return v ? v[1] * q : null;
+  }
+  // Like-for-like split. job: {product, w, h, q, mat, hem, method, sides, stakes}
+  function groups(data, job) {
+    var inG = [], ref = [], out = [];
+    data.sellers.forEach(function (s) {
+      if (s.product !== job.product) return;
+      var why = null, refOnly = false;
+      if (job.product === 'banner') {
+        if (s.material !== job.mat) why = s.material === 'heavy' ? 'heavier vinyl (' + (s.weight || '15-18 oz') + ')' : '13 oz vinyl';
+        else if (!!s.hem !== !!job.hem) why = s.hem ? 'hemmed edges' : 'no hem (grommets only)';
+      } else {
+        if (s.sides !== job.sides) why = s.sides + ' sided only';
+        else if (!job.stakes && s.stake === 'included') why = 'stake always included';
+        if (!why && s.method !== job.method) { why = s.methodLabel || 'made differently'; refOnly = true; }
+      }
+      if (!why) inG.push(s); else if (refOnly) ref.push(s); else out.push({ s: s, why: why });
+    });
+    return { inG: inG, ref: ref, out: out };
+  }
+  // Price every seller in a list for the job; adds stakes when asked.
+  function priceList(data, list, job) {
+    return list.map(function (s) {
+      var r = sellerPrice(s, job.w, job.h, job.q, 1), sale = s.sizes[0] && s.sizes[0].ladder[0].length > 2 ? sellerPrice(s, job.w, job.h, job.q, 2) : null;
+      var res = { s: s, r: r, total: null, stake: 0 };
+      if (r.na) return res;
+      var st = 0;
+      if (job.product === 'lawn' && job.stakes) { st = stakeCost(s, data.addons || {}, job.w, job.h, job.q); if (st == null) { res.r = { na: 'stake', note: 'No stake price' }; return res; } }
+      res.stake = st; res.total = r.p + st;
+      if (sale && !sale.na && sale.p < r.p - 0.005) res.sale = sale.p + st;
+      return res;
+    });
+  }
+  function stats(rows) {
+    var v = rows.filter(function (x) { return x.total != null; }).map(function (x) { return x.total; }).sort(function (a, b) { return a - b; });
+    if (!v.length) return null;
+    var n = v.length;
+    return { low: v[0], high: v[n - 1], mid: n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2, n: n };
+  }
+  var api = { ladderAt: ladderAt, sellerPrice: sellerPrice, stakeCost: stakeCost, groups: groups, priceList: priceList, stats: stats };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SignsMarket = api;
+})(this);
+</script>
+<script>
+var DEFAULT_VINYL = [
+  {name:"Matte Vinyl",               cost:0.56, code:"MAC-GV528P-W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Gloss Vinyl",               cost:0.56, code:"MAC-GV529P-W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Matte Laminate",            cost:0.56, code:"MAC-LUV8254W54L150",    supplier:"Pony Graphics", notes:"54x150ft  - $320/roll  - calc: $320/675sqft x1.18"},
+  {name:"Gloss Laminate",            cost:0.63, code:"MAC-LUV80554-W54L150",  supplier:"Pony Graphics", notes:"54x150ft  - $360/roll  - calc: $360/675sqft x1.18"},
+  {name:"Heat Press Vinyl",          cost:2.69, code:"BFLEX",                 supplier:"Pony Graphics", notes:"20x81ft  - $308.31/roll"},
+  {name:"Perforated Vinyl 60/40",    cost:0.80, code:"VMOWV-UV",              supplier:"Pony Graphics", notes:"54x164ft  - $500/roll"},
+  {name:"Poly Banner",               cost:0.43, code:"VMSMPB",                supplier:"Pony Graphics", notes:"54x100ft  - $163/roll"},
+  {name:"15oz Banner Premium 54in",  cost:0.64, code:"VMPETBO",               supplier:"Pony Graphics", notes:"54x164ft  - $398.50/roll"},
+  {name:"Ultraflex Superprint Plus Matte 13oz 38in", cost:0.35, code:"VMJFM0965050",          supplier:"Pony Graphics", notes:"38x164ft  - $155.21/roll - 519 sqft"},
+  {name:"Vision CANVAS matte/satin", cost:0.75, code:"VMACCF",                supplier:"Pony Graphics", notes:"54x100ft  - $285/roll"},
+  {name:"Mactac M-Dot Removable",    cost:0.66, code:"MAC-MD228",             supplier:"Pony Graphics", notes:"54x150ft  - $380/roll"},
+  {name:"Holographic",               cost:2.01, code:"RESM-HOLO",             supplier:"Pony Graphics", notes:"15x75ft  - $160/roll"},
+  {name:"180gsm Photo Paper",        cost:2.01, code:"VMSMPP",                supplier:"Pony Graphics", notes:"15x75ft  - $160/roll - NOTE: same cost as holographic"},
+  {name:"Strip Mesh Pro LTX 9oz",    cost:0.59, code:"VMSMPLLTX",             supplier:"Pony Graphics", notes:"54x164ft - price not on record"},
+  {name:"MACTAC Frosted Printable",  cost:1.84, code:"MAC-JJ-5796",           supplier:"Pony Graphics", notes:"54x75ft  - $525/roll"},
+  {name:"Removable Interior",        cost:1.00, code:"MAC-RO628",             supplier:"Pony Graphics", notes:"54x100ft  - $380.79/roll"},
+  {name:"Dry Erase Laminate",        cost:0.65, code:"",                      supplier:"",              notes:"No roll price on record - estimate"},
+  {name:"Razor Optically Clear Gloss",cost:0.96,code:"MAC-LF3648G",           supplier:"Pony Graphics", notes:"54x150ft  - $546.38/roll"},
+  {name:"Static Cling",              cost:0.60, code:"MAC-WVC-109",           supplier:"Pony Graphics", notes:"54x150ft  - $344.30/roll"},
+  {name:"Reflective White 24x30",    cost:2.75, code:"Nikkalite Eng. grade",  supplier:"Spicers",       notes:"24x30ft  - $140/roll - lynne.sauve@spicers.ca"},
+  {name:"Reflective White 24x150",   cost:2.01, code:"Nikkalite Eng. grade",  supplier:"Spicers",       notes:"24x150ft  - $510.20/roll"},
+  {name:"Magnetic 30mil 24x50",      cost:1.65, code:"30 mil",                supplier:"Spicers",       notes:"24x50ft  - $140/roll"},
+  {name:"Gold Leaf",                 cost:6.00, code:"",                      supplier:"SignSupply",     notes:"No roll size on record - estimate"},
+  {name:"Wrap Vinyl",                cost:1.05, code:"MAC_GV1029SW5",         supplier:"Pony Graphics", notes:"54x150ft  - $600/roll"},
+  {name:"Wrap Laminate",             cost:1.05, code:"MAC-LF36485415",        supplier:"Pony Graphics", notes:"54x150ft  - $600/roll"},
+  {name:"Eco Matte Laminate",        cost:0.22, code:"Vision",                supplier:"Pony Graphics", notes:"54x150ft  - $125/roll - Vision brand"},
+  {name:"Eco Glossy Laminate",       cost:0.22, code:"Vision",                supplier:"Pony Graphics", notes:"54x150ft  - $125/roll - Vision brand"},
+  {name:"White Backed Opaque",       cost:0.51, code:"Mactac",                supplier:"Pony Graphics", notes:"54x150ft  - $290/roll"},
+  {name:"White Backed Opaque 4mil (Vision)",cost:0.31, code:"VMPVM4P54150",          supplier:"Pony Graphics", notes:"54x150ft  - $175.95/roll - Vision Media Print Vinyl 4mil Matt Permanent"},
+  {name:"Anti Graffiti Laminate",    cost:0.79, code:"MAC-SAG38",             supplier:"Pony Graphics", notes:"54x150ft  - $450/roll"},
+];
+var DEFAULT_SUBSTRATES = [
+  {name:"3mm Aluminum",          cost:2.03, size:"4x8ft", supplier:"Spicers", notes:"$55/sheet  - 32sqft  - lynne.sauve@spicers.ca"},
+  {name:"6mm Aluminum",          cost:5.57, size:"4x8ft", supplier:"Spicers", notes:"$151/sheet  - 32sqft"},
+  {name:"4mm Coroplast",         cost:0.52, size:"4x8ft", supplier:"Spicers", notes:"$350/box of 25  - $14/sheet  - 32sqft"},
+  {name:"10mm Coroplast",        cost:1.84, size:"4x8ft", supplier:"Spicers", notes:"$50/sheet  - 32sqft"},
+  {name:"Foam 4mm (3/16th)",     cost:0.62, size:"4x8ft", supplier:"Spicers", notes:"$420/box of 25  - $16.80/sheet  - 32sqft"},
+  {name:"Styrene 0.020",         cost:0.55, size:"4x8ft", supplier:"Spicers", notes:"$15/sheet  - 32sqft"},
+  {name:"Sintra (foamlux)",      cost:1.60, size:"4x8ft", supplier:"Spicers", notes:"$433/10 sheets  - $43.30/sheet  - 32sqft"},
+  {name:"Aluminum Black 2-side", cost:5.53, size:"4x8ft", supplier:"Spicers", notes:"$150/sheet  - 32sqft"},
+];
+</script>
+<script>
+(function () {
+  'use strict';
+  var M = window.SignsMarket;
+  var DATA = JSON.parse(document.getElementById('signs-data').textContent);
+  DATA.sellers.forEach(function (s) { if (/^(stp|ks)-/.test(s.id)) s.flat = true; });
+  var SETTINGS_KEY = 'coba-beta-signs-v1';     // beta-only key
+  var INVENTORY_KEY = 'coba-inventory-v2';     // live estimator's inventory: READ ONLY, never written here
+  var DEFAULTS = { at: 'mid', pct: 100, round: 1, nomk: 'rate', prem: 50, min: 0, banrate: 6, sgnrate: 12, side2: 0, stakeprice: 2.5, stakecost: 0,
+    vinyl: 'Matte Vinyl', lam: 'Matte Laminate', ink: 0.5, warn: 1.3, hst: 13, media13: 'Ultraflex Superprint Plus Matte 13oz 38in', mediaHeavy: '15oz Banner Premium 54in', sub: '4mm Coroplast' };
+  var JOB_DEFAULTS = {
+    banner: { w: 4, h: 2, unit: 'ft', q: 1, mat: '13oz', hem: 1 },
+    lawn: { w: 24, h: 18, unit: 'in', q: 10, method: 'vinyl', sides: 1, stakes: 0 }
+  };
+  var SIZE_CHIPS = { banner: [[48, 24], [72, 24], [72, 36], [96, 36], [96, 48], [120, 48]], lawn: [[18, 12], [24, 18], [24, 24], [36, 24], [48, 48], [96, 48]] }; // inches
+  var QTY_CHIPS = { banner: [1, 2, 3, 5, 10], lawn: [1, 5, 10, 25, 50, 100] };
+  var BREAKS = { banner: [1, 2, 3, 5, 10], lawn: [1, 2, 5, 10, 25, 50, 100] };
+  var TIMES = String.fromCharCode(215), ICON_LOSS = String.fromCharCode(10006), ICON_WARN = String.fromCharCode(9888), ICON_OK = String.fromCharCode(10004), DASH = String.fromCharCode(8212);
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- storage (beta-only key) ----------
+  var store = { s: {}, jobs: {}, local: [], product: 'banner' };
+  try { var raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); if (raw && typeof raw === 'object') { store.s = raw.s || {}; store.jobs = raw.jobs || {}; store.local = Array.isArray(raw.local) ? raw.local : []; store.product = raw.product === 'lawn' ? 'lawn' : 'banner'; } } catch (e) {}
+  var S = {}; Object.keys(DEFAULTS).forEach(function (k) { S[k] = store.s[k] != null ? store.s[k] : DEFAULTS[k]; });
+  var JOBS = {}; ['banner', 'lawn'].forEach(function (p) { JOBS[p] = {}; var d = JOB_DEFAULTS[p], o = store.jobs[p] || {}; Object.keys(d).forEach(function (k) { JOBS[p][k] = o[k] != null ? o[k] : d[k]; }); });
+  var P = store.product;
+  function save() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ s: S, jobs: JOBS, local: store.local, product: P })); } catch (e) {} }
+
+  // ---------- materials: saved inventory on this device (read only), else built-in defaults ----------
+  var vinylList = DEFAULT_VINYL, subList = DEFAULT_SUBSTRATES, invSource = 'built-in defaults';
+  try { var inv = JSON.parse(localStorage.getItem(INVENTORY_KEY) || 'null'); if (inv && Array.isArray(inv.vinyl) && inv.vinyl.length) { vinylList = inv.vinyl; invSource = 'your saved inventory'; } if (inv && Array.isArray(inv.substrates) && inv.substrates.length) subList = inv.substrates; } catch (e) {}
+  var ok = function (v) { return v && typeof v.name === 'string' && isFinite(+v.cost); };
+  vinylList = vinylList.filter(ok); subList = subList.filter(ok);
+  var lamList = vinylList.filter(function (v) { return /lam/i.test(v.name); });
+  var printList = vinylList.filter(function (v) { return !/lam/i.test(v.name); });
+  var bannerList = vinylList.filter(function (v) { return /banner|13oz|15oz|mesh|poly/i.test(v.name); });
+  function fill(sel, list, chosen) {
+    sel.innerHTML = list.map(function (v) { return '<option value="' + esc(v.name) + '">' + esc(v.name) + ' ($' + (+v.cost).toFixed(2) + '/sqft)</option>'; }).join('');
+    var names = list.map(function (v) { return v.name; });
+    sel.value = names.indexOf(chosen) >= 0 ? chosen : (names[0] || '');
+  }
+  function costOf(list, name) { for (var i = 0; i < list.length; i++) if (list[i].name === name) return +list[i].cost; return 0; }
+
+  // ---------- helpers ----------
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function money(v) { return '$' + (+v).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(id, f) { var v = parseFloat($(id).value); return isFinite(v) ? v : f; }
+  function roundTo(v, step) { return step > 0 ? Math.round(v / step) * step : Math.round(v * 100) / 100; }
+  function fmtDate(d) { return new Date(d + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.style.display = 'none'; }, 2200); }
+  function dimTxt(w, h, unit) { var f = function (x) { return unit === 'ft' ? +(x / 12).toFixed(2) + ' ft' : +x.toFixed(2) + ' in'; }; return f(Math.max(w, h)) + ' ' + TIMES + ' ' + f(Math.min(w, h)); }
+
+  // ---------- current job ----------
+  function job() {
+    var J = JOBS[P], f = J.unit === 'ft' ? 12 : 1;
+    var j = { product: P, w: Math.max(0, +J.w) * f, h: Math.max(0, +J.h) * f, q: Math.max(1, Math.round(+J.q || 1)), unit: J.unit };
+    if (P === 'banner') { j.mat = J.mat; j.hem = !!+J.hem; } else { j.method = J.method; j.sides = +J.sides; j.stakes = !!+J.stakes; }
+    return j;
+  }
+  function groupName(j) {
+    if (j.product === 'banner') return (j.mat === '13oz' ? '13 oz vinyl' : 'heavy 15-18 oz vinyl') + ', ' + (j.hem ? 'hemmed + grommets' : 'grommets only');
+    return (j.method === 'vinyl' ? 'vinyl + laminate on coroplast' : 'printed straight onto coroplast') + ', ' + j.sides + ' sided, ' + (j.stakes ? 'with stakes' : 'no stakes');
+  }
+  // Your estimator's way of pricing this job today
+  function yourRate(j) {
+    var sqft = j.w * j.h / 144;
+    if (j.product === 'banner') return sqft * S.banrate * j.q;
+    var per = sqft * S.sgnrate * (j.sides === 2 ? 1 + S.side2 / 100 : 1);
+    return per * j.q + (j.stakes ? S.stakeprice * j.q : 0);
+  }
+  function materialCost(j) {
+    var sqft = j.w * j.h / 144;
+    if (j.product === 'banner') { var media = costOf(vinylList, $('o-media').value); return { cost: (media + S.ink) * sqft * j.q, parts: 'media + ink' }; }
+    var face = costOf(vinylList, S.vinyl) + S.ink + (j.method === 'vinyl' ? costOf(vinylList, S.lam) : 0);
+    var board = costOf(subList, $('o-sub').value);
+    var stake = j.stakes ? S.stakecost : 0;
+    return { cost: (face * j.sides + board) * sqft * j.q + stake * j.q, parts: (j.method === 'vinyl' ? 'vinyl + laminate' : 'vinyl') + ' + ink ' + TIMES + ' ' + j.sides + ' side' + (j.sides > 1 ? 's' : '') + ' + board' + (j.stakes ? (S.stakecost > 0 ? ' + stakes' : ' (stakes not costed)') : '') };
+  }
+  // The quote for any quantity of the current size and options
+  function quoteFor(j) {
+    var G = M.groups(DATA, j), rows = M.priceList(DATA, G.inG, j), st = M.stats(rows);
+    var refRows = M.priceList(DATA, G.ref, j), refSt = M.stats(refRows);
+    var base, basis;
+    if (st) { base = S.at === 'low' ? st.low : S.at === 'high' ? st.high : st.mid; basis = { kind: 'market', label: { mid: 'market middle', low: 'market low', high: 'market high' }[S.at] }; base = base * S.pct / 100; }
+    else if (S.nomk === 'ref' && refSt) { base = refSt.mid * (1 + S.prem / 100); basis = { kind: 'ref', label: 'direct-print middle + ' + S.prem + '%' }; }
+    else { base = yourRate(j); basis = { kind: 'rate', label: 'your estimator rate' }; }
+    var q = roundTo(base, S.round);
+    var minHit = S.min > 0 && q < S.min; if (minHit) q = S.min;
+    return { G: G, rows: rows, st: st, refRows: refRows, refSt: refSt, base: base, basis: basis, quote: q, minHit: minHit };
+  }
+  function status(quote, cost) {
+    if (!(cost > 0)) return 'none';
+    var x = quote / cost; return x < 1 ? 'loss' : x < S.warn ? 'thin' : 'ok';
+  }
+
+  // ---------- render ----------
+  function sellerCard(x, j, used, refMode) {
+    var s = x.s, r = x.r, badges = '';
+    if (s.local) badges += '<span class="badge local">Local</span>';
+    if (j.product === 'lawn') badges += '<span class="badge ' + (s.method === 'vinyl' ? 'mine' : 'meth') + '">' + esc(s.method === 'vinyl' ? 'Vinyl + laminate' : 'No laminate') + '</span>';
+    if (j.product === 'lawn' && s.stake === 'included') badges += '<span class="badge">Stake included</span>';
+    var pr = r.na ? esc(r.note) : money(x.total) + (x.sale != null ? ' <span style="font-size:11px;font-weight:400;color:#166534">(' + money(x.sale) + ' on sale now)</span>' : '');
+    var sub = [];
+    if (!r.na) { sub.push(money(x.total / j.q) + ' each'); if (x.stake > 0) sub.push('incl. ' + money(x.stake) + ' stakes'); if (r.note) sub.push(r.note); }
+    return '<div class="seller' + (r.na ? ' na' : '') + (used ? ' used' : '') + '"><div class="nm">' + esc(s.name) + badges + '</div>' +
+      '<div class="pr">' + pr + '</div>' + (sub.length ? '<div class="sp">' + esc(sub.join(' ' + String.fromCharCode(183) + ' ')) + '</div>' : '') +
+      '<div class="nt">' + esc(s.label) + (s.note ? '. ' + esc(s.note) : '') + '. ' + esc(s.ship) + (refMode && s.methodSource ? '. ' + esc(s.methodSource) : '') + '</div></div>';
+  }
+  function render() {
+    var J = JOBS[P], j = job();
+    document.querySelectorAll('.tab').forEach(function (t) { var on = t.getAttribute('data-p') === P; t.classList.toggle('on', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    $('opts-banner').hidden = P !== 'banner'; $('opts-lawn').hidden = P !== 'lawn';
+    $('job-title').innerHTML = P === 'banner' ? '&#128681; Banner job <span class="hint">single sided, priced by size</span>' : '&#129703; Lawn sign job <span class="hint">4 mm coroplast, priced per sign</span>';
+    $('l-w').textContent = 'Width (' + J.unit + ')'; $('l-h').textContent = 'Height (' + J.unit + ')';
+    ['o-mat', 'o-hem', 'o-meth', 'o-sides', 'o-stake'].forEach(function (id) {
+      var key = { 'o-mat': 'mat', 'o-hem': 'hem', 'o-meth': 'method', 'o-sides': 'sides', 'o-stake': 'stakes' }[id];
+      $(id).querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', String(J[key]) === b.getAttribute('data-v')); });
+    });
+    // chips
+    $('size-chips').innerHTML = '<span class="lbl">Size</span>' + SIZE_CHIPS[P].map(function (z) { var on = Math.abs(j.w - z[0]) < 0.01 && Math.abs(j.h - z[1]) < 0.01 || Math.abs(j.w - z[1]) < 0.01 && Math.abs(j.h - z[0]) < 0.01; return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-w="' + z[0] + '" data-h="' + z[1] + '">' + esc(dimTxt(z[0], z[1], P === 'banner' ? 'ft' : 'in')) + '</button>'; }).join('');
+    $('qty-chips').innerHTML = '<span class="lbl">Qty</span>' + QTY_CHIPS[P].map(function (q) { return '<button type="button" class="chip' + (q === j.q ? ' on' : '') + '" data-q="' + q + '">' + q + '</button>'; }).join('');
+    $('src-note').textContent = 'Material costs from ' + invSource + ' (read only).';
+    if (!(j.w > 0 && j.h > 0)) return;
+
+    var Q = quoteFor(j), mc = materialCost(j), st = status(Q.quote, mc.cost), hst = S.hst / 100;
+    $('c-cost').textContent = money(mc.cost); $('c-cost-sub').textContent = mc.parts;
+    $('c-quote').textContent = money(Q.quote); $('c-quote-sub').textContent = money(Q.quote / j.q) + ' each' + (Q.minHit ? ' (minimum order)' : '');
+    $('c-profit').textContent = money(Q.quote - mc.cost); $('c-profit-sub').textContent = mc.cost > 0 ? (Q.quote / mc.cost).toFixed(1) + TIMES + ' material cost' : '';
+    $('c-total').textContent = money(Q.quote * (1 + hst)); $('c-total-sub').textContent = 'HST ' + money(Q.quote * hst);
+    var chk = $('check'); chk.className = 'check ' + st;
+    chk.textContent = st === 'loss' ? ICON_LOSS + ' Below material cost. Raise the price.' : st === 'thin' ? ICON_WARN + ' Thin: only ' + (Q.quote / mc.cost).toFixed(2) + TIMES + ' material cost (warning below ' + S.warn + TIMES + ').' : st === 'ok' ? ICON_OK + ' Covers material ' + (Q.quote / mc.cost).toFixed(1) + TIMES + ' over.' : 'No material cost to check.';
+
+    // main market box
+    $('mk-group').textContent = groupName(j);
+    var used = Q.basis.kind === 'market';
+    $('mk-stats').hidden = !Q.st;
+    if (Q.st) { $('mk-range').textContent = Q.st.n > 1 ? money(Q.st.low) + ' - ' + money(Q.st.high) : money(Q.st.low); $('mk-mid').textContent = money(Q.st.mid); }
+    $('sellers').innerHTML = Q.rows.map(function (x) { return sellerCard(x, j, used && x.total != null, false); }).join('');
+    var empty = $('mk-empty');
+    if (!Q.G.inG.length) {
+      empty.hidden = false;
+      empty.innerHTML = j.product === 'lawn' && j.method === 'vinyl' ? '<strong>No one found sells signs made your way</strong> (printed vinyl + laminate on coroplast). Every lawn sign seller found prints straight onto the coroplast, so they are shown below for reference only.' : '<strong>No seller found for this exact combination.</strong>';
+    } else if (!Q.st) { empty.hidden = false; empty.innerHTML = 'The sellers below don&rsquo;t sell this size or quantity online.'; }
+    else empty.hidden = true;
+    $('mk-excl').innerHTML = Q.G.out.length ? 'Not compared: ' + Q.G.out.map(function (o) { return esc(o.s.name + ' (' + o.why + ')'); }).join(', ') + '.' : '';
+    $('rule-line').innerHTML = 'Quote = <strong>' + esc(Q.basis.label) + '</strong>' + (Q.basis.kind === 'market' && S.pct !== 100 ? ' ' + TIMES + ' ' + S.pct + '%' : '') + ', rounded';
+    $('est-price').textContent = money(yourRate(j)) + (j.product === 'lawn' && j.sides === 2 && !S.side2 ? ' (same as 1 sided)' : '');
+
+    // reference box (other print method)
+    var refBox = $('mk-ref');
+    refBox.hidden = !Q.G.ref.length;
+    if (Q.G.ref.length) {
+      $('ref-group').textContent = j.method === 'vinyl' ? 'printed straight onto coroplast, no laminate (a different product)' : 'vinyl + laminate (your method)';
+      $('ref-range').textContent = Q.refSt ? (Q.refSt.n > 1 ? money(Q.refSt.low) + ' - ' + money(Q.refSt.high) : money(Q.refSt.low)) : '-';
+      $('ref-mid').textContent = Q.refSt ? money(Q.refSt.mid) : '-';
+      $('ref-sellers').innerHTML = Q.refRows.map(function (x) { return sellerCard(x, j, Q.basis.kind === 'ref' && x.total != null, true); }).join('');
+      $('ref-note').textContent = Q.refSt ? 'Your quote is ' + (Q.quote >= Q.refSt.mid ? Math.round((Q.quote / Q.refSt.mid - 1) * 100) + '% above' : Math.round((1 - Q.quote / Q.refSt.mid) * 100) + '% below') + ' the direct-print middle. Not used for your quote unless you pick "Direct-print market + premium" in the settings.' : '';
+    }
+    // local prices for this job type and size
+    var loc = store.local.filter(function (e) { return sameKind(e, j); });
+    $('mk-local').hidden = !loc.length;
+    $('local-sellers').innerHTML = loc.map(function (e) { var each = e.price / e.q; return '<div class="seller"><div class="nm">' + esc(e.name) + '<span class="badge local">You entered</span></div><div class="pr">' + money(each * j.q) + '</div><div class="sp">' + money(each) + ' each, from their ' + money(e.price) + ' for ' + e.q + '</div><div class="nt">Entered ' + esc(e.date) + '</div></div>'; }).join('');
+    renderLocalList();
+    renderBreaks(j);
+    save();
+  }
+  function kindKey(j) { return j.product === 'banner' ? ['banner', j.mat, j.hem ? 1 : 0].join('|') : ['lawn', j.method, j.sides, j.stakes ? 1 : 0].join('|'); }
+  function sameKind(e, j) { return e.kind === kindKey(j) && Math.abs(Math.max(e.w, e.h) - Math.max(j.w, j.h)) < 0.01 && Math.abs(Math.min(e.w, e.h) - Math.min(j.w, j.h)) < 0.01; }
+  function renderLocalList() {
+    $('local-list').innerHTML = store.local.map(function (e, i) { return '<div class="local-row"><span>' + esc(e.name) + ': ' + money(e.price) + ' for ' + e.q + ' ' + String.fromCharCode(183) + ' ' + esc(e.desc) + ' ' + String.fromCharCode(183) + ' ' + esc(e.date) + '</span><button type="button" class="btn-x" data-del="' + i + '" aria-label="Remove">' + ICON_LOSS + '</button></div>'; }).join('');
+  }
+  function renderBreaks(j) {
+    var qs = BREAKS[P].slice(); if (qs.indexOf(j.q) < 0) { qs.push(j.q); qs.sort(function (a, b) { return a - b; }); }
+    var G0 = M.groups(DATA, j), useRef = !G0.inG.length && G0.ref.length > 0;
+    var head = '<tr><th>Qty</th><th>' + (useRef ? 'Direct-print middle (reference)' : 'Like-for-like middle') + '</th><th>Quote</th><th>Each</th><th>Estimator now</th><th>Your cost</th><th>' + TIMES + ' cost</th></tr>';
+    var body = qs.map(function (q) {
+      var jj = Object.assign({}, j, { q: q }), Q = quoteFor(jj), mc = materialCost(jj).cost, st = status(Q.quote, mc), mid = useRef ? Q.refSt : Q.st;
+      return '<tr' + (q === j.q ? ' class="cur"' : '') + '><td class="qcell">' + q + '</td><td class="num"' + (useRef ? ' style="color:#888"' : '') + '>' + (mid ? money(mid.mid) : DASH) + '</td><td class="num"><span class="dot ' + st + '"></span>' + money(Q.quote) + '</td><td class="num">' + money(Q.quote / q) + '</td><td class="num">' + money(yourRate(jj)) + '</td><td class="num" style="color:#888">' + money(mc) + '</td><td class="num">' + (mc > 0 ? (Q.quote / mc).toFixed(1) + TIMES : DASH) + '</td></tr>';
+    }).join('');
+    $('breaks').innerHTML = head + body;
+    $('breaks-hint').textContent = dimTxt(j.w, j.h, j.unit) + ', ' + groupName(j);
+  }
+
+  // ---------- inputs ----------
+  function loadInputs() {
+    var J = JOBS[P];
+    $('j-w').value = J.w; $('j-h').value = J.h; $('j-unit').value = J.unit; $('j-q').value = J.q;
+  }
+  function readJob() {
+    var J = JOBS[P];
+    J.w = num('j-w', J.w); J.h = num('j-h', J.h); J.q = Math.max(1, Math.round(num('j-q', J.q)));
+  }
+  ['j-w', 'j-h', 'j-q'].forEach(function (id) { $(id).addEventListener('input', function () { readJob(); render(); }); });
+  $('j-unit').addEventListener('change', function () {
+    var J = JOBS[P], nu = $('j-unit').value; if (nu === J.unit) return;
+    var f = nu === 'in' ? 12 : 1 / 12; J.w = +(J.w * f).toFixed(2); J.h = +(J.h * f).toFixed(2); J.unit = nu; loadInputs(); render();
+  });
+  [['o-mat', 'mat'], ['o-hem', 'hem'], ['o-meth', 'method'], ['o-sides', 'sides'], ['o-stake', 'stakes']].forEach(function (p) {
+    $(p[0]).addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var v = b.getAttribute('data-v'); JOBS[P][p[1]] = /^\d+$/.test(v) ? +v : v;
+      if (p[1] === 'mat') { var want = v === '13oz' ? S.media13 : S.mediaHeavy; fill($('o-media'), bannerList.length ? bannerList : vinylList, want); }
+      render();
+    });
+  });
+  $('o-media').addEventListener('change', function () { if (JOBS.banner.mat === '13oz') S.media13 = $('o-media').value; else S.mediaHeavy = $('o-media').value; render(); });
+  $('o-sub').addEventListener('change', function () { S.sub = $('o-sub').value; render(); });
+  $('size-chips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (!b) return; var J = JOBS[P], f = J.unit === 'ft' ? 1 / 12 : 1; J.w = +(+b.getAttribute('data-w') * f).toFixed(2); J.h = +(+b.getAttribute('data-h') * f).toFixed(2); loadInputs(); render(); });
+  $('qty-chips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (!b) return; JOBS[P].q = +b.getAttribute('data-q'); loadInputs(); render(); });
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { P = t.getAttribute('data-p'); loadInputs(); fillJobSelects(); render(); }); });
+
+  // settings
+  var NUM_SETTINGS = ['pct', 'prem', 'min', 'banrate', 'sgnrate', 'side2', 'stakeprice', 'stakecost', 'ink', 'warn', 'hst'];
+  function loadSettingsUI() {
+    NUM_SETTINGS.forEach(function (k) { $('s-' + k).value = S[k]; });
+    $('s-at').value = S.at; $('s-round').value = String(S.round); $('s-nomk').value = S.nomk;
+    fill($('s-vinyl'), printList.length ? printList : vinylList, S.vinyl); fill($('s-lam'), lamList.length ? lamList : vinylList, S.lam);
+  }
+  function fillJobSelects() {
+    fill($('o-media'), bannerList.length ? bannerList : vinylList, JOBS.banner.mat === '13oz' ? S.media13 : S.mediaHeavy);
+    fill($('o-sub'), subList, S.sub);
+  }
+  NUM_SETTINGS.forEach(function (k) { $('s-' + k).addEventListener('input', function () { var v = parseFloat($('s-' + k).value); if (isFinite(v)) { S[k] = v; render(); } }); });
+  $('s-at').addEventListener('change', function () { S.at = $('s-at').value; render(); });
+  $('s-round').addEventListener('change', function () { S.round = parseFloat($('s-round').value); render(); });
+  $('s-nomk').addEventListener('change', function () { S.nomk = $('s-nomk').value; render(); });
+  $('s-vinyl').addEventListener('change', function () { S.vinyl = $('s-vinyl').value; render(); });
+  $('s-lam').addEventListener('change', function () { S.lam = $('s-lam').value; render(); });
+  $('s-reset').addEventListener('click', function () { Object.keys(DEFAULTS).forEach(function (k) { S[k] = DEFAULTS[k]; }); loadSettingsUI(); fillJobSelects(); render(); toast('Settings reset'); });
+  $('set-toggle').addEventListener('click', function () { var s = $('settings'), open = s.hidden; s.hidden = !open; this.setAttribute('aria-expanded', open ? 'true' : 'false'); this.innerHTML = (open ? '&#9650; Hide' : '&#9660; Show') + ' pricing settings'; });
+
+  // local prices
+  $('lp-add').addEventListener('click', function () {
+    var j = job(), name = $('lp-name').value.trim(), price = parseFloat($('lp-price').value), q = Math.max(1, Math.round(parseFloat($('lp-q').value) || j.q));
+    if (!name || !(price > 0)) { toast('Enter the shop and their price'); return; }
+    var d = new Date(), date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    store.local.push({ kind: kindKey(j), w: j.w, h: j.h, name: name.slice(0, 60), price: price, q: q, date: date, desc: dimTxt(j.w, j.h, j.unit) + ', ' + groupName(j) });
+    $('lp-name').value = ''; $('lp-price').value = ''; render(); toast('Local price added');
+  });
+  $('local-list').addEventListener('click', function (e) { var b = e.target.closest('[data-del]'); if (!b) return; store.local.splice(+b.getAttribute('data-del'), 1); render(); });
+
+  // actions
+  function quoteText() {
+    var j = job(), Q = quoteFor(j), hst = S.hst / 100;
+    var what = j.product === 'banner' ? 'Vinyl banner ' + dimTxt(j.w, j.h, j.unit) + ', ' + (j.mat === '13oz' ? '13 oz' : 'heavy') + ' vinyl, ' + (j.hem ? 'hemmed with grommets' : 'grommets') : 'Lawn sign ' + dimTxt(j.w, j.h, j.unit) + ', 4 mm coroplast, ' + (j.method === 'vinyl' ? 'printed vinyl with protective laminate' : 'printed') + ', ' + j.sides + ' sided' + (j.stakes ? ', with stakes' : '');
+    return ['Coba Studios quote', what, 'Quantity: ' + j.q, 'Price: ' + money(Q.quote) + ' (' + money(Q.quote / j.q) + ' each)', 'HST ' + S.hst + '%: ' + money(Q.quote * hst), 'Total: ' + money(Q.quote * (1 + hst))].join('\n');
+  }
+  $('btn-copy').addEventListener('click', function () {
+    var t = quoteText();
+    var fallback = function () { $('copy-box').hidden = false; $('copy-text').value = t; $('copy-text').select(); };
+    try { navigator.clipboard.writeText(t).then(function () { toast('Quote copied'); }, fallback); } catch (e) { fallback(); }
+  });
+  $('btn-new').addEventListener('click', function () { var d = JOB_DEFAULTS[P]; Object.keys(d).forEach(function (k) { JOBS[P][k] = d[k]; }); loadInputs(); fillJobSelects(); render(); });
+  $('btn-print').addEventListener('click', function () { window.print(); });
+
+  // freshness
+  var age = Math.max(0, Math.floor((Date.now() - new Date(DATA.captured + 'T12:00:00').getTime()) / 86400000));
+  $('mk-date').textContent = fmtDate(DATA.captured); $('mk-date2').textContent = fmtDate(DATA.captured);
+  $('mk-age').textContent = ' (' + age + ' day' + (age === 1 ? '' : 's') + ' old)';
+  $('stale-pill').hidden = age <= 150;
+
+  loadInputs(); loadSettingsUI(); fillJobSelects(); render();
+})();
+</script>
+</body>
+</html>
