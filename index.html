@@ -776,10 +776,9 @@
               <div class="rate-item" style="font-size:12px">
                 Vinyl: <select id="r-stk-vinyl" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:180px"></select>
               </div>
-              <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:4px;cursor:pointer">
-                <input type="checkbox" id="r-stk-lam" onchange="rCalc()" style="accent-color:#1e40af"> Laminate:
-              </label>
-              <select id="r-stk-lam-type" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:160px"></select>
+              <input type="checkbox" id="r-stk-lam" hidden tabindex="-1" aria-hidden="true">
+              <label for="r-stk-lam-type" style="font-size:12px;color:#666">Laminate:</label>
+              <select id="r-stk-lam-type" data-drives="r-stk-lam" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:170px"></select>
               <div class="rate-item no-print" style="font-size:12px">
                 Pricing: <select id="r-stk-mode" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:auto"><option value="market" selected>Market (like for like)</option><option value="classic">Classic markup</option></select>
               </div>
@@ -877,10 +876,9 @@
             <input type="checkbox" id="r-sgn-sub-on" onchange="rCalc()" style="accent-color:#16a34a"> Substrate:
           </label>
           <select id="r-sgn-sub" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:180px"></select>
-          <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:4px;cursor:pointer">
-            <input type="checkbox" id="r-sgn-lam" onchange="rCalc()" checked style="accent-color:#16a34a"> Laminate:
-          </label>
-          <select id="r-sgn-lam-type" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:170px"></select>
+          <input type="checkbox" id="r-sgn-lam" checked hidden tabindex="-1" aria-hidden="true">
+          <label for="r-sgn-lam-type" style="font-size:12px;color:#666">Laminate:</label>
+          <select id="r-sgn-lam-type" data-drives="r-sgn-lam" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:170px"></select>
         </div>
         <div id="r-sgn-section" style="display:none">
           <div class="scroll-x">
@@ -3021,6 +3019,7 @@ function rBuildVinylOpts(selId, filterFn){
   const sel=document.getElementById(selId); if(!sel) return;
   const cur=sel.value;
   sel.innerHTML='<option value="">— select —</option>';
+  if(sel.dataset.drives) sel.options[0].textContent='None (no laminate)'; // v30: laminate picked in the dropdown alone
   if(!inventory.vinyl) return;
   inventory.vinyl.filter(filterFn||(_=>true)).forEach(v=>{
     const o=document.createElement('option');
@@ -3213,6 +3212,9 @@ function rStkRenderMarket(mode, rows, lam, matCost){
 }
 
 function rCalc(){
+  // v30: a laminate dropdown with data-drives sets its hidden checkbox (a laminate picked = laminated, None = not).
+  // Jobs saved before v30 have no data-drives, so their visible checkbox still decides, as when they were quoted.
+  document.querySelectorAll('#panel-vinyl select[data-drives]').forEach(sel=>{ const box=document.getElementById(sel.dataset.drives); if(box) box.checked = sel.value!==''; });
   const rollW  = rGetV('r-roll-w') || 50;
   const inkSF  = rGetV('r-ink');
   const stkRate= rGetV('r-stk-rate');
@@ -3399,11 +3401,12 @@ function rCalc(){
 
 function resetRoland(){
   cobaConfirm('New Roland estimate? This will clear all Roland fields.', ()=>{
-    if((!document.getElementById('r-stk-mode') || !document.getElementById('r-sgn-lam')) && R_PANEL_PRISTINE){ // a job saved before v28/v29 replaced the panel markup
+    if((!document.getElementById('r-stk-mode') || !document.querySelector('#r-sgn-lam-type[data-drives]') || !document.querySelector('#r-stk-lam-type[data-drives]')) && R_PANEL_PRISTINE){ // a job saved before v28/v29/v30 replaced the panel markup
       const pv=document.getElementById('panel-vinyl'); if(pv){ pv.innerHTML=R_PANEL_PRISTINE; rebuildRolandDropdowns(); }
     }
     const sm=document.getElementById('r-stk-mode'); if(sm) sm.value='market';
-    const sl=document.getElementById('r-sgn-lam'); if(sl) sl.checked=true;
+    const stl=document.getElementById('r-stk-lam-type'); if(stl) stl.value='';           // stickers: no laminate
+    const sgl=document.getElementById('r-sgn-lam-type'); if(sgl){ sgl.value=''; delete sgl.dataset.init; rSgnLamDefault(); } // signage: Matte Laminate
     const sd=document.getElementById('r-stk-mkt-date'); if(sd) sd.value='';
     const rp=document.getElementById('r-proj'); if(rp) rp.value='';
     document.getElementById('r-hrs').value='0';

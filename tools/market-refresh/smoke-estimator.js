@@ -51,6 +51,7 @@ const SRC = path.resolve(__dirname, '..', '..', 'index.html');
     const on = document.getElementById('r-stk-on'); if (!on.checked) { on.checked = true; rToggle('stk'); }
     pick('r-stk-vinyl', 'Matte Vinyl'); pick('r-stk-lam-type', 'Matte Laminate');
     document.getElementById('r-stk-lam').checked = lam;
+    { const lt = document.getElementById('r-stk-lam-type'); if (lt.dataset.drives && !lam) lt.value = ''; } // v30: the dropdown decides
     document.getElementById('r-stk-mode').value = mode;
     const id = rStkRows[0];
     document.getElementById(id + '-w').value = w; document.getElementById(id + '-h').value = h; document.getElementById(id + '-q').value = q;
