@@ -877,16 +877,21 @@
             <input type="checkbox" id="r-sgn-sub-on" onchange="rCalc()" style="accent-color:#16a34a"> Substrate:
           </label>
           <select id="r-sgn-sub" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:180px"></select>
+          <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="checkbox" id="r-sgn-lam" onchange="rCalc()" checked style="accent-color:#16a34a"> Laminate:
+          </label>
+          <select id="r-sgn-lam-type" onchange="rCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:170px"></select>
         </div>
         <div id="r-sgn-section" style="display:none">
           <div class="scroll-x">
             <table style="min-width:660px;margin-bottom:6px">
               <thead><tr>
-                <th class="gh" style="width:22%">Sign description</th>
-                <th class="gh" style="width:10%">W (in)</th>
-                <th class="gh" style="width:10%">H (in)</th>
+                <th class="gh" style="width:20%">Sign description</th>
+                <th class="gh" style="width:9%">W (in)</th>
+                <th class="gh" style="width:9%">H (in)</th>
                 <th class="gh" style="width:8%">Qty</th>
-                <th class="gh" style="width:12%">Sq ft each</th>
+                <th class="gh" style="width:7%">Sides</th>
+                <th class="gh" style="width:11%">Sq ft each</th>
                 <th class="gh" style="width:12%">Your cost</th>
                 <th class="gh" style="width:13%">Retail total</th>
                 <th class="gh" style="width:10%">/ sign</th>
@@ -900,6 +905,7 @@
             <div class="info-item">Total sign area: <strong id="r-sgn-sqft">0 sq ft</strong></div>
             <div class="info-item">Your cost: <strong id="r-sgn-cost">$0.00</strong></div>
             <div class="info-item">Signage retail: <strong id="r-sgn-retail">$0.00</strong></div>
+            <div class="info-item" id="r-sgn-2s" style="color:#888"></div>
           </div>
         </div>
       </div>
@@ -1665,7 +1671,7 @@ const SNAP_STATE = {
   dtf:    { get: ()=>({ dGarmentRows:[...dGarmentRows], dImprintRows:[...dImprintRows], gId, iId }),
             set: s=>{ dGarmentRows=[...(s.dGarmentRows||[])]; dImprintRows=[...(s.dImprintRows||[])]; gId=s.gId||0; iId=s.iId||0; } },
   vinyl:  { get: ()=>({ rStkRows:[...rStkRows], rBanRows:[...rBanRows], rSgnRows:[...rSgnRows], rCanRows:[...rCanRows], rSId, rBId, rGId, rCId }),
-            set: s=>{ rStkRows=[...(s.rStkRows||[])]; rBanRows=[...(s.rBanRows||[])]; rSgnRows=[...(s.rSgnRows||[])]; rCanRows=[...(s.rCanRows||[])]; rSId=s.rSId||0; rBId=s.rBId||0; rGId=s.rGId||0; rCId=s.rCId||0; } },
+            set: s=>{ rStkRows=[...(s.rStkRows||[])]; rBanRows=[...(s.rBanRows||[])]; rSgnRows=[...(s.rSgnRows||[])]; rCanRows=[...(s.rCanRows||[])]; rSId=s.rSId||0; rBId=s.rBId||0; rGId=s.rGId||0; rCId=s.rCId||0; rSgnMigrateIds(); } },
   epson:  { get: ()=>({ ePlanRows:[...ePlanRows], eArtRows:[...eArtRows], eLamRows:[...eLamRows], ePId, eAId, eLamId }),
             set: s=>{ ePlanRows=[...(s.ePlanRows||[])]; eArtRows=[...(s.eArtRows||[])]; eLamRows=[...(s.eLamRows||[])]; ePId=s.ePId||0; eAId=s.eAId||0; eLamId=s.eLamId||0; } }
 };
@@ -2936,7 +2942,7 @@ function rToggle(type){
 }
 
 function rAddRow(type){
-  const id = type==='stk'?'s'+rSId++:type==='ban'?'b'+rBId++:type==='can'?'c'+rCId++:'g'+rGId++;
+  const id = type==='stk'?'s'+rSId++:type==='ban'?'b'+rBId++:type==='can'?'c'+rCId++:'sg'+rGId++; // v29: was 'g', which clashed with DTF garment rows
   if(type==='stk')      rStkRows.push(id);
   else if(type==='ban') rBanRows.push(id);
   else if(type==='can') rCanRows.push(id);
@@ -2973,7 +2979,8 @@ function rAddRow(type){
       <td class="inp"><input type="text" id="${id}-n" placeholder="${type==='ban'?'e.g. 3x6ft banner':'e.g. 24x36 coroplast sign'}"></td>
       <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
       <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
-      <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>
+      <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>${type==='sgn'?`
+      <td class="inp"><select id="${id}-sd" onchange="rCalc()" title="2 sided = 2 faces of vinyl + ink + laminate on 1 board"><option value="1" selected>1</option><option value="2">2</option></select></td>`:''}
       <td class="res dim" id="${id}-sf">—</td>
       <td class="res dim" id="${id}-co">—</td>
       <td class="res" id="${id}-rt">—</td>
@@ -2992,6 +2999,20 @@ function rRemoveRow(id, type){
   rCalc();
 }
 
+// v29: signage rows used ids g0, g1... which are also the DTF garment row ids, so getElementById found the DTF
+// inputs first (signage read the garment quantity and wrote its retail into the DTF table). New rows use sg0, sg1...;
+// jobs saved before v29 get their signage rows renamed here when they are reopened.
+function rSgnMigrateIds(){
+  const panel=document.getElementById('panel-vinyl'); if(!panel) return;
+  rSgnRows=rSgnRows.map(id=>{
+    if(!/^g\d+$/.test(id)) return id;
+    const nid='s'+id;
+    panel.querySelectorAll('[id^="'+id+'-"]').forEach(el=>{ el.id=nid+el.id.slice(id.length); });
+    const tr=panel.querySelector('#rrow-'+id); if(tr) tr.id='rrow-'+nid;
+    panel.querySelectorAll('[onclick*="\''+id+'\'"]').forEach(el=>{ el.setAttribute('onclick', el.getAttribute('onclick').replace("'"+id+"'", "'"+nid+"'")); });
+    return nid;
+  });
+}
 function rGetV(id){ const e=document.getElementById(id); return e?parseFloat(e.value)||0:0; }
 const rfmt = n=>'$'+n.toFixed(2);
 const rsfmt = n=>n.toFixed(3)+' sq ft';
@@ -3029,6 +3050,15 @@ function rebuildRolandDropdowns(){
   rBuildVinylOpts('r-sgn-vinyl');
   rBuildVinylOpts('r-can-media', v=>v.name.toLowerCase().includes('canvas'));
   rBuildSubstrateOpts('r-sgn-sub');
+  rBuildVinylOpts('r-sgn-lam-type', v=>v.name.toLowerCase().includes('lam'));
+  rSgnLamDefault();
+}
+// v29: a new Signage section starts with Matte Laminate picked (Coba signs are vinyl + laminate). Marked once, so a
+// saved job's own choice (restored with the panel) is never overwritten.
+function rSgnLamDefault(){
+  const sel=document.getElementById('r-sgn-lam-type'); if(!sel || sel.dataset.init) return;
+  sel.dataset.init='1';
+  if(sel.value===''){ const i=Array.from(sel.options).findIndex(o=>o.text.trim().startsWith('Matte Laminate')); if(i>=0) sel.selectedIndex=i; }
 }
 
 // ===== STICKER MARKET PRICING (v28) =====
@@ -3282,14 +3312,20 @@ function rCalc(){
     const vinylCost = rGetV('r-sgn-vinyl');
     const subOn     = document.getElementById('r-sgn-sub-on').checked;
     const subCost   = subOn ? rGetV('r-sgn-sub') : 0;
-    const matCost   = vinylCost + inkSF + subCost;
+    // v29: laminate from inventory; a 2 sided sign is 2 faces (vinyl + ink + laminate) on 1 board.
+    // Jobs saved before v29 have no laminate box or Sides column, so they price exactly as before.
+    const lamEl     = document.getElementById('r-sgn-lam');
+    const lamCost   = lamEl && lamEl.checked ? rGetV('r-sgn-lam-type') : 0;
+    const face      = vinylCost + inkSF + lamCost;
+    const side2x    = face+subCost>0 ? (2*face+subCost)/(face+subCost) : 2;
     rSgnRows.forEach(id=>{
       const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
+      const sdEl=document.getElementById(id+'-sd'), sides=sdEl && sdEl.value==='2' ? 2 : 1;
       const sfEl=document.getElementById(id+'-sf'), coEl=document.getElementById(id+'-co');
       const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
       if(w>0&&h>0&&q>0){
         const sqft=(w*h/144)*q;
-        const cost=sqft*matCost, retail=sqft*sgnRate, per=retail/q;
+        const cost=sqft*(face*sides+subCost), retail=sqft*sgnRate*(sides===2?side2x:1), per=retail/q;
         if(sfEl) sfEl.textContent=rsfmt(w*h/144);
         if(coEl) coEl.textContent=rfmt(cost);
         if(rtEl) rtEl.textContent=rfmt(retail);
@@ -3301,6 +3337,7 @@ function rCalc(){
     set('r-sgn-sqft', sgnArea>0?rsfmt(sgnArea):'0 sq ft');
     set('r-sgn-cost', rfmt(sgnCost));
     set('r-sgn-retail', rfmt(sgnRetail));
+    set('r-sgn-2s', '2 sided = '+side2x.toFixed(2)+'x the 1 sided price (2 faces + 1 board)');
   }
 
   // ── CANVAS ──
@@ -3362,10 +3399,11 @@ function rCalc(){
 
 function resetRoland(){
   cobaConfirm('New Roland estimate? This will clear all Roland fields.', ()=>{
-    if(!document.getElementById('r-stk-mode') && R_PANEL_PRISTINE){ // a job saved before v28 replaced the panel markup
+    if((!document.getElementById('r-stk-mode') || !document.getElementById('r-sgn-lam')) && R_PANEL_PRISTINE){ // a job saved before v28/v29 replaced the panel markup
       const pv=document.getElementById('panel-vinyl'); if(pv){ pv.innerHTML=R_PANEL_PRISTINE; rebuildRolandDropdowns(); }
     }
     const sm=document.getElementById('r-stk-mode'); if(sm) sm.value='market';
+    const sl=document.getElementById('r-sgn-lam'); if(sl) sl.checked=true;
     const sd=document.getElementById('r-stk-mkt-date'); if(sd) sd.value='';
     const rp=document.getElementById('r-proj'); if(rp) rp.value='';
     document.getElementById('r-hrs').value='0';
