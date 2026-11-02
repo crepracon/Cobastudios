@@ -2750,6 +2750,7 @@ const PAPER_SEED = [
   P('8.5x11 12up 2.5" circles',null,'',"Circle Labels 2.5in 12-up","8.5x11",0.35),
   P("Lynx 24# 12x18",24,'#',"Lynx","12x18",0.07),
   P("Sustana 24#",24,'#',"Sustana","12x18",0.05,['size']),
+  P("Husky Digital Opaque 24# 11x17",24,'#',"Husky Digital Opaque Smooth","11x17",0.05409),   // v37: Spicer HUS2362, 60# text = 24# bond, $54.09 / 1000 sheets
   P("Sustana 28#",28,'#',"Sustana","12x18",0.07,['size']),
   P("Hammermill 32#",32,'#',"Hammermill","12x18",0.11,['size']),
   P("Pacesetter 60# adhesive 13x19",60,'#',"Pacesetter Adhesive","13x19",0.83),
@@ -2872,6 +2873,7 @@ function invLoad(){
       if(!inventory.papers || inventory.papers.length===0){ inventory.papers = JSON.parse(JSON.stringify(DEFAULT_PAPERS)); invSave(); }
       if(paperMigrate()) invSave();
       { const zod = inventory.papers.find(p=>(p.brand||'').toLowerCase().includes('zodia')); if(!zod){ const z=PAPER_SEED.find(x=>x.brand.indexOf('Zodia')===0); inventory.papers.push({brand:z.brand,weight:z.weight,unit:z.unit,size:z.size,cost:z.cost,supplier:z.supplier,unsure:[]}); paperSortApply(); invSave(); } else if(zod.cost===2.00){ zod.cost=0.50; invSave(); } }
+      invAddPaperOnce('husky-11x17-v37', p=>/husky/i.test(p.brand||p.name||'') && /11\s*x\s*17/i.test(p.size||p.name||''));
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
@@ -2894,9 +2896,20 @@ function invAddOnce(tag, list, codes){
   inventory.added.push(tag);
   invSave();
 }
+// v37: the same for a new default paper. Papers have no product code, so match() picks it out (brand + size);
+// it is only added when the saved inventory has no paper matching, and only once per device.
+function invAddPaperOnce(tag, match){
+  if(!Array.isArray(inventory.added)) inventory.added = [];
+  if(inventory.added.indexOf(tag)>=0) return;
+  if(!Array.isArray(inventory.papers)) inventory.papers = [];
+  const def = DEFAULT_PAPERS.find(match);
+  if(def && !inventory.papers.some(match)){ inventory.papers.push(JSON.parse(JSON.stringify(def))); paperSortApply(); }
+  inventory.added.push(tag);
+  invSave();
+}
 function invSetDefaults(){
   inventory = {
-    added:        ['nekoosa-v32'],
+    added:        ['nekoosa-v32', 'husky-11x17-v37'],
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),

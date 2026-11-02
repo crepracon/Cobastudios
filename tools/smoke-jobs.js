@@ -218,8 +218,29 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const saved = JSON.parse(E.w.localStorage.getItem('coba-inventory-v2'));
   ok(saved.papers.every(p => p.brand !== undefined), 'migrated inventory saved');
 
+  // ---------- v37: Husky Digital Opaque 24# 11x17 reaches every inventory once ----------
+  const isHusky = p => /husky/i.test(p.brand || '') && p.size === '11x17';
+  const hk = papers.filter(isHusky);
+  ok(hk.length === 1 && hk[0].weight === 24 && hk[0].unit === '#' && hk[0].cost === 0.05409 && saved.added.indexOf('husky-11x17-v37') >= 0, 'Husky 24# 11x17 added to a saved inventory once, and tagged');
+  ok(opts.indexOf('24# Husky Digital Opaque Smooth 11x17') >= 0, 'Husky 11x17 in the Paper tab dropdowns');
+  const huskyOpt = Array.from(E.$('pp-s0').options).find(o => /Husky/.test(o.textContent));
+  E.$('pp-s0').value = huskyOpt.value; E.w.pSetPaper(0);
+  ok(E.$('pp-c0').value === '0.054', 'choosing it fills in its cost per sheet: ' + E.$('pp-c0').value);
+  const F = openWin({}); await sleep(40);   // fresh device
+  ok(F.w.eval('inventory.papers').filter(isHusky).length === 1 && F.w.eval('inventory.added').indexOf('husky-11x17-v37') >= 0, 'fresh inventory has it once');
+  const inv1 = JSON.parse(E.w.localStorage.getItem('coba-inventory-v2'));
+  inv1.papers = inv1.papers.filter(p => !isHusky(p));   // Chris removes it
+  const G = openWin({ inventory: JSON.stringify(inv1) }); await sleep(40);
+  ok(G.w.eval('inventory.papers').filter(isHusky).length === 0, 'a removed Husky paper stays removed');
+  const inv2 = JSON.parse(E.w.localStorage.getItem('coba-inventory-v2'));
+  inv2.added = inv2.added.filter(t => t !== 'husky-11x17-v37');   // a v36 inventory with its own Husky 11x17 entry
+  inv2.papers = inv2.papers.filter(p => !isHusky(p)).concat([{ brand: 'Husky', weight: 24, unit: '#', size: '11x17', cost: 0.06, supplier: 'Spicer', unsure: [] }]);
+  const H = openWin({ inventory: JSON.stringify(inv2) }); await sleep(40);
+  const hh = H.w.eval('inventory.papers').filter(isHusky);
+  ok(hh.length === 1 && hh[0].cost === 0.06, 'an existing Husky 11x17 entry is not duplicated or changed');
+
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDE'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGH'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
