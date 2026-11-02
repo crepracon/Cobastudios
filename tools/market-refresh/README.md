@@ -7,6 +7,10 @@ the refresh changes nothing else in them. Saved jobs keep the market price they 
 so a refresh only affects new quotes and rows that get edited.
 A scheduled Claude task runs this every 4 months (March, July, November). Anyone can follow it by hand too.
 
+**Also in the same scheduled task (since Nov 2026):** the VistaPrint calendar, coaster and brochure prices behind UV
+Printing > Coasters and the Paper tab's Calendar / Brochure references (the `market-print` block in `index.html` only).
+That refresh has its own 60-day check, collector, build and apply scripts and report: see `print/README.md`.
+
 **Why a real browser:** StickerYou, Sticker Mule and VistaPrint only show prices through their own price
 calculators, and StickerYou blocks plain web requests. So the prices are pulled from inside a real browser tab
 on each site, using the same price requests the pages make when a customer picks a size. Keep the pace polite
@@ -21,14 +25,15 @@ on each site, using the same price requests the pages make when a customer picks
 | `apply.js` | Compares collected prices with the current data in `index.html`, applies the safe changes to the market-data block in **both** `index.html` and `beta/index.html`, writes a report. |
 | `smoke-estimator.js` | Checks the live estimator after the update: data is valid ASCII JSON, scripts compile, the Vinyl / Roland sticker quote equals the like-for-like market middle (laminated and not), Classic mode works, no page errors. |
 | `smoke-beta.js` | Checks the beta after the update (scripts compile and are ASCII, both laminate modes work). |
-| `reports/` | One change report per refresh (`YYYY-MM-DD.md`). |
+| `reports/` | One change report per refresh (`YYYY-MM-DD.md` for stickers, `print-YYYY-MM-DD.md` for the VistaPrint print prices). |
+| `print/` | VistaPrint calendars, coasters and brochures: collector, build and apply scripts, data, runbook. |
 
 ## Steps (Claude, scheduled run)
 1. **Already done this cycle?** Read the `"captured"` date at the top of the `market-data` JSON in `index.html`.
-   If it is less than 60 days old, stop — nothing to do (no message needed).
+   If it is less than 60 days old, skip the sticker steps (no message needed); the print refresh has its own check.
 2. **Is Chris's computer reachable?** The collectors need the Claude desktop app's built-in browser on his computer
    (`Claude_Browser` tools). If those tools are missing or can't reach the computer, stop and tell Chris in one line:
-   "Couldn't reach your computer for the sticker price refresh; I'll try again next Monday."
+   "Couldn't reach your computer for the market price refresh; I'll try again next Monday."
 3. **Collect.** For each collector, open its page with `preview_start`, wait ~3 s for prices to load, then run the
    collector file's full text with `javascript_tool` (it returns a JSON string). Save each result to
    `/tmp/market-refresh/<collector>.json`. If the browser asks for site access, request it for that site.
