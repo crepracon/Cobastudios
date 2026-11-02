@@ -71,6 +71,7 @@
     td.iv-edit input:focus { outline: 2px solid #a855f7; border-color: #a855f7; }
     td.iv-edit { background: #faf5ff; }
     th.uh { background: #ccfbf1; color: #115e59; font-weight: 600; text-align: center; font-size: 12px; }
+    th.uch { background: #fae8ff; color: #86198f; font-weight: 600; text-align: center; font-size: 12px; }
     td.uv-bd input { width: 90px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable:hover { background: #e9d5ff; }
@@ -1090,6 +1091,70 @@
         </div>
         <div style="font-size:11px;color:#115e59;margin-top:6px;line-height:1.6"><strong>Ink $ (xTool)</strong> and <strong>Mins (xTool)</strong>: type the Estimated cost and Estimated time that xTool Studio shows for the whole row (the greyed "est" number is what the app would otherwise assume). Blank $ ea = cost of the item itself (leave 0 if the customer supplies it). Tick <strong>White?</strong> when printing on a dark or coloured surface: the whole print area gets a white underbase first, which adds ink cost and print time. Cost = print area x cost per sq ft (+ white) + per-item consumables + blank. Details in settings below.</div>
       </div>
+
+      <!-- ── COASTERS (v34) ── -->
+      <div style="background:#fdf4ff;border:1px solid #f0abfc;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.75rem">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#86198f;cursor:pointer">
+            <input type="checkbox" id="uc-on" onchange="ucToggle()" style="width:16px;height:16px;accent-color:#a21caf"> &#9749; Coasters
+          </label>
+          <span style="font-size:11px;color:#86198f;background:#fdf4ff;padding:3px 8px;border-radius:20px;border:1px solid #f0abfc">ceramic tiles &middot; compared with VistaPrint ceramic coasters</span>
+        </div>
+        <div id="uc-section" style="display:none">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:.75rem;padding:8px 12px;background:#fff;border:1px solid #f0abfc;border-radius:6px">
+            <div class="rate-item" style="font-size:12px">Price:
+              <select id="uc-mode" onchange="uCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:170px">
+                <option value="market" selected>Match VistaPrint</option>
+                <option value="each">My price per coaster</option>
+              </select>
+            </div>
+            <div class="rate-item" id="uc-pct-wrap" style="font-size:12px">at <input type="number" id="uc-pct" value="100" min="0" step="5" oninput="uCalc()" style="width:60px"> % of their price</div>
+            <div class="rate-item" id="uc-each-wrap" style="font-size:12px;display:none">$<input type="number" id="uc-each" value="8.00" min="0" step="0.25" oninput="uCalc()" style="width:65px"> each</div>
+            <span style="font-size:11px;color:#888">Coaster prices are all-in: no job setup fee is added for them. Your cost uses the UV cost model in settings plus the tile.</span>
+          </div>
+          <div class="scroll-x">
+            <table style="min-width:1080px;margin-bottom:6px">
+              <thead><tr>
+                <th class="uch" style="width:13%">Description</th>
+                <th class="uch" style="width:8%">Shape</th>
+                <th class="uch" style="width:6%">W (in)</th>
+                <th class="uch" style="width:6%">H (in)</th>
+                <th class="uch" style="width:6%">Qty</th>
+                <th class="uch" style="width:7%" title="Your tile cost each. VistaPrint's include a cork back, so include yours to compare like for like.">Tile $ ea</th>
+                <th class="uch" style="width:5%">White?</th>
+                <th class="uch" style="width:5%" title="Primer wipe on each tile (usual for glazed ceramic)">Primer?</th>
+                <th class="uch" style="width:7%" title="Optional: ink cost xTool Studio shows for this whole row">Ink $ (xTool)</th>
+                <th class="uch" style="width:7%" title="Optional: minutes xTool Studio shows for this whole row">Mins (xTool)</th>
+                <th class="uch" style="width:7%">Your cost</th>
+                <th class="uch" style="width:8%" title="VistaPrint ceramic coaster price each at this quantity">VistaPrint ea</th>
+                <th class="uch" style="width:7%">Price ea</th>
+                <th class="uch" style="width:8%">Retail total</th>
+                <th class="uch" style="width:3%"></th>
+              </tr></thead>
+              <tbody id="uc-body"></tbody>
+            </table>
+          </div>
+          <button class="btn-add no-print" onclick="ucAddRow()" style="background:#fdf4ff;color:#86198f;border-color:#f0abfc">+ Add coasters</button>
+          <div class="info-bar" style="margin-top:8px;border-color:#f0abfc">
+            <div class="info-item">Coasters: <strong id="uc-count">0</strong></div>
+            <div class="info-item">Your cost: <strong id="uc-cost">$0.00</strong></div>
+            <div class="info-item">Cost per coaster: <strong id="uc-costper">&mdash;</strong></div>
+            <div class="info-item">Coaster retail: <strong id="uc-retail">$0.00</strong></div>
+            <div class="info-item">VistaPrint for the same: <strong id="uc-vp">&mdash;</strong></div>
+          </div>
+          <div class="no-print" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:#888">Strategy:</span>
+            <select id="uc-strategy" onchange="uCalc()" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;background:#fff;color:#1a1a1a" title="Override the default defend/compete call for coasters">
+              <option value="auto" selected>Auto (default: &#9878;&#65039; Compete)</option>
+              <option value="defend">&#128737;&#65039; Defend</option>
+              <option value="compete">&#9878;&#65039; Compete</option>
+            </select>
+          </div>
+          <div id="uc-market-bar" class="no-print" style="margin-top:6px;border-radius:6px;padding:8px 12px;background:#f5f5f2;border:1px solid #e5e5e5;font-size:12px;color:#888">
+            Market check &mdash; VistaPrint ceramic coasters: enter a quantity to see
+          </div>
+        </div>
+      </div>
       <hr class="divider">
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
@@ -1765,6 +1830,7 @@
 ]}
 ]}
 </script>
+<script type="application/json" id="market-print">{"captured":"2026-11-02","currency":"CAD","note":"VistaPrint Canada only. Prices before tax and before shipping. Rows: [qty, price] or [qty, list, sale]. Sizes in inches (w x h); brochure sizes are flat (unfolded).","stocks":{"brochure":{"glossy":{"standard":"5pt","premium":"9pt"},"matte":{"standard":"5pt","premium":"9.5pt"},"uncoated":{"standard":"5.5pt","premium":"11pt"},"recycled":{"standard":"6pt"},"coating":"Glossy and matte are coated both sides; uncoated recommended for writing on"}},"quirks":["Tri-fold 8.5x14 recycled: 1,000 is cheaper than 750 ($682.49 vs $794.29)","Bi-fold 11x17 uncoated is about double the matte price at every quantity","Per-unit price rises from 25 to 50 on tri-fold 9x16 recycled and bi-fold 11x17 uncoated/recycled"],"sellers":[{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-cal-wall","product":"calendar","type":"wall","label":"Wall calendar, 12 months, spiral bound, custom start month","paper":"Standard matte or premium glossy, picked in the calendar editor at add-to-cart (upcharge not shown before cart). Middle-bound sizes: coated photo half, uncoated grid half. Top-bound sizes: uncoated throughout.","url":"https://www.vistaprint.ca/photo-gifts/calendars/wall-calendars","note":"Sale on at capture (code FAVES25, ends Nov 8, 2026): rows are [qty, list, sale]. Use list for like-for-like. Online max 500; more is a custom quote.","sizes":[{"label":"Mini, top binding","w":8.2,"h":5.8,"binding":"top","ladder":[[1,12.99,12.34],[2,25.5,24.22],[3,37.5,35.62],[4,49.6,47.12],[5,61.5,58.42],[10,120,114],[15,180,171],[20,240,228],[30,330,313.5],[100,1100,1045],[250,2750,2612.5],[500,5500,5225]]},{"label":"Small, top binding","w":11.5,"h":8,"binding":"top","ladder":[[1,26.99,17.54],[2,51.5,33.47],[3,75,48.75],[4,97,63.05],[5,118.75,77.18],[10,232.5,151.12],[15,348.75,226.68],[20,465,302.25],[30,667.5,433.87],[100,2225,1446.25],[250,5562.5,3615.62],[500,11125,7231.25]]},{"label":"Classic, top binding","w":17,"h":11,"binding":"top","ladder":[[1,42.99,27.94],[2,81.5,52.97],[3,118.5,77.02],[4,154,100.1],[5,188.75,122.68],[10,370,240.5],[15,555,360.75],[20,740,481],[30,1050,682.5],[100,3500,2275],[250,8750,5687.5],[500,17500,11375]]},{"label":"Classic, middle binding (8.5x11 closed)","w":17,"h":11,"binding":"middle","closed":[8.5,11],"ladder":[[1,29.99,17.99],[2,57,34.2],[3,82.5,49.5],[4,107,64.2],[5,132.5,79.5],[10,257.5,154.5],[15,386.25,231.75],[20,515,309],[30,750,450],[100,2500,1500],[250,6250,3750],[500,12500,7500]]},{"label":"Large, middle binding (11.25x14.5 closed)","w":22.5,"h":14.5,"binding":"middle","closed":[11.25,14.5],"ladder":[[1,46.49,27.89],[2,88,52.8],[3,128.25,76.95],[4,166,99.6],[5,205,123],[10,400,240],[15,600,360],[20,800,480],[30,1132.5,679.5],[100,3775,2265],[250,9437.5,5662.5],[500,18875,11325]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-cal-desk","product":"calendar","type":"desk","label":"Desk calendar, spiral bound, built-in stand","url":"https://www.vistaprint.ca/photo-gifts/calendars/desk-calendars","note":"No sale at capture. Online max 500. Sizes given in cm by VistaPrint; inches here are converted.","sizes":[{"label":"Rectangular (10.5 x 21 cm), 1-sided, standard matte or premium glossy (UV coated)","w":8.27,"h":4.13,"sides":1,"ladder":[[1,14.99],[2,29],[5,71],[10,128],[15,188],[20,240],[30,350],[100,990],[250,2460],[500,4910]]},{"label":"Square (20 x 20 cm), 2-sided, standard matte uncoated only","w":7.87,"h":7.87,"sides":2,"ladder":[[1,17.99],[2,35],[5,86],[10,155],[15,230],[20,300],[30,425],[100,1190],[250,2960],[500,5910]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-cal-poster","product":"calendar","type":"poster","label":"Poster calendar, single sheet, 12 months, January start","paper":"Glossy or premium glossy (picked in editor)","url":"https://www.vistaprint.ca/photo-gifts/calendars/poster-calendars","note":"Online max 200.","sizes":[{"w":17.3,"h":11.25,"ladder":[[1,9.99],[2,14],[3,18],[4,22],[5,24],[10,35],[20,66],[50,115],[100,170],[200,200]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-cal-magnet","product":"calendar","type":"magnetic","label":"Magnetic calendar, semi-gloss, horizontal or vertical","paper":"0.4 mm standard magnet (prices shown); 0.6 mm premium picked later, upcharge not shown","url":"https://www.vistaprint.ca/marketing-materials/magnets/magnetic-calendars","note":"Min 10, up to 2,500 online.","sizes":[{"w":5.47,"h":4.21,"ladder":[[10,24.99],[20,40],[30,55],[40,73],[50,91],[100,150],[200,200],[500,375],[1000,750]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-cal-bookmark","product":"calendar","type":"bookmark","label":"Bookmark calendar, 16pt premium glossy","url":"https://www.vistaprint.ca/marketing-materials/bookmark-calendars","note":"Size not captured.","sizes":[{"w":null,"h":null,"ladder":[[5,9.09],[10,12.99],[15,19.49],[20,22.09],[25,23.39],[50,36.39],[100,62.39],[150,64.99],[200,84.49],[250,107.24],[500,194.99],[1000,259.99]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-cal-mousepad","product":"calendar","type":"mousepad","label":"Mouse pad calendar, 3 mm, matte surface (6 mm option)","url":"https://www.vistaprint.ca/marketing-materials/mouse-pad-calendars","sizes":[{"w":9.25,"h":7.76,"ladder":[[1,6.73],[5,28],[10,50.2],[25,108.7],[50,197.19],[100,374.17],[250,905.1],[500,1790],[750,2685]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-coaster-paper","product":"coaster","material":"pulpboard","label":"Paper coaster, 56pt off-white matte coaster board, front printed only","url":"https://www.vistaprint.ca/photo-gifts/paper-coasters","note":"Min 20; quote above 1,000. Square only. 3.3 stars (51 reviews).","sizes":[{"w":4,"h":4,"shape":"square","ladder":[[20,34.99],[40,50],[100,105],[200,200],[500,500],[1000,1000]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-coaster-photo","product":"coaster","material":"gloss board","label":"Photo coaster, 1/8 in thick, high-gloss face, non-slip cork back","url":"https://www.vistaprint.ca/photo-gifts/photo-coasters","note":"Sold in multiples of 4; quote above 400. Square only.","sizes":[{"w":4,"h":4,"shape":"square","ladder":[[4,24.99],[8,50],[12,70],[16,90],[20,110],[40,205],[80,405],[200,1010],[400,2000]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-coaster-ceramic","product":"coaster","material":"ceramic","label":"Ceramic coaster, heavyweight ceramic stone, cork back","url":"https://www.vistaprint.ca/photo-gifts/custom-ceramic-coasters","note":"Min 2; quote above 400. Square and round are the same price.","sizes":[{"w":3.9,"h":3.9,"shape":"square","ladder":[[2,17.99],[4,32.6],[8,60],[12,82.8],[16,105.6],[20,127.2],[40,254.4],[80,508.8],[100,630],[200,1260],[400,2520]]},{"w":4.1,"h":4.1,"shape":"round","ladder":[[2,17.99],[4,32.6],[8,60],[12,82.8],[16,105.6],[20,127.2],[40,254.4],[80,508.8],[100,630],[200,1260],[400,2520]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-tri-glossy","product":"brochure","fold":"tri","stock":"glossy","thickness":"standard (presumed)","pt":5,"premiumPt":9,"label":"Tri-fold brochure, glossy stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/tri-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[1,13.99],[25,40.29],[50,67.59],[100,109.19],[250,197.59],[500,272.99],[750,313.29],[1000,382.19]]},{"label":"8.5x14 flat","w":14,"h":8.5,"flat":true,"ladder":[[1,15.99],[25,44.19],[50,77.99],[100,129.99],[250,258.69],[500,367.89],[750,422.49],[1000,491.39]]},{"label":"9x16 flat","w":16,"h":9,"flat":true,"ladder":[[25,48.09],[50,94.89],[100,157.29],[250,300.29],[500,464.09],[750,600.59],[1000,722.79]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-tri-matte","product":"brochure","fold":"tri","stock":"matte","thickness":"standard (presumed)","pt":5,"premiumPt":9.5,"label":"Tri-fold brochure, matte stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/tri-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[1,14.99],[25,45.49],[50,76.69],[100,124.79],[250,226.19],[500,311.99],[750,357.49],[1000,436.79]]},{"label":"8.5x14 flat","w":14,"h":8.5,"flat":true,"ladder":[[1,16.99],[25,49.39],[50,89.69],[100,148.19],[250,295.09],[500,419.89],[750,482.29],[1000,561.59]]},{"label":"9x16 flat","w":16,"h":9,"flat":true,"ladder":[[25,54.59],[50,107.89],[100,179.39],[250,343.19],[500,530.39],[750,686.39],[1000,825.49]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-tri-uncoated","product":"brochure","fold":"tri","stock":"uncoated","thickness":"standard (presumed)","pt":5.5,"premiumPt":11,"label":"Tri-fold brochure, uncoated stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/tri-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[1,15.99],[25,57.19],[50,98.79],[100,161.19],[250,285.99],[500,393.89],[750,449.79],[1000,536.89]]},{"label":"8.5x14 flat","w":14,"h":8.5,"flat":true,"ladder":[[1,17.99],[25,61.09],[50,113.09],[100,184.59],[250,367.89],[500,523.89],[750,603.19],[1000,691.59]]},{"label":"9x16 flat","w":16,"h":9,"flat":true,"ladder":[[1,20.99],[25,70.19],[50,135.19],[100,218.39],[250,414.69],[500,672.09],[750,864.49],[1000,1025.69]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-tri-recycled","product":"brochure","fold":"tri","stock":"recycled","thickness":"standard (presumed)","pt":6,"premiumPt":null,"label":"Tri-fold brochure, recycled stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/tri-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[25,72.79],[50,132.59],[100,213.19],[250,379.59],[500,519.99],[750,597.99],[1000,707.19]]},{"label":"8.5x14 flat","w":14,"h":8.5,"flat":true,"ladder":[[25,83.19],[50,148.19],[100,239.19],[250,486.19],[500,686.39],[750,794.29],[1000,682.49]]},{"label":"9x16 flat","w":16,"h":9,"flat":true,"ladder":[[25,92.29],[50,200.19],[100,295.09],[250,566.79],[500,882.69],[750,1140.09],[1000,1358.49]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-bi-glossy","product":"brochure","fold":"bi","stock":"glossy","thickness":"standard (presumed)","pt":5,"premiumPt":9,"label":"Bi-fold brochure, glossy stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/bi-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"9x8 flat","w":9,"h":8,"flat":true,"ladder":[[1,11.99],[25,25.99],[50,51.99],[100,84.49],[250,155.99],[500,246.99],[750,285.99],[1000,324.99]]},{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[1,12.99],[25,38.99],[50,64.99],[100,103.99],[250,188.49],[500,259.99],[750,298.99],[1000,363.99]]},{"label":"11x17 flat","w":17,"h":11,"flat":true,"ladder":[[1,17.99],[25,51.99],[50,103.99],[100,162.49],[250,324.99],[500,519.99],[750,649.99],[1000,779.99]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-bi-matte","product":"brochure","fold":"bi","stock":"matte","thickness":"standard (presumed)","pt":5,"premiumPt":9.5,"label":"Bi-fold brochure, matte stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/bi-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"9x8 flat","w":9,"h":8,"flat":true,"ladder":[[1,12.99],[25,29.89],[50,59.79],[100,97.49],[250,179.39],[500,283.39],[750,328.89],[1000,373.09]]},{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[1,13.99],[25,44.19],[50,74.09],[100,119.59],[250,217.09],[500,298.99],[750,343.19],[1000,418.59]]},{"label":"11x17 flat","w":17,"h":11,"flat":true,"ladder":[[1,18.99],[25,59.79],[50,119.59],[100,187.19],[250,373.09],[500,597.99],[750,747.49],[1000,896.99]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-bi-uncoated","product":"brochure","fold":"bi","stock":"uncoated","thickness":"standard (presumed)","pt":5.5,"premiumPt":11,"label":"Bi-fold brochure, uncoated stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/bi-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"9x8 flat","w":9,"h":8,"flat":true,"ladder":[[1,12.99],[25,37.69],[50,75.39],[100,120.89],[250,223.59],[500,356.19],[750,412.09],[1000,464.09]]},{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[1,14.99],[25,55.89],[50,96.19],[100,155.99],[250,276.89],[500,380.89],[750,435.49],[1000,518.69]]},{"label":"11x17 flat","w":17,"h":11,"flat":true,"ladder":[[1,20.99],[25,116.99],[50,262.59],[100,384.79],[250,773.49],[500,1221.99],[750,1485.89],[1000,1760.19]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-bi-recycled","product":"brochure","fold":"bi","stock":"recycled","thickness":"standard (presumed)","pt":6,"premiumPt":null,"label":"Bi-fold brochure, recycled stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/bi-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"9x8 flat","w":9,"h":8,"flat":true,"ladder":[[25,48.09],[50,96.19],[100,157.29],[250,295.09],[500,467.99],[750,543.39],[1000,617.49]]},{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[25,71.49],[50,129.99],[100,207.99],[250,370.49],[500,506.99],[750,583.69],[1000,688.99]]},{"label":"11x17 flat","w":17,"h":11,"flat":true,"ladder":[[25,97.49],[50,204.09],[100,310.69],[250,631.79],[500,997.09],[750,1221.99],[1000,1466.39]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-z-glossy","product":"brochure","fold":"z","stock":"glossy","thickness":"standard (presumed)","pt":5,"premiumPt":9,"label":"Z-fold brochure, glossy stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/z-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[25,41.59],[50,71.49],[100,114.39],[250,206.69],[500,285.99],[750,328.89],[1000,400.39]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-z-matte","product":"brochure","fold":"z","stock":"matte","thickness":"standard (presumed)","pt":5,"premiumPt":9.5,"label":"Z-fold brochure, matte stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/z-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[25,46.79],[50,80.59],[100,129.99],[250,235.29],[500,324.99],[750,373.09],[1000,454.99]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-z-uncoated","product":"brochure","fold":"z","stock":"uncoated","thickness":"standard (presumed)","pt":5.5,"premiumPt":11,"label":"Z-fold brochure, uncoated stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/z-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[25,58.49],[50,102.69],[100,166.39],[250,295.09],[500,406.89],[750,465.39],[1000,555.09]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"},{"captured":"2026-11-02","sizing":"exact","name":"VistaPrint","id":"vp-bro-z-recycled","product":"brochure","fold":"z","stock":"recycled","thickness":"standard (presumed)","pt":6,"premiumPt":null,"label":"Z-fold brochure, recycled stock, shipped pre-folded","url":"https://www.vistaprint.ca/marketing-materials/brochures/z-fold","note":"Product-page price. Standard vs premium thickness is not on the product page; its upcharge was not visible before the design-approval step, so these are taken as standard thickness. Qty 1 rows are single copies.","sizes":[{"label":"8.5x11 flat","w":11,"h":8.5,"flat":true,"ladder":[[25,74.09],[50,136.49],[100,218.39],[250,388.69],[500,532.99],[750,613.59],[1000,725.39]]}],"ship":"Shipping $5.99 standard (about 8 business days) or $15.99 fastest; free economy shipping over $100"}]}</script>
 <script>
 // ══════════════════════════════════════════════
 //  TAB SWITCHING
@@ -1895,8 +1961,8 @@ const SNAP_STATE = {
             set: s=>{ dGarmentRows=[...(s.dGarmentRows||[])]; dImprintRows=[...(s.dImprintRows||[])]; gId=s.gId||0; iId=s.iId||0; } },
   vinyl:  { get: ()=>({ rStkRows:[...rStkRows], rBanRows:[...rBanRows], rSgnRows:[...rSgnRows], rCanRows:[...rCanRows], rSId, rBId, rGId, rCId }),
             set: s=>{ rStkRows=[...(s.rStkRows||[])]; rBanRows=[...(s.rBanRows||[])]; rSgnRows=[...(s.rSgnRows||[])]; rCanRows=[...(s.rCanRows||[])]; rSId=s.rSId||0; rBId=s.rBId||0; rGId=s.rGId||0; rCId=s.rCId||0; rSgnMigrateIds(); } },
-  uv:     { get: ()=>({ uRows:[...uRows], uId }),
-            set: s=>{ uRows=[...(s.uRows||[])]; uId=s.uId||0; } },
+  uv:     { get: ()=>({ uRows:[...uRows], uId, ucRows:[...ucRows], ucId }),
+            set: s=>{ uRows=[...(s.uRows||[])]; uId=s.uId||0; ucRows=[...(s.ucRows||[])]; ucId=s.ucId||0; } },
   epson:  { get: ()=>({ ePlanRows:[...ePlanRows], eArtRows:[...eArtRows], eLamRows:[...eLamRows], ePId, eAId, eLamId }),
             set: s=>{ ePlanRows=[...(s.ePlanRows||[])]; eArtRows=[...(s.eArtRows||[])]; eLamRows=[...(s.eLamRows||[])]; ePId=s.ePId||0; eAId=s.eAId||0; eLamId=s.eLamId||0; } }
 };
@@ -4627,6 +4693,25 @@ function resetEpson(){
 // ══════════════════════════════════════════════
 const U_HST = 0.13;
 let uRows = [], uId = 0;
+let ucRows = [], ucId = 0;   // v34: coaster rows ('uc' prefix)
+// v34: VistaPrint price ladders for calendars, coasters and brochures (JSON block id="market-print",
+// written by tools/market-refresh/print/apply-print.js; never hand-edit). Rows are [qty, price] or [qty, list, sale].
+const MKP = (()=>{ try{ return JSON.parse(document.getElementById('market-print').textContent); }catch(e){ return { sellers: [] }; } })();
+function mkpSeller(id){ return (MKP.sellers||[]).find(x=>x.id===id) || null; }
+// Price each at a quantity: the tier at or below q (VistaPrint sells tier quantities, so between tiers the
+// unit price of the lower tier is the fair comparison). col 1 = list price, col 2 = sale price when present.
+function mkpTier(ladder, q, col){
+  if(!ladder || !ladder.length || !(q>0)) return null;
+  col = col || 1;
+  let t = null;
+  ladder.forEach(r=>{ if(r[0] <= q) t = r; });
+  let note = '';
+  if(!t){ t = ladder[0]; note = 'their minimum is ' + t[0]; }
+  const last = ladder[ladder.length-1];
+  if(q > last[0]) note = 'over ' + last[0] + ' they quote larger runs';
+  const price = (t[col] != null ? t[col] : t[1]);
+  return { each: price / t[0], tier: t[0], tierTotal: price, note: note };
+}
 const uGet = id => { const e=document.getElementById(id); return e ? (parseFloat(e.value)||0) : 0; };
 const uSet = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
 
@@ -4651,6 +4736,38 @@ function uAddRow(){
     <td class="res" id="${id}-pe">—</td>
     <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="uRemoveRow('${id}')" title="Remove">✕</button></td>`;
   tb.appendChild(tr); uCalc();
+}
+function ucAddRow(){
+  const id='uc'+ucId++; ucRows.push(id);
+  const tb=document.getElementById('uc-body');
+  const tr=document.createElement('tr'); tr.id='ucrow-'+id;
+  tr.innerHTML=`
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. Logo coasters"></td>
+    <td class="inp"><select id="${id}-sh" onchange="uCalc()"><option value="square" selected>Square</option><option value="round">Round</option></select></td>
+    <td class="inp"><input type="number" id="${id}-w" value="4" min="0" step="0.25" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-h" value="4" min="0" step="0.25" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-b" placeholder="0.00" min="0" step="0.05" oninput="uCalc()"></td>
+    <td class="inp" style="text-align:center"><input type="checkbox" id="${id}-wh" onchange="uCalc()" style="width:16px;height:16px;display:inline-block;accent-color:#a21caf" title="White underbase under the whole print area"></td>
+    <td class="inp" style="text-align:center"><input type="checkbox" id="${id}-pr" checked onchange="uCalc()" style="width:16px;height:16px;display:inline-block;accent-color:#a21caf" title="Primer wipe on each tile"></td>
+    <td class="inp"><input type="number" id="${id}-ik" placeholder="est" min="0" step="0.001" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-mn" placeholder="est" min="0" step="0.1" oninput="uCalc()"></td>
+    <td class="res dim" id="${id}-co">&mdash;</td>
+    <td class="res dim" id="${id}-vp">&mdash;</td>
+    <td class="res" id="${id}-pe">&mdash;</td>
+    <td class="res" id="${id}-rt">&mdash;</td>
+    <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="ucRemoveRow('${id}')" title="Remove">&#10005;</button></td>`;
+  tb.appendChild(tr); uCalc();
+}
+function ucRemoveRow(id){
+  const el=document.getElementById('ucrow-'+id); if(el) el.remove();
+  ucRows=ucRows.filter(r=>r!==id); uCalc();
+}
+function ucToggle(){
+  const on=document.getElementById('uc-on').checked;
+  document.getElementById('uc-section').style.display = on ? '' : 'none';
+  if(on && ucRows.length===0) ucAddRow();
+  uCalc();
 }
 function uRemoveRow(id){
   const el=document.getElementById('urow-'+id); if(el) el.remove();
@@ -4748,8 +4865,54 @@ function uCalc(){
       if(ikEl) ikEl.placeholder='est'; if(mnEl) mnEl.placeholder='est';
     }
   });
+  // ── v34: coasters (ceramic tiles): all-in prices, compared like for like with VistaPrint ceramic coasters ──
+  const DASH=String.fromCharCode(8212);
+  const ucOnEl=document.getElementById('uc-on'), ucOn=!!(ucOnEl&&ucOnEl.checked);
+  const ucModeEl=document.getElementById('uc-mode'), ucMode=ucModeEl?ucModeEl.value:'market';
+  const ucPct=uGet('uc-pct')/100, ucEachSet=uGet('uc-each');
+  const vpCer=mkpSeller('vp-coaster-ceramic'), vpLad=(vpCer&&vpCer.sizes&&vpCer.sizes[0])?vpCer.sizes[0].ladder:null;
+  const ucPw=document.getElementById('uc-pct-wrap'), ucEw=document.getElementById('uc-each-wrap');
+  if(ucPw) ucPw.style.display = ucMode==='market'?'':'none';
+  if(ucEw) ucEw.style.display = ucMode==='each'?'':'none';
+  let cCost=0, cRetail=0, cQty=0, cMin=0, cVP=0, cBlank0=false, cNote='';
+  ucRows.forEach(id=>{
+    const w=uGet(id+'-w'), h=uGet(id+'-h'), q=uGet(id+'-q'), blank=uGet(id+'-b');
+    const inkTyped=uGet(id+'-ik'), minTyped=uGet(id+'-mn');
+    const shEl=document.getElementById(id+'-sh'), round=!!(shEl&&shEl.value==='round');
+    const whEl=document.getElementById(id+'-wh'), white=!!(whEl&&whEl.checked);
+    const prEl=document.getElementById(id+'-pr'), primer=!!(prEl&&prEl.checked);
+    const coEl=document.getElementById(id+'-co'), vpEl=document.getElementById(id+'-vp'), peEl=document.getElementById(id+'-pe'), rtEl=document.getElementById(id+'-rt');
+    const ikEl=document.getElementById(id+'-ik'), mnEl=document.getElementById(id+'-mn');
+    if(ucOn && w>0 && h>0 && q>0){
+      const area=(round?Math.PI/4:1)*w*h/144*q;          // a round tile prints a circle
+      const estInk=area*(inkSF+(white?whiteInkSF:0)), estMin=q*(tBase+(white?tWhite:0));
+      if(ikEl) ikEl.placeholder='est '+estInk.toFixed(3);
+      if(mnEl) mnEl.placeholder='est '+estMin.toFixed(1);
+      const mins = minTyped>0 ? minTyped : estMin;
+      const inkCost = inkTyped>0 ? inkTyped*(1+purgeK) + area*nonInkSF : area*(costSF+(white?whiteSF:0));
+      const cost = inkCost + q*((primer?primerEach:0)+blank) + (mins/60)*machHr;
+      const vp = vpLad ? mkpTier(vpLad, q) : null;
+      const per = ucMode==='each' ? ucEachSet : (vp ? Math.round(vp.each*ucPct*100)/100 : 0);
+      const retail = q*per;
+      if(coEl){ coEl.textContent=rfmt(cost); coEl.style.color = blank>0 ? '' : '#b45309';
+        coEl.title=(inkTyped>0?'ink from xTool':'ink estimated')+', '+(minTyped>0?'time from xTool':'time estimated')+' ('+uFmtMin(mins)+')'+(blank>0?'':' - no tile cost entered yet'); }
+      if(vpEl){ vpEl.textContent = vp ? rfmt(vp.each) : DASH; vpEl.title = vp ? ('VistaPrint ceramic coaster: '+vp.tier+' for '+rfmt(vp.tierTotal)+(vp.note?' ('+vp.note+')':'')) : 'no VistaPrint data'; }
+      if(peEl){ peEl.textContent=rfmt(per); peEl.title = ucMode==='each' ? 'your price per coaster' : (Math.round(ucPct*100)+'% of VistaPrint'); }
+      if(rtEl) rtEl.textContent=rfmt(retail);
+      cCost+=cost; cRetail+=retail; cQty+=q; cMin+=mins; if(vp) cVP+=vp.each*q;
+      if(!(blank>0)) cBlank0=true;
+      if(vp && vp.note) cNote=vp.note;
+    } else {
+      [coEl,vpEl,peEl,rtEl].forEach(e=>{ if(e){ e.textContent=DASH; e.title=''; e.style.color=''; } });
+      if(ikEl) ikEl.placeholder='est'; if(mnEl) mnEl.placeholder='est';
+    }
+  });
   if(totQty>0) totCost+=matJob;     // mat / fixture is once per job
-  const shopLab = totQty>0 ? ((uGet('u-lab-setup') + uGet('u-lab-item')*totQty)/60)*uGet('u-rate') : 0;   // internal labour cost (setup + handling)
+  const cMat = (totQty===0 && cQty>0) ? matJob : 0;   // counted with the coasters when there are no item rows
+  const labSetupM=uGet('u-lab-setup'), labItemM=uGet('u-lab-item'), labRate=uGet('u-rate');
+  const shopLab = (totQty+cQty)>0 ? ((labSetupM + labItemM*(totQty+cQty))/60)*labRate : 0;   // internal labour cost (setup + handling)
+  const itemShopLab = totQty>0 ? ((labSetupM + labItemM*totQty)/60)*labRate : 0;            // the items' share
+  const cShopLab = shopLab - itemShopLab;                                                    // the coasters' share
   const setupFee=uGet('u-setup-fee'), setupModeEl=document.getElementById('u-setup-mode'), setupMode=setupModeEl?setupModeEl.value:'add';
   let printRev=totRetail, setupAdd=0, setupTxt='—';
   if(totQty>0){
@@ -4763,16 +4926,34 @@ function uCalc(){
   uSet('u-cost', rfmt(totCost));
   uSet('u-retail', rfmt(totRetail));
   uSet('u-per', totQty>0 ? rfmt(totRetail/totQty)+' avg' : '—');
-  uSet('u-costper', totQty>0 ? rfmt((totCost+shopLab)/totQty)+' each' : '—');
+  uSet('u-costper', totQty>0 ? rfmt((totCost+itemShopLab)/totQty)+' each' : '—');
+  // coaster summary + market check
+  const cCostAll = cCost + cMat + cShopLab;
+  uSet('uc-count', cQty);
+  uSet('uc-cost', rfmt(cCostAll));
+  uSet('uc-costper', cQty>0 ? rfmt(cCostAll/cQty)+' each' : DASH);
+  uSet('uc-retail', rfmt(cRetail));
+  uSet('uc-vp', (cQty>0 && cVP>0) ? rfmt(cVP)+' ('+rfmt(cVP/cQty)+' each)' : DASH);
+  const ucBar=document.getElementById('uc-market-bar');
+  if(ucBar){
+    if(ucOn && cQty>0 && cVP>0){
+      const vpEach=cVP/cQty, yourEach=cRetail/cQty, floor=cCostAll/cQty, diff=(yourEach/vpEach-1)*100;
+      ucBar.innerHTML='<strong>Market check</strong> - VistaPrint ceramic coasters (cork back, shipped): '+rfmt(vpEach)+' each for '+cQty+(cNote?' ('+cNote+')':'')+
+        ' &middot; you: '+rfmt(yourEach)+' each ('+(diff>=0?'+':'')+diff.toFixed(0)+'%) &middot; your cost '+rfmt(floor)+' each'+
+        (cBlank0?' <span style="color:#b45309">(enter your tile cost to see the real floor)</span>':'')+
+        stratAdvice(stratResolve('uc-strategy','compete'), yourEach, floor, vpEach, vpEach);
+      ucBar.style.color='#1a1a1a';
+    } else { ucBar.innerHTML='Market check &mdash; VistaPrint ceramic coasters: enter a quantity to see'; ucBar.style.color='#888'; }
+  }
 
   // ── totals ──
   const labour=uGet('u-hrs')*uGet('u-rate');
   uSet('u-labour-total', rfmt(labour));
-  const cost=totCost+shopLab+labour, quote=printRev+setupAdd+labour;
+  const cost=totCost+cCost+cMat+shopLab+labour, quote=printRev+setupAdd+cRetail+labour;
   const profit=quote-cost, margin=quote>0?(profit/quote*100):0;
   const hst=quote*U_HST, grand=quote+hst;
   uSet('u-tt-cost', rfmt(cost));
-  uSet('u-tt-cost-sub', 'materials '+rfmt(totCost)+(shopLab>0?' + shop labour '+rfmt(shopLab):'')+(labour>0?' + billed labour '+rfmt(labour):'')+(totMin>0?', print time '+uFmtMin(totMin):''));
+  uSet('u-tt-cost-sub', 'materials '+rfmt(totCost+cCost+cMat)+(shopLab>0?' + shop labour '+rfmt(shopLab):'')+(labour>0?' + billed labour '+rfmt(labour):'')+((totMin+cMin)>0?', print time '+uFmtMin(totMin+cMin):''));
   uSet('u-tt-quote', rfmt(quote));
   uSet('u-tt-profit', rfmt(profit)+' profit - '+margin.toFixed(1)+'%'+(quote>0&&margin<50?'  '+String.fromCharCode(9888)+' low margin':''));
   uSet('u-tt-grand', rfmt(grand));
@@ -4784,6 +4965,10 @@ function resetUV(){
     document.getElementById('u-hrs').value='0';
     uRows.forEach(id=>{ const r=document.getElementById('urow-'+id); if(r) r.remove(); });
     uRows=[]; uId=0;
+    ucRows.forEach(id=>{ const r=document.getElementById('ucrow-'+id); if(r) r.remove(); });
+    ucRows=[]; ucId=0;
+    const ucOn=document.getElementById('uc-on'); if(ucOn) ucOn.checked=false;
+    const ucSec=document.getElementById('uc-section'); if(ucSec) ucSec.style.display='none';
     uAddRow();
   });
 }
