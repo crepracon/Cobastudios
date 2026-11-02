@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Coba Studios — Estimator Suite</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,6 +16,8 @@
     .customer-bar { background: #fff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 2px solid #e0e0e0; padding: 0.8rem 1.25rem; }
     .customer-bar .cb-lbl { font-size: 10px; font-weight: 700; color: #aaa; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 5px; }
     .customer-bar .cb-grid { display: grid; grid-template-columns: 2fr 1.2fr 1.5fr; gap: 10px; }
+    .customer-bar .cb-title { grid-column: span 2; }
+    .customer-bar .cb-hint { color:#2f6f4f; font-weight:600; margin-left:6px; }
     .customer-bar .cb-field label { display: block; font-size: 10px; color: #888; margin-bottom: 2px; }
     .customer-bar input { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fafafa; }
     .customer-bar input:focus { outline: none; border-color: #999; background: #fff; }
@@ -68,6 +70,13 @@
     td.iv-edit input { width: 100%; padding: 5px 6px; border: 1px solid #e5e5e5; border-radius: 4px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; display: block; }
     td.iv-edit input:focus { outline: 2px solid #a855f7; border-color: #a855f7; }
     td.iv-edit { background: #faf5ff; }
+    th.uh { background: #ccfbf1; color: #115e59; font-weight: 600; text-align: center; font-size: 12px; }
+    td.uv-bd input { width: 90px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background: #e9d5ff; }
+    td.iv-edit.unsure { background: #fef9c3; position: relative; }
+    td.iv-edit.unsure input, td.iv-edit.unsure select { background: #fffbe6; border-color: #f59e0b; }
+    .pq { position: absolute; top: 0; right: 4px; font-size: 11px; font-weight: 700; color: #b45309; }
 
     /* 4-card grid for paper estimator */
     .cards4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
@@ -166,6 +175,7 @@
       .cards3  { grid-template-columns: 1fr; }
       .tab-btn { padding: 10px 12px; font-size: 12px; }
       .customer-bar .cb-grid { grid-template-columns: 1fr; }
+      .customer-bar .cb-title { grid-column: auto; }
     }
     /* ===== JOBS / WORKFLOW TAB ===== */
     .jobs-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:1.2rem; }
@@ -187,10 +197,14 @@
     .jobs-est-meta { font-size:12px; color:#888; }
     .jobs-est-total { font-weight:600; font-size:14px; margin-left:auto; }
     .jobs-status { padding:5px 8px; font-size:12px; font-family:inherit; border:1px solid #ddd; border-radius:5px; background:#fff; }
-    .jobs-status.st-quote { background:#fff8e6; border-color:#e6d9a8; }
-    .jobs-status.st-approved { background:#e9f3ff; border-color:#b8d4f0; }
-    .jobs-status.st-production { background:#f3e9ff; border-color:#d4bcf0; }
-    .jobs-status.st-done { background:#e9f7ee; border-color:#b5ddc3; }
+    .jobs-status.st-wait { background:#fff8e1; border-color:#ecd78a; }
+    .jobs-status.st-go { background:#e8f6ed; border-color:#a9d9bb; }
+    .jobs-status.st-done { background:#efefef; border-color:#d0d0d0; color:#666; }
+    .jobs-dot { display:inline-block; width:12px; height:12px; border-radius:50%; flex:none; box-shadow:0 0 0 2px rgba(0,0,0,.06) inset; }
+    .jobs-dot.dot-wait { background:#f5b800; }
+    .jobs-dot.dot-go { background:#22a559; }
+    .jobs-dot.dot-done { background:#9a9a9a; }
+    .jobs-est-title-wrap { display:flex; align-items:center; gap:8px; }
     .jobs-mini { padding:5px 10px; font-size:12px; font-family:inherit; border:1px solid #ddd; border-radius:5px; background:#fff; cursor:pointer; }
     .jobs-mini:hover { background:#f5f5f2; }
     .jobs-mini.danger { color:#b33; border-color:#e0bcbc; }
@@ -212,17 +226,13 @@
 
   <!-- PERSISTENT CUSTOMER BAR -->
   <div class="customer-bar">
-    <div class="cb-lbl">Customer</div>
+    <div class="cb-lbl">Customer &amp; job</div>
     <div class="cb-grid">
       <div class="cb-field"><label>Name</label><input type="text" id="cb-name" placeholder="Full name…"></div>
       <div class="cb-field"><label>Phone</label><input type="tel" id="cb-phone" placeholder="613-555-0100"></div>
       <div class="cb-field"><label>Email</label><input type="email" id="cb-email" placeholder="customer@email.com"></div>
-      <div class="cb-field" style="display:flex;align-items:flex-end"><button class="cb-save-btn" onclick="saveEstimate()">&#128190; Save estimate</button></div>
-    </div>
-    <div id="save-title-bar" style="display:none;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
-      <input type="text" id="save-title-input" placeholder="Job title for this estimate..." class="jobs-cust-notes" style="margin:0;flex:1;min-width:200px" onkeydown="if(event.key==='Enter')saveEstimateConfirm()">
-      <button class="cb-save-btn" onclick="saveEstimateConfirm()">Save</button>
-      <button class="jobs-btn" onclick="saveEstimateCancel()">Cancel</button>
+      <div class="cb-field cb-title"><label>Job title<span class="cb-hint" id="cb-active-hint"></span></label><input type="text" id="cb-title" placeholder="e.g. 100 matchboxes, staff name tags…" onkeydown="if(event.key==='Enter')saveEstimate()"></div>
+      <div class="cb-field" style="display:flex;align-items:flex-end"><button class="cb-save-btn" onclick="saveEstimate()" style="width:100%">&#128190; Save estimate</button></div>
     </div>
   </div>
 
@@ -231,6 +241,7 @@
     <button class="tab-btn active" onclick="switchTab('paper',this)">📄 Paper Estimator</button>
     <button class="tab-btn" onclick="switchTab('dtf',this)">🔥 DTF Heat Transfer</button>
     <button class="tab-btn" onclick="switchTab('vinyl',this)">🎨 Vinyl / Roland</button>
+    <button class="tab-btn" onclick="switchTab('uv',this)">🖨 UV Printing</button>
     <button class="tab-btn" onclick="switchTab('epson',this)">🖼 Epson</button>
     <button class="tab-btn" onclick="switchTab('jobs',this)">🗂 Jobs</button>
     <button class="tab-btn" onclick="switchTab('inventory',this)">📦 Inventory</button>
@@ -1020,6 +1031,195 @@
     </div>
   </div>
 
+  <!-- ═══════════════ UV PRINTING ═══════════════ -->
+  <div class="tab-panel" id="panel-uv">
+    <div class="panel-body">
+
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.75rem">
+          <div style="font-size:14px;font-weight:700;color:#115e59">🖨 UV Printed Items</div>
+          <span style="font-size:11px;color:#115e59;background:#f0fdfa;padding:3px 8px;border-radius:20px;border:1px solid #99f6e4">xTool O1 Omni · small items · priced by sq ft or per item</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:.75rem;padding:8px 12px;background:#fff;border:1px solid #99f6e4;border-radius:6px">
+          <div class="rate-item" style="font-size:12px">Price by:
+            <select id="u-basis" onchange="uCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:130px">
+              <option value="sqft" selected>Sq ft</option>
+              <option value="item">Per item</option>
+            </select>
+          </div>
+          <div class="rate-item" style="font-size:12px">Print bed:
+            <select id="u-bed" onchange="uCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;width:190px">
+              <option value="4.8">Standard 13 x 4.8 in</option>
+              <option value="16.5">Large 13 x 16.5 in</option>
+            </select>
+          </div>
+          <span style="font-size:11px;color:#888">Sq ft mode: print area x rate (with a per-item minimum). Per-item mode: flat price each. A "Flat $ ea" on a row overrides either.</span>
+        </div>
+        <div class="scroll-x">
+          <table style="min-width:1040px;margin-bottom:6px">
+            <thead><tr>
+              <th class="uh" style="width:14%">Item / description</th>
+              <th class="uh" style="width:6%">W (in)</th>
+              <th class="uh" style="width:6%">H (in)</th>
+              <th class="uh" style="width:6%">Qty</th>
+              <th class="uh" style="width:6%">White?</th>
+              <th class="uh" style="width:6%" title="Tick if each item needs a primer wipe (metal, glass, acrylic). Untick for paper/cardboard.">Primer?</th>
+              <th class="uh" style="width:7%">Sq ft ea</th>
+              <th class="uh" style="width:7%">Blank $ ea</th>
+              <th class="uh" style="width:7%">Flat $ ea</th>
+              <th class="uh" style="width:8%" title="Optional: ink cost shown in xTool Studio for this whole row. Overrides the estimate.">Ink $ (xTool)</th>
+              <th class="uh" style="width:8%" title="Optional: estimated time shown in xTool Studio for this whole row, in minutes. Overrides the estimate.">Mins (xTool)</th>
+              <th class="uh" style="width:8%">Your cost</th>
+              <th class="uh" style="width:9%">Retail total</th>
+              <th class="uh" style="width:7%">/ item</th>
+              <th class="uh" style="width:3%"></th>
+            </tr></thead>
+            <tbody id="u-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="uAddRow()" style="background:#f0fdfa;color:#115e59;border-color:#99f6e4">+ Add item</button>
+        <div class="info-bar" style="margin-top:8px;border-color:#99f6e4">
+          <div class="info-item">Print area: <strong id="u-sqft">0 sq ft</strong></div>
+          <div class="info-item">Items: <strong id="u-count">0</strong></div>
+          <div class="info-item">Print time: <strong id="u-time">—</strong></div>
+          <div class="info-item">Setup fee: <strong id="u-setup">—</strong></div>
+          <div class="info-item">Your cost: <strong id="u-cost">$0.00</strong></div>
+          <div class="info-item">Cost per item: <strong id="u-costper">—</strong></div>
+          <div class="info-item">Retail: <strong id="u-retail">$0.00</strong></div>
+          <div class="info-item">Avg per item: <strong id="u-per">—</strong></div>
+        </div>
+        <div style="font-size:11px;color:#115e59;margin-top:6px;line-height:1.6"><strong>Ink $ (xTool)</strong> and <strong>Mins (xTool)</strong>: type the Estimated cost and Estimated time that xTool Studio shows for the whole row (the greyed "est" number is what the app would otherwise assume). Blank $ ea = cost of the item itself (leave 0 if the customer supplies it). Tick <strong>White?</strong> when printing on a dark or coloured surface: the whole print area gets a white underbase first, which adds ink cost and print time. Cost = print area x cost per sq ft (+ white) + per-item consumables + blank. Details in settings below.</div>
+      </div>
+      <hr class="divider">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+        <div class="sec-title" style="margin-bottom:0">UV settings &amp; cost breakdown</div>
+        <button onclick="toggleUVSettings()" id="u-settings-btn" class="btn-light no-print" style="padding:4px 12px;font-size:12px">▼ Show settings</button>
+      </div>
+      <div id="u-settings-wrap" style="display:none">
+        <div class="rate-bar" style="flex-wrap:wrap;gap:10px;margin-bottom:0.75rem">
+          <div class="rate-item"><strong>Job setup fee:</strong> $<input type="number" id="u-setup-fee" value="25.00" min="0" step="1" oninput="uCalc()" style="width:60px">
+            <select id="u-setup-mode" onchange="uCalc()" style="font-size:12px;padding:3px 6px;border:1px solid #ddd;border-radius:4px">
+              <option value="add" selected>added once per job</option>
+              <option value="min">job minimum only</option>
+            </select>
+            <span style="font-size:10px;color:#888">placing, scanning, positioning the graphic</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item"><strong>Shop labour in cost:</strong> <input type="number" id="u-lab-setup" value="15" min="0" step="5" oninput="uCalc()" style="width:50px"> min setup per job + <input type="number" id="u-lab-item" value="0.25" min="0" step="0.05" oninput="uCalc()" style="width:55px"> min handling per item, at the labour $/hr below
+            <span style="font-size:10px;color:#888">cost only (not billed on top). Guesses - time yourself on a real job</span></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Retail: $<input type="number" id="u-retail-sqft" value="20.00" min="0" step="0.50" oninput="uCalc()" style="width:65px">/sq ft</div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Minimum per item (optional): $<input type="number" id="u-min-item" value="0.00" min="0" step="0.50" oninput="uCalc()" style="width:60px"></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Flat price per item: $<input type="number" id="u-flat-item" value="1.00" min="0" step="0.50" oninput="uCalc()" style="width:60px"></div>
+          <div class="rate-div"></div>
+          <div class="rate-item">Blank markup: <input type="number" id="u-blank-mk" value="50" min="0" step="5" oninput="uCalc()" style="width:55px">%</div>
+          <div class="rate-div"></div>
+          <label class="rate-item" style="cursor:pointer"><input type="checkbox" id="u-min-incl" checked onchange="uCalc()" style="width:15px;height:15px;accent-color:#0f766e"> Per-item minimum / flat price includes the blank</label>
+          <div style="width:100%;font-size:11px;color:#888">The sq ft rate, per-item minimum and flat price are placeholders - set them to what you actually charge per item. The job setup fee is charged once on top (or acts as the job minimum if you pick that).</div>
+        </div>
+
+        <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:.85rem 1rem;margin-bottom:.75rem">
+          <div style="font-size:13px;font-weight:700;color:#115e59;margin-bottom:4px">Cost per sq ft (mock breakdown - replace with your real numbers)</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;line-height:1.6">Starting values are estimates in CAD, converted from xTool US prices at about 1.38. xTool has not published ink yield, printhead life or cleaning-cycle usage, so the usage figures are assumptions. Check the O1 Omni ink price on the Canadian xTool store and your real consumption after a few weeks of jobs.</div>
+          <div class="scroll-x">
+            <table style="min-width:560px;margin-bottom:6px">
+              <thead><tr>
+                <th class="uh" style="width:34%;text-align:left">Item</th>
+                <th class="uh" style="width:46%;text-align:left">Inputs</th>
+                <th class="uh" style="width:20%">$ / sq ft</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>Colour ink (CMYK)</td>
+                  <td class="uv-bd">$<input type="number" id="u-ink-ml" value="0.22" min="0" step="0.01" oninput="uCalc()">/ml x <input type="number" id="u-ink-use" value="1.0" min="0" step="0.1" oninput="uCalc()"> ml/sq ft
+                    <div style="font-size:10px;color:#888;margin-top:2px">~US$19.99 per 125 ml (US$13.99 early-bird). Measured: 2.0 ml/sq ft on a dark, solid tag; 0.48 on light matchbox artwork. Default is a middle guess</div></td>
+                  <td class="res" id="u-bd-ink">$0.00</td></tr>
+                <tr><td>White underbase ink <span style="font-size:10px;color:#888">(only when White? is ticked)</span></td>
+                  <td class="uv-bd">$<input type="number" id="u-white-ml" value="0.17" min="0" step="0.01" oninput="uCalc()">/ml x <input type="number" id="u-white-use" value="1.7" min="0" step="0.05" oninput="uCalc()"> ml/sq ft
+                    <div style="font-size:10px;color:#888;margin-top:2px">measured: 1.45 ml/sq ft (tag) and 1.79 (matchboxes). Whole print area gets white first. Purge % below also applies</div></td>
+                  <td class="res" id="u-bd-white">$0.00</td></tr>
+                <tr><td>Cleaning / purge ink waste</td>
+                  <td class="uv-bd"><input type="number" id="u-purge" value="50" min="0" step="5" oninput="uCalc()">% of ink used
+                    <div style="font-size:10px;color:#888;margin-top:2px">nozzle checks, standard and deep cleaning</div></td>
+                  <td class="res" id="u-bd-purge">$0.00</td></tr>
+                <tr><td>Printhead wear</td>
+                  <td class="uv-bd">$<input type="number" id="u-head-cost" value="550" min="0" step="10" oninput="uCalc()"> head / <input type="number" id="u-head-life" value="1500" min="1" step="100" oninput="uCalc()"> sq ft life
+                    <div style="font-size:10px;color:#888;margin-top:2px">replacement head listed ~US$399; life not published</div></td>
+                  <td class="res" id="u-bd-head">$0.00</td></tr>
+                <tr><td>Maintenance consumables</td>
+                  <td class="uv-bd">$<input type="number" id="u-maint" value="0.10" min="0" step="0.01" oninput="uCalc()">/sq ft
+                    <div style="font-size:10px;color:#888;margin-top:2px">absorber foam, ink pad, scraper, swabs, waste ink cartridge, moisturizing liquid, air filter</div></td>
+                  <td class="res" id="u-bd-maint">$0.00</td></tr>
+                <tr><td>Machine depreciation / overhead</td>
+                  <td class="uv-bd">$<input type="number" id="u-mach" value="0.25" min="0" step="0.05" oninput="uCalc()">/sq ft
+                    <div style="font-size:10px;color:#888;margin-top:2px">printer ~US$2,499-3,299, power, UV lamp, space</div></td>
+                  <td class="res" id="u-bd-mach">$0.00</td></tr>
+                <tr class="sub-row"><td colspan="2" style="text-align:right;font-size:12px;color:#666">Calculated cost per sq ft</td>
+                  <td class="res" id="u-bd-total">$0.00</td></tr>
+                <tr><td>My real colour cost per sq ft <span style="font-size:10px;color:#888">(optional override)</span></td>
+                  <td class="uv-bd">$<input type="number" id="u-cost-override" value="" placeholder="blank = use calc" min="0" step="0.05" oninput="uCalc()" style="width:130px">
+                    <div style="font-size:10px;color:#888;margin-top:2px">replaces the calculated total above; white ink is still added on top when ticked</div></td>
+                  <td class="res" id="u-bd-used">$0.00</td></tr>
+                <tr><td>Print time per item</td>
+                  <td class="uv-bd"><input type="number" id="u-time-base" value="1.0" min="0" step="0.1" oninput="uCalc()"> min colour + <input type="number" id="u-time-white" value="1.0" min="0" step="0.1" oninput="uCalc()"> min extra for white
+                    <div style="font-size:10px;color:#888;margin-top:2px">rough guess. xTool Studio showed 2:18 colour / 3:17 white for one tag, and 1:56 / 4:04 for 6 matchboxes (time does not scale per item) - type the real minutes on each row</div></td>
+                  <td class="res" id="u-bd-time">—</td></tr>
+                <tr><td>Machine time cost <span style="font-size:10px;color:#888">(optional)</span></td>
+                  <td class="uv-bd">$<input type="number" id="u-machine-hr" value="0" min="0" step="1" oninput="uCalc()">/hr of print time
+                    <div style="font-size:10px;color:#888;margin-top:2px">leave 0 to just show the time; set a rate to add it to your cost</div></td>
+                  <td class="res" id="u-bd-machine">$0.00 / min</td></tr>
+                <tr><td>Consumables (primer / mat)</td>
+                  <td class="uv-bd">primer wipe $<input type="number" id="u-primer" value="0.45" min="0" step="0.05" oninput="uCalc()"> per item (if Primer? ticked) + mat / fixture $<input type="number" id="u-mat" value="0.35" min="0" step="0.05" oninput="uCalc()"> once per job
+                    <div style="font-size:10px;color:#888;margin-top:2px">primer wipes (50 pack, price not confirmed) per item; one adhesive mat (5 pack ~US$25.99) is spread over the jobs it lasts</div></td>
+                  <td class="res" id="u-bd-item">$0.00 / item</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">
+        Labour / finishing <span class="badge badge-blue">flat fee</span>
+        <span style="font-size:11px;font-weight:400;color:#888;margin-left:4px">extra billed time (artwork prep, jigs, finishing) - added to both cost and quote. Normal setup and handling is already counted in cost via "Shop labour in cost" in settings</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
+        <input type="number" id="u-hrs" value="0" min="0" step="0.25" oninput="uCalc()" style="width:70px">
+        <span style="font-size:13px;color:#666">hrs × $</span>
+        <input type="number" id="u-rate" value="45" min="0" step="5" oninput="uCalc()" style="width:65px">
+        <span style="font-size:13px;color:#666">/hr =</span>
+        <span style="font-size:15px;font-weight:700;font-family:monospace;color:#1a1a1a" id="u-labour-total">$0.00</span>
+      </div>
+
+      <div class="cards3">
+        <div class="card yourCost">
+          <div class="card-lbl">Your total cost</div>
+          <div class="card-num" id="u-tt-cost">$0.00</div>
+          <div class="card-sub" id="u-tt-cost-sub">materials + labour</div>
+        </div>
+        <div class="card quote">
+          <div class="card-lbl">Quote to customer (before tax)</div>
+          <div class="card-num" id="u-tt-quote">$0.00</div>
+          <div class="card-sub" id="u-tt-profit">$0.00 profit · 0.0%</div>
+        </div>
+        <div class="card grand">
+          <div class="card-lbl">Grand total (incl. 13% HST)</div>
+          <div class="card-num" id="u-tt-grand">$0.00</div>
+          <div class="card-sub" id="u-tt-tax">HST: $0.00</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="sec-title">Notes</div>
+      <textarea id="u-proj" rows="3" placeholder="Job details — items, substrate, artwork, customer info…"></textarea>
+
+    </div>
+    <div class="action-bar no-print">
+      <button class="btn-light" onclick="resetUV()">↺ New estimate</button>
+      <button class="btn-dark" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+  </div>
+
   <!-- ═══════════════ EPSON ═══════════════ -->
   <div class="tab-panel" id="panel-epson">
     <div class="panel-body">
@@ -1431,11 +1631,16 @@
       <div class="inv-section">
         <div class="inv-section-title">📄 Paper Stocks <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds the Paper Estimator dropdown</span></div>
         <div class="scroll-x">
-          <table style="min-width:520px;margin-bottom:6px">
+          <div id="inv-paper-flags" style="font-size:11px;margin-bottom:6px"></div>
+          <div style="font-size:11px;color:#9333ea;margin-bottom:6px">Click <strong>Brand</strong>, <strong>Weight</strong> or <strong>Size</strong> in the header to sort (click again to reverse). Weights stay in their own groups: # then pt then mil then gsm.</div>
+          <table style="min-width:700px;margin-bottom:6px">
             <thead><tr>
-              <th class="ivh" style="width:45%">Paper name</th>
-              <th class="ivh" style="width:18%">Cost / sheet ($)</th>
-              <th class="ivh" style="width:30%">Supplier / notes</th>
+              <th class="ivh sortable" style="width:30%" onclick="paperSortBy('brand')">Brand / type<span id="inv-psort-brand"></span></th>
+              <th class="ivh sortable" style="width:9%" onclick="paperSortBy('weight')">Weight<span id="inv-psort-weight"></span></th>
+              <th class="ivh sortable" style="width:10%" onclick="paperSortBy('weight')">Unit</th>
+              <th class="ivh sortable" style="width:11%" onclick="paperSortBy('size')">Size<span id="inv-psort-size"></span></th>
+              <th class="ivh" style="width:12%">Cost / sheet ($)</th>
+              <th class="ivh" style="width:21%">Supplier</th>
               <th class="ivh" style="width:7%"></th>
             </tr></thead>
             <tbody id="inv-paper-body"></tbody>
@@ -1635,14 +1840,36 @@ function cobaConfirmAnswer(yes){
 }
 function notify(msg){ jobsToast(msg); }
 const JOBS_KEY = 'coba-jobs-v1';
-const JOBS_TABS = { paper:'Paper', dtf:'DTF', vinyl:'Vinyl/Roland', epson:'Epson' };
-const JOBS_STATUSES = ['Quote','Approved','In Production','Done'];
+const JOBS_TABS = { paper:'Paper', dtf:'DTF', vinyl:'Vinyl/Roland', uv:'UV Print', epson:'Epson' };
+const JOBS_STATUSES = [
+  { v:'Waiting',       label:'Waiting (approval / details)', cls:'st-wait', dot:'dot-wait' },
+  { v:'In Production', label:'Accepted - in production',     cls:'st-go',   dot:'dot-go' },
+  { v:'Done',          label:'Done',                          cls:'st-done', dot:'dot-done' }
+];
+// older saved jobs used Quote / Approved / In Production / Done
+function jobsStatusNorm(v){ return v==='Quote' ? 'Waiting' : v==='Approved' ? 'In Production' : (['Waiting','In Production','Done'].indexOf(v)>=0 ? v : 'Waiting'); }
+function jobsStatusInfo(v){ return JOBS_STATUSES.find(x=>x.v===jobsStatusNorm(v)); }
+function jobsNormAll(){ jobsData.customers.forEach(c=>(c.estimates||[]).forEach(e=>{ e.status=jobsStatusNorm(e.status); })); }
+// date + time job was taken; older jobs only have a date
+function jobsFmtTaken(e){
+  const t = e.taken || '';
+  if(t.length > 10){
+    const d = new Date(t);
+    if(!isNaN(d)){
+      try{ return d.toLocaleString('en-CA', { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); }catch(x){ return d.toLocaleString(); }
+    }
+  }
+  return e.date || '';
+}
+function jobsLocalDate(d){ d=d||new Date(); const z=n=>(n<10?'0':'')+n; return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()); }
+let jobsActive = null;   // { cid, eid } of the saved job currently open in the estimator
 let jobsData = { customers: [] };
 
 function jobsLoad(){
   try{
     const s = localStorage.getItem(JOBS_KEY);
     if(s){ const d = JSON.parse(s); if(d && Array.isArray(d.customers)) jobsData = d; }
+    jobsNormAll();
   }catch(e){ console.error('jobs load failed', e); }
 }
 function jobsSave(){
@@ -1668,6 +1895,8 @@ const SNAP_STATE = {
             set: s=>{ dGarmentRows=[...(s.dGarmentRows||[])]; dImprintRows=[...(s.dImprintRows||[])]; gId=s.gId||0; iId=s.iId||0; } },
   vinyl:  { get: ()=>({ rStkRows:[...rStkRows], rBanRows:[...rBanRows], rSgnRows:[...rSgnRows], rCanRows:[...rCanRows], rSId, rBId, rGId, rCId }),
             set: s=>{ rStkRows=[...(s.rStkRows||[])]; rBanRows=[...(s.rBanRows||[])]; rSgnRows=[...(s.rSgnRows||[])]; rCanRows=[...(s.rCanRows||[])]; rSId=s.rSId||0; rBId=s.rBId||0; rGId=s.rGId||0; rCId=s.rCId||0; rSgnMigrateIds(); } },
+  uv:     { get: ()=>({ uRows:[...uRows], uId }),
+            set: s=>{ uRows=[...(s.uRows||[])]; uId=s.uId||0; } },
   epson:  { get: ()=>({ ePlanRows:[...ePlanRows], eArtRows:[...eArtRows], eLamRows:[...eLamRows], ePId, eAId, eLamId }),
             set: s=>{ ePlanRows=[...(s.ePlanRows||[])]; eArtRows=[...(s.eArtRows||[])]; eLamRows=[...(s.eLamRows||[])]; ePId=s.ePId||0; eAId=s.eAId||0; eLamId=s.eLamId||0; } }
 };
@@ -1675,9 +1904,10 @@ const SNAP_TOTALS = {
   paper: { cost:'p-yourcost', quote:'p-quote-total', grand:'p-grand' },
   dtf:   { cost:'d-tt-cost',  quote:'d-tt-quote',    grand:'d-tt-grand' },
   vinyl: { cost:'r-tt-cost',  quote:'r-tt-quote',    grand:'r-tt-grand' },
+  uv:    { cost:'u-tt-cost',  quote:'u-tt-quote',    grand:'u-tt-grand' },
   epson: { cost:'e-tt-cost',  quote:'e-tt-quote',    grand:'e-tt-grand' }
 };
-const SNAP_CALCS = { paper:['pCalc'], dtf:['dCalc'], vinyl:['rCalc'], epson:['eCalc'] };
+const SNAP_CALCS = { paper:['pCalc'], dtf:['dCalc'], vinyl:['rCalc'], uv:['uCalc'], epson:['eCalc'] };
 
 function snapCapture(tab){
   const panel = document.getElementById('panel-'+tab);
@@ -1716,46 +1946,61 @@ function pPanelRepair(){
 }
 
 // --- save flow ---
+function jobsActiveHint(){
+  const el = document.getElementById('cb-active-hint'); if(!el) return;
+  const f = jobsActive ? jobsFind(jobsActive.cid, jobsActive.eid) : {};
+  el.textContent = (f.e) ? '- saved job open: Save updates it' : '';
+}
 function saveEstimate(){
   if(currentTab === 'jobs'){
     const f = document.getElementById('jobs-logform');
     f.style.display = 'block';
     document.getElementById('jl-cust').value = document.getElementById('cb-name').value.trim();
-    document.getElementById('jl-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('jl-title').value = document.getElementById('cb-title').value.trim();
+    document.getElementById('jl-date').value = jobsLocalDate();
     document.getElementById('jl-cust').focus();
     return;
   }
   if(!(currentTab in JOBS_TABS)){ notify('Switch to an estimator tab to save, or use the Jobs tab to log a job.'); return; }
   const name = document.getElementById('cb-name').value.trim();
   if(!name){ notify('Enter a customer name in the customer bar first.'); document.getElementById('cb-name').focus(); return; }
-  const bar = document.getElementById('save-title-bar');
-  bar.style.display = 'flex';
-  document.getElementById('save-title-input').focus();
-}
-function saveEstimateConfirm(){
-  const title = document.getElementById('save-title-input').value;
-  document.getElementById('save-title-bar').style.display = 'none';
-  document.getElementById('save-title-input').value = '';
-  const name = document.getElementById('cb-name').value.trim();
-  if(!name){ notify('Enter a customer name first.'); return; }
+  const title = document.getElementById('cb-title').value.trim() || (JOBS_TABS[currentTab] + ' estimate');
   const snap = snapCapture(currentTab);
-  const cust = jobsUpsertCustomer(name);
-  cust.estimates.unshift({
-    id: 'e' + Date.now(),
-    title: title.trim() || (JOBS_TABS[currentTab] + ' estimate'),
-    tab: currentTab,
-    date: new Date().toISOString().slice(0,10),
-    status: 'Quote',
-    totals: snap.totals,
-    noteText: snap.noteText,
-    snap: { html: snap.html, fields: snap.fields, state: snap.state }
-  });
-  jobsSave();
-  jobsToast('Saved "' + (title.trim()||'estimate') + '" under ' + cust.name);
-}
-function saveEstimateCancel(){
-  document.getElementById('save-title-bar').style.display = 'none';
-  document.getElementById('save-title-input').value = '';
+  const snapObj = { html: snap.html, fields: snap.fields, state: snap.state };
+
+  // update the open saved job in place (same customer + same tab), otherwise save a new one
+  let existing = null;
+  if(jobsActive){
+    const f = jobsFind(jobsActive.cid, jobsActive.eid);
+    if(f.e && f.c.name.toLowerCase() === name.toLowerCase() && f.e.tab === currentTab) existing = f;
+  }
+  const cust = existing ? existing.c : jobsUpsertCustomer(name);
+  if(existing){
+    const ph = document.getElementById('cb-phone').value.trim(), em = document.getElementById('cb-email').value.trim();
+    if(ph) cust.phone = ph; if(em) cust.email = em;
+    Object.assign(existing.e, { title, totals: snap.totals, noteText: snap.noteText, snap: snapObj });
+    jobsSave();
+    jobsToast('Updated "' + title + '" for ' + cust.name);
+  } else {
+    const now = new Date();
+    const e = {
+      id: 'e' + Date.now(),
+      title,
+      tab: currentTab,
+      date: jobsLocalDate(now),
+      taken: now.toISOString(),          // date + time the job was taken
+      status: 'Waiting',
+      totals: snap.totals,
+      noteText: snap.noteText,
+      snap: snapObj
+    };
+    cust.estimates.unshift(e);
+    jobsActive = { cid: cust.id, eid: e.id };
+    jobsSave();
+    jobsToast('Saved "' + title + '" under ' + cust.name);
+  }
+  jobsActiveHint();
+  if(!document.getElementById('cb-title').value.trim()) document.getElementById('cb-title').value = title;
 }
 function jobsUpsertCustomer(name){
   const key = name.toLowerCase();
@@ -1777,8 +2022,9 @@ function jobsLogManual(){
     id: 'e' + Date.now(),
     title: document.getElementById('jl-title').value.trim() || 'Logged job',
     tab: 'log',
-    date: document.getElementById('jl-date').value || new Date().toISOString().slice(0,10),
-    status: 'Quote',
+    date: document.getElementById('jl-date').value || jobsLocalDate(),
+    taken: (function(){ const d = document.getElementById('jl-date').value; const t = new Date().toISOString(); return (!d || d === jobsLocalDate()) ? t : d; })(),
+    status: 'Waiting',
     totals: { grand: isNaN(amt) ? '' : '$' + amt.toFixed(2) },
     noteText: document.getElementById('jl-notes').value.trim(),
     snap: null
@@ -1805,6 +2051,9 @@ function loadEstimate(cid, eid, dup){
   document.getElementById('cb-name').value  = c.name;
   document.getElementById('cb-phone').value = c.phone || '';
   document.getElementById('cb-email').value = c.email || '';
+  if(dup){ jobsActive = null; document.getElementById('cb-title').value = e.title + ' (copy)'; }
+  else   { jobsActive = { cid: c.id, eid: e.id }; document.getElementById('cb-title').value = e.title; }
+  jobsActiveHint();
   const legacyStk = e.tab === 'vinyl' && !document.getElementById('r-stk-mode');
   jobsToast((dup ? 'Duplicated as a new working copy - hit Save estimate to keep it' : 'Loaded "' + e.title + '"') + (legacyStk ? ' (classic sticker pricing - saved before market pricing)' : ''));
   });
@@ -1814,19 +2063,21 @@ function deleteEstimate(cid, eid){
   cobaConfirm('Delete estimate "' + e.title + '"? This cannot be undone.', ()=>{
     const cur = jobsFind(cid, eid).c; if(!cur) return; // re-find: cloud sync may have refreshed the list while the dialog was open
     cur.estimates = cur.estimates.filter(x=>x.id!==eid);
-    jobsSave(); renderJobs();
+    if(jobsActive && jobsActive.eid===eid) jobsActive = null;
+    jobsSave(); renderJobs(); jobsActiveHint();
   });
 }
 function deleteCustomer(cid){
   const c = jobsData.customers.find(x=>x.id===cid); if(!c) return;
   cobaConfirm('Delete ' + c.name + ' and ALL ' + c.estimates.length + ' saved estimate(s)? This cannot be undone.', ()=>{
     jobsData.customers = jobsData.customers.filter(x=>x.id!==cid);
+    jobsOpen.delete(cid);
     jobsSave(); renderJobs();
   });
 }
 function setEstStatus(cid, eid, val){
   const { e } = jobsFind(cid, eid); if(!e) return;
-  e.status = val; jobsSave(); renderJobs();
+  e.status = jobsStatusNorm(val); jobsSave(); renderJobs();
 }
 function setCustNotes(cid, val){
   const c = jobsData.customers.find(x=>x.id===cid); if(!c) return;
@@ -1852,18 +2103,18 @@ function renderJobs(){
       if(!ests.length) return;
     }
     shown++;
-    const statusCls = { 'Quote':'st-quote','Approved':'st-approved','In Production':'st-production','Done':'st-done' };
     let estHtml = ests.map(e=>{
-      const opts = JOBS_STATUSES.map(s=>'<option' + (e.status===s?' selected':'') + '>' + s + '</option>').join('');
+      const si = jobsStatusInfo(e.status);
+      const opts = JOBS_STATUSES.map(x=>'<option value="' + x.v + '"' + (si.v===x.v?' selected':'') + '>' + x.label + '</option>').join('');
       const loadBtns = e.snap
         ? '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',false)">Load</button>' +
           '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',true)">Duplicate</button>'
         : '';
       const noteLine = (!e.snap && e.noteText) ? '<div class="jobs-est-meta" style="width:100%">' + jobsEsc(e.noteText) + '</div>' : '';
       return '<div class="jobs-est">' +
-        '<span class="jobs-est-title">' + jobsEsc(e.title) + '</span>' +
-        '<span class="jobs-est-meta">' + e.date + ' &middot; ' + (JOBS_TABS[e.tab]||'Logged') + '</span>' +
-        '<select class="jobs-status ' + (statusCls[e.status]||'') + '" onchange="setEstStatus(\'' + c.id + '\',\'' + e.id + '\',this.value)">' + opts + '</select>' +
+        '<span class="jobs-est-title-wrap"><span class="jobs-dot ' + si.dot + '" title="' + jobsEsc(si.label) + '"></span><span class="jobs-est-title">' + jobsEsc(e.title) + '</span></span>' +
+        '<span class="jobs-est-meta">Taken ' + jobsEsc(jobsFmtTaken(e)) + ' &middot; ' + (JOBS_TABS[e.tab]||'Logged') + '</span>' +
+        '<select class="jobs-status ' + si.cls + '" onchange="setEstStatus(\'' + c.id + '\',\'' + e.id + '\',this.value)">' + opts + '</select>' +
         '<span class="jobs-est-total">' + jobsEsc((e.totals&&e.totals.grand)||'') + '</span>' +
         loadBtns +
         '<button class="jobs-mini danger" onclick="deleteEstimate(\'' + c.id + '\',\'' + e.id + '\')">Delete</button>' +
@@ -1890,11 +2141,12 @@ function renderJobs(){
 // Merge another jobs list into jobsData: customers match by name, estimates by id. Returns estimates added.
 function jobsMergeData(d){
   let added = 0;
+  const norm = ie=>{ if(ie) ie.status = jobsStatusNorm(ie.status); return ie; };   // incoming jobs use the current status names
   (d && d.customers || []).forEach(ic=>{
     let c = jobsData.customers.find(x=>x.name.toLowerCase() === String(ic.name||'').toLowerCase());
-    if(!c){ jobsData.customers.push(ic); added += (ic.estimates||[]).length; return; }
+    if(!c){ (ic.estimates||[]).forEach(norm); jobsData.customers.push(ic); added += (ic.estimates||[]).length; return; }
     (ic.estimates||[]).forEach(ie=>{
-      if(!c.estimates.some(x=>x.id===ie.id)){ c.estimates.push(ie); added++; }
+      if(!c.estimates.some(x=>x.id===ie.id)){ c.estimates.push(norm(ie)); added++; }
     });
     if(!c.notes && ic.notes) c.notes = ic.notes;
     if(!c.phone && ic.phone) c.phone = ic.phone;
@@ -1906,7 +2158,7 @@ function exportJobs(data, label){
   const blob = new Blob([JSON.stringify(data || jobsData, null, 2)], { type:'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'coba-jobs-' + (label || 'backup') + '-' + new Date().toISOString().slice(0,10) + '.json';
+  a.download = 'coba-jobs-' + (label || 'backup') + '-' + jobsLocalDate() + '.json';
   a.click();
   URL.revokeObjectURL(a.href);
   jobsToast('Backup downloaded - keep it somewhere safe');
@@ -2356,42 +2608,107 @@ const DEFAULT_SUBSTRATES = [
   {name:"Aluminum Black 2-side", cost:5.53, size:"4x8ft", supplier:"Spicers", notes:"$150/sheet  - 32sqft"},
 ];
 
-const DEFAULT_PAPERS = [
-  {name:"2-part NCR (11.5x17)",       cost:0.21, supplier:"Spicer"},
-  {name:"3-Part NCR+Perf (11.5x17)",  cost:0.25, supplier:"Spicer"},
-  {name:"Tango 14pt CS2 Cover (13x19)",cost:0.24,supplier:"Spicer"},
-  {name:"Tango 14pt CS1 (12x18)",     cost:0.18, supplier:"Spicer"},
-  {name:"2-part NCR (11x17)",         cost:0.21, supplier:"Spicer"},
-  {name:"Astro Bright 11x17",         cost:0.15, supplier:"Spicer"},
-  {name:"Mohawk 18x12 100# eggshell", cost:0.90, supplier:"Spicer"},
-  {name:"Hammermill 100# cover 13x19",cost:0.28, supplier:"Spicer"},
-  {name:"80# Hammermill Cover",       cost:0.19, supplier:"Spicer"},
-  {name:"Hammermill 32#",             cost:0.11, supplier:"Spicer"},
-  {name:"12pt CS1 12x18",             cost:0.15, supplier:"Spicer"},
-  {name:"Lynx 24# 12x18",            cost:0.07, supplier:"Spicer"},
-  {name:"Springhill cream 11x17 bristol 67#",cost:0.06,supplier:"Spicer"},
-  {name:"Supreme 100# gloss text 13x19",cost:0.16,supplier:"Spicer"},
-  {name:"Pacesetter 60# adhesive 13x19",cost:0.83,supplier:"Spicer"},
-  {name:"Mohawk Felt 110# 18x12",    cost:0.74, supplier:"Spicer"},
-  {name:"Sustana 24#",               cost:0.05, supplier:"Spicer"},
-  {name:"Sustana 28#",               cost:0.07, supplier:"Spicer"},
-  {name:"100# gloss text (Creator)", cost:0.12, supplier:"Spicer"},
-  {name:"80# gloss (Creator)",       cost:0.09, supplier:"Spicer"},
-  {name:'70# Gloss Text (Creator) 24x36"',cost:0.08,supplier:"Spicer"},
-  {name:'Sundance Fiber 80# cover 8.5x11"',cost:0.17,supplier:"Spicer"},
-  {name:"13x19 11pt Gloss Cover Invercote",cost:0.45,supplier:"Spicer"},
-  {name:"Sustana 100# Cover 100% recycled",cost:0.21,supplier:"Spicer"},
-  {name:"80# Rolland Cover",         cost:0.19, supplier:"Spicer"},
-  {name:"TEAR RESISTANT 12x18 5 mil",cost:0.71, supplier:"Spicer"},
-  {name:"TEAR RESISTANT 12x18 8 mil",cost:1.05, supplier:"Spicer"},
-  {name:"TEAR RESISTANT 12x18 10 mil",cost:1.36,supplier:"Spicer"},
-  {name:"Cougar 100# text 12x18",    cost:0.16, supplier:"Spicer"},
-  {name:'8.5x11 12up 2.5" circles',  cost:0.35, supplier:"Spicer"},
-  {name:"Padding board 12x18",       cost:0.25, supplier:"Spicer"},
-  {name:"Padding board 13x19",       cost:0.53, supplier:"Spicer"},
-  {name:"23x35 Lynx Sheets",         cost:0.16, supplier:"Spicer"},
-  {name:'Zodia OGT Synthetic 13x19 White 4.2mil (4-up from 28x40)',cost:0.50,supplier:"Spicers"},
+// ── PAPER STOCKS: structured (brand / weight / unit / size) ──
+// unit: '#' (lb text/cover), 'pt' (caliper), 'mil', 'gsm', '' (none). unsure[] = fields to confirm ('size','weight').
+let paperSort = {key:'weight', dir:1};
+const PAPER_UNIT_ORDER = {'#':0,'pt':1,'mil':2,'gsm':3,'':4};
+function P(old,weight,unit,brand,size,cost,unsure,sup){ return {old:old,weight:weight,unit:unit,brand:brand,size:size,cost:cost,supplier:sup||'Spicer',unsure:unsure||[]}; }
+const PAPER_SEED = [
+  P("2-part NCR (11.5x17)",null,'',"NCR 2-part","11.5x17",0.21),
+  P("2-part NCR (11x17)",null,'',"NCR 2-part","11x17",0.21),
+  P("3-Part NCR+Perf (11.5x17)",null,'',"NCR 3-part + Perf","11.5x17",0.25),
+  P("Padding board 12x18",null,'',"Padding Board","12x18",0.25),
+  P("Padding board 13x19",null,'',"Padding Board","13x19",0.53),
+  P('8.5x11 12up 2.5" circles',null,'',"Circle Labels 2.5in 12-up","8.5x11",0.35),
+  P("Lynx 24# 12x18",24,'#',"Lynx","12x18",0.07),
+  P("Sustana 24#",24,'#',"Sustana","12x18",0.05,['size']),
+  P("Sustana 28#",28,'#',"Sustana","12x18",0.07,['size']),
+  P("Hammermill 32#",32,'#',"Hammermill","12x18",0.11,['size']),
+  P("Pacesetter 60# adhesive 13x19",60,'#',"Pacesetter Adhesive","13x19",0.83),
+  P("Springhill cream 11x17 bristol 67#",67,'#',"Springhill Cream Bristol","11x17",0.06),
+  P('70# Gloss Text (Creator) 24x36"',70,'#',"Creator Gloss Text","24x36",0.08),
+  P("80# gloss (Creator)",80,'#',"Creator Gloss","12x18",0.09,['size']),
+  P("80# Hammermill Cover",80,'#',"Hammermill Cover","12x18",0.19,['size']),
+  P("80# Rolland Cover",80,'#',"Rolland Cover","12x18",0.19,['size']),
+  P('Sundance Fiber 80# cover 8.5x11"',80,'#',"Sundance Fiber Cover","8.5x11",0.17),
+  P("Astro Bright 11x17",80,'#',"Astro Bright Cover","11x17",0.15,['weight']),
+  P("Astro Bright 11x17",24,'#',"Astro Bright Text","11x17",0.15,['weight']),
+  P("23x35 Lynx Sheets",24,'#',"Lynx","23x35",0.16,['weight']),
+  P("23x35 Lynx Sheets",28,'#',"Lynx","23x35",0.16,['weight']),
+  P("Cougar 100# text 12x18",100,'#',"Cougar Text","12x18",0.16),
+  P("100# gloss text (Creator)",100,'#',"Creator Gloss Text","12x18",0.12,['size']),
+  P("Hammermill 100# cover 13x19",100,'#',"Hammermill Cover","13x19",0.28),
+  P("Mohawk 18x12 100# eggshell",100,'#',"Mohawk Eggshell","12x18",0.90),
+  P("Sustana 100# Cover 100% recycled",100,'#',"Sustana Cover (100% recycled)","12x18",0.21,['size']),
+  P("Supreme 100# gloss text 13x19",100,'#',"Supreme Gloss Text","13x19",0.16),
+  P("Mohawk Felt 110# 18x12",110,'#',"Mohawk Felt","12x18",0.74),
+  P("13x19 11pt Gloss Cover Invercote",11,'pt',"Invercote Gloss Cover","13x19",0.45),
+  P("12pt CS1 12x18",12,'pt',"CS1","12x18",0.15),
+  P("Tango 14pt CS1 (12x18)",14,'pt',"Tango CS1","12x18",0.18),
+  P("Tango 14pt CS2 Cover (13x19)",14,'pt',"Tango CS2 Cover","13x19",0.24),
+  P("Zodia OGT Synthetic 13x19 White 4.2mil (4-up from 28x40)",4.2,'mil',"Zodia OGT Synthetic White (4-up from 28x40)","13x19",0.50,[],'Spicers'),
+  P("TEAR RESISTANT 12x18 5 mil",5,'mil',"Tear Resistant","12x18",0.71),
+  P("TEAR RESISTANT 12x18 8 mil",8,'mil',"Tear Resistant","12x18",1.05),
+  P("TEAR RESISTANT 12x18 10 mil",10,'mil',"Tear Resistant","12x18",1.36),
 ];
+function paperArea(sz){ const m=String(sz||'').match(/([\d.]+)\s*x\s*([\d.]+)/i); return m?parseFloat(m[1])*parseFloat(m[2]):1e9; }
+function paperCmpWeight(a,b){
+  const ua=(PAPER_UNIT_ORDER[a.unit||'']===undefined?4:PAPER_UNIT_ORDER[a.unit||'']), ub=(PAPER_UNIT_ORDER[b.unit||'']===undefined?4:PAPER_UNIT_ORDER[b.unit||'']);
+  if(ua!==ub) return ua-ub;
+  const wa=(a.weight===null||a.weight===undefined||a.weight==='')?1e9:+a.weight;
+  const wb=(b.weight===null||b.weight===undefined||b.weight==='')?1e9:+b.weight;
+  return wa-wb;
+}
+function paperSortArr(arr){
+  const k=paperSort.key, d=paperSort.dir;
+  arr.sort((a,b)=>{
+    let r=0;
+    if(k==='weight') r=paperCmpWeight(a,b);
+    else if(k==='brand') r=(a.brand||'').localeCompare(b.brand||'',undefined,{sensitivity:'base'});
+    else r=paperArea(a.size)-paperArea(b.size);
+    r*=d;
+    if(r) return r;
+    return paperCmpWeight(a,b) || (a.brand||'').localeCompare(b.brand||'',undefined,{sensitivity:'base'}) || (paperArea(a.size)-paperArea(b.size));
+  });
+}
+function paperSortApply(){ if(Array.isArray(inventory.papers)) paperSortArr(inventory.papers); }
+function paperWeightStr(p){
+  if(p.weight===null||p.weight===undefined||p.weight==='') return '';
+  return (p.unit==='mil'||p.unit==='gsm') ? (p.weight+(p.unit==='mil'?' mil':'gsm')) : (p.weight+(p.unit||''));
+}
+function paperLabel(p, withFlags){
+  const us=(withFlags&&p.unsure)||[];
+  const w=paperWeightStr(p)+(us.indexOf('weight')>=0&&paperWeightStr(p)?'?':'');
+  const sz=(p.size||'')+(us.indexOf('size')>=0&&p.size?'?':'');
+  return [w,p.brand||'',sz].filter(Boolean).join(' ');
+}
+function paperParse(name){
+  let n=String(name||''), weight=null, unit='', size='', unsure=[];
+  let m=n.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/i);
+  if(m){ const a=parseFloat(m[1]), b=parseFloat(m[2]); size=Math.min(a,b)+'x'+Math.max(a,b); n=n.replace(m[0],' '); } else { size='12x18'; unsure.push('size'); }
+  m=n.match(/(\d+(?:\.\d+)?)\s*(mil|pt|#)/i);
+  if(m){ weight=parseFloat(m[1]); unit=m[2].toLowerCase(); n=n.replace(m[0],' '); } else { unsure.push('weight'); }
+  n=n.replace(/["']/g,'').replace(/\s+/g,' ').replace(/\(\s*\)/g,'').trim();
+  return {brand:n, weight:weight, unit:unit, size:size, unsure:unsure};
+}
+function paperMigrate(){
+  if(!Array.isArray(inventory.papers)) return false;
+  if(!inventory.papers.some(p=>p && p.brand===undefined)) return false;
+  const out=[];
+  inventory.papers.forEach(p=>{
+    if(!p) return;
+    if(p.brand!==undefined){ out.push(p); return; }
+    const seeds=PAPER_SEED.filter(x=>x.old===p.name);
+    if(seeds.length){
+      seeds.forEach(x=>out.push({brand:x.brand,weight:x.weight,unit:x.unit,size:x.size,unsure:x.unsure.slice(),cost:p.cost,supplier:p.supplier||''}));
+    } else {
+      const q=paperParse(p.name); q.cost=p.cost; q.supplier=p.supplier||''; out.push(q);
+    }
+  });
+  inventory.papers=out; paperSortApply(); return true;
+}
+const DEFAULT_PAPERS = PAPER_SEED.map(x=>({brand:x.brand,weight:x.weight,unit:x.unit,size:x.size,cost:x.cost,supplier:x.supplier,unsure:x.unsure.slice()}));
+paperSortArr(DEFAULT_PAPERS);
 
 const DEFAULT_TONER = [
   {name:"B&W",    cost:0.03, notes:"per click"},
@@ -2424,7 +2741,9 @@ function invLoad(){
       const hasEnv = inventory.other.some(o=>o.name.toLowerCase().includes('a2ww')||o.name.toLowerCase().includes('4-3/8'));
       if(!hasEnv){ inventory.other.splice(1,0,{name:"4-3/8x5-3/4 White Envelope A2WW",cost:0.06,unit:"per unit",supplier:"Spicers",notes:"Product code: A2WW - SKU: GENEA2WSF - gospicers.ca"}); invSave(); }
       invAddOnce('nekoosa-v32', 'vinyl', ['138809','101719']);
-      if(inventory.papers){ const zod = inventory.papers.find(p=>p.name.toLowerCase().includes('zodia')); if(!zod){ inventory.papers.push({name:'Zodia OGT Synthetic 13x19 White 4.2mil (4-up from 28x40)',cost:0.50,supplier:"Spicers"}); invSave(); } else if(zod.cost===2.00){ zod.cost=0.50; zod.name='Zodia OGT Synthetic 13x19 White 4.2mil (4-up from 28x40)'; invSave(); } }
+      if(!inventory.papers || inventory.papers.length===0){ inventory.papers = JSON.parse(JSON.stringify(DEFAULT_PAPERS)); invSave(); }
+      if(paperMigrate()) invSave();
+      { const zod = inventory.papers.find(p=>(p.brand||'').toLowerCase().includes('zodia')); if(!zod){ const z=PAPER_SEED.find(x=>x.brand.indexOf('Zodia')===0); inventory.papers.push({brand:z.brand,weight:z.weight,unit:z.unit,size:z.size,cost:z.cost,supplier:z.supplier,unsure:[]}); paperSortApply(); invSave(); } else if(zod.cost===2.00){ zod.cost=0.50; invSave(); } }
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
@@ -2461,7 +2780,7 @@ function invSetDefaults(){
   };
 }
 function invSave(){
-  localStorage.setItem('coba-inventory-v2', JSON.stringify(inventory));
+  try{ localStorage.setItem('coba-inventory-v2', JSON.stringify(inventory)); }catch(e){}
   const s = document.getElementById('inv-save-status');
   if(s){ s.textContent='✓ Saved'; s.className='inv-save-badge saved'; }
 }
@@ -2581,19 +2900,49 @@ function invRenderCoils(){
 function invAddCoil(){ inventory.coils.push({size:'',color:'Black',cost:0,code:'',notes:''}); invRenderCoils(); invDebounceSave(); }
 function invRemoveCoil(i){ cobaConfirm('Remove this coil?', ()=>{ inventory.coils.splice(i,1); invRenderCoils(); invDebounceSave(); }); }
 
+function paperFlagCount(){
+  const n=(inventory.papers||[]).reduce((a,p)=>a+((p.unsure||[]).length?1:0),0);
+  const e=document.getElementById('inv-paper-flags');
+  if(e){ e.textContent = n>0 ? (n+' stock'+(n>1?'s':'')+' flagged with ? (yellow) - confirm the size/weight; editing a field clears its flag.') : 'All paper stocks confirmed.'; e.style.color = n>0?'#92400e':'#166534'; }
+}
+function paperEdit(i, field, el){
+  const p=inventory.papers[i]; if(!p) return;
+  if(field==='weight') p.weight = el.value===''?null:(parseFloat(el.value)||0);
+  else p[field]=el.value;
+  const flagKey = field==='unit'?'weight':field;
+  if(p.unsure && p.unsure.indexOf(flagKey)>=0){
+    p.unsure=p.unsure.filter(f=>f!==flagKey);
+    const td=el.closest('td'); if(td){ td.classList.remove('unsure'); const q=td.querySelector('.pq'); if(q) q.remove(); }
+    if(field==='weight'){ const sib=el.closest('tr').querySelector('td.pw-unit'); if(sib){ sib.classList.remove('unsure'); } }
+  }
+  paperFlagCount(); invDebounceSave();
+}
+function paperSortBy(k){
+  if(paperSort.key===k) paperSort.dir*=-1; else { paperSort.key=k; paperSort.dir=1; }
+  paperSortApply(); invRenderPapers(); invDebounceSave();
+}
 function invRenderPapers(){
   const tb = document.getElementById('inv-paper-body');
   if(!tb) return;
   tb.innerHTML = '';
+  ['brand','weight','size'].forEach(k=>{ const e=document.getElementById('inv-psort-'+k); if(e) e.textContent = paperSort.key===k ? (paperSort.dir>0?' '+String.fromCharCode(9650):' '+String.fromCharCode(9660)) : ''; });
   inventory.papers.forEach((p, i)=>{
+    const us=p.unsure||[];
+    const wf=us.indexOf('weight')>=0, sf=us.indexOf('size')>=0;
+    const q='<span class="pq">?</span>';
+    const unitOpts=[['#','# (lb)'],['pt','pt'],['mil','mil'],['gsm','gsm'],['','none']].map(o=>'<option value="'+o[0]+'"'+((p.unit||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('');
     const tr = document.createElement('tr');
     tr.innerHTML=`
-      <td class="iv-edit"><input type="text" value="${esc(p.name)}" oninput="inventory.papers[${i}].name=this.value;invDebounceSave()"></td>
+      <td class="iv-edit"><input type="text" value="${esc(p.brand||'')}" oninput="paperEdit(${i},'brand',this)" placeholder="e.g. Mohawk Eggshell"></td>
+      <td class="iv-edit${wf?' unsure':''}">${wf?q:''}<input type="number" value="${(p.weight===null||p.weight===undefined)?'':p.weight}" min="0" step="0.1" oninput="paperEdit(${i},'weight',this)" placeholder="wt"></td>
+      <td class="iv-edit pw-unit${wf?' unsure':''}"><select onchange="paperEdit(${i},'unit',this)" style="width:100%;padding:5px 4px;border:1px solid #e5e5e5;border-radius:4px;font-size:13px;background:#fff">${unitOpts}</select></td>
+      <td class="iv-edit${sf?' unsure':''}">${sf?q:''}<input type="text" value="${esc(p.size||'')}" oninput="paperEdit(${i},'size',this)" placeholder="12x18"></td>
       <td class="iv-edit"><input type="number" value="${p.cost}" min="0" step="0.005" oninput="inventory.papers[${i}].cost=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>
       <td class="iv-edit"><input type="text" value="${esc(p.supplier||'')}" oninput="inventory.papers[${i}].supplier=this.value;invDebounceSave()" placeholder="Spicer, etc."></td>
       <td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemovePaper(${i})" title="Remove">✕</button></td>`;
     tb.appendChild(tr);
   });
+  paperFlagCount();
 }
 
 function invRenderToner(){
@@ -2628,11 +2977,11 @@ function invRenderOther(){
   });
 }
 
-function invAddPaper(){ inventory.papers.push({name:'New paper stock',cost:0.00,supplier:''}); invRenderPapers(); invDebounceSave(); }
+function invAddPaper(){ inventory.papers.push({brand:'',weight:null,unit:'#',size:'12x18',cost:0.00,supplier:'Spicer',unsure:[]}); invRenderPapers(); invDebounceSave(); }
 function invAddToner(){ inventory.toner.push({name:'New type',cost:0.00,notes:''}); invRenderToner(); invDebounceSave(); }
 function invAddOther(){ inventory.other.push({name:'New item',cost:0.00,unit:'',supplier:'',notes:''}); invRenderOther(); invDebounceSave(); }
 
-function invRemovePaper(i){ cobaConfirm('Remove "'+inventory.papers[i].name+'"?', ()=>{ inventory.papers.splice(i,1); invRenderPapers(); invDebounceSave(); }); }
+function invRemovePaper(i){ cobaConfirm('Remove "'+paperLabel(inventory.papers[i])+'"?', ()=>{ inventory.papers.splice(i,1); invRenderPapers(); invDebounceSave(); }); }
 function invRemoveToner(i){ cobaConfirm('Remove "'+inventory.toner[i].name+'"?', ()=>{ inventory.toner.splice(i,1); invRenderToner(); invDebounceSave(); }); }
 function invRemoveOther(i){ inventory.other.splice(i,1); invRenderOther(); invDebounceSave(); }
 
@@ -2649,7 +2998,7 @@ function invImport(input){
   r.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if(data.papers && data.toner){ inventory = data; invRenderAll(); invSave(); rebuildDropdowns(); notify('Inventory imported successfully!'); }
+      if(data.papers && data.toner){ inventory = data; paperMigrate(); invRenderAll(); invSave(); rebuildDropdowns(); notify('Inventory imported successfully!'); }
       else { notify('Invalid inventory file.'); }
     } catch(ex){ notify('Could not read file: '+ex.message); }
   };
@@ -2668,7 +3017,7 @@ function rebuildDropdowns(){
     sel.innerHTML = '<option value="">— select paper —</option>';
     inventory.papers.forEach(p=>{
       const opt = document.createElement('option');
-      opt.value = p.cost; opt.textContent = p.name;
+      opt.value = p.cost; opt.textContent = paperLabel(p);
       if(String(p.cost)===cur) opt.selected = true;
       sel.appendChild(opt);
     });
@@ -4274,13 +4623,183 @@ function resetEpson(){
   });
 }
 // ══════════════════════════════════════════════
+//  UV PRINTING ESTIMATOR  (xTool O1 Omni)
+// ══════════════════════════════════════════════
+const U_HST = 0.13;
+let uRows = [], uId = 0;
+const uGet = id => { const e=document.getElementById(id); return e ? (parseFloat(e.value)||0) : 0; };
+const uSet = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+
+function uAddRow(){
+  const id='u'+uId++; uRows.push(id);
+  const tb=document.getElementById('u-body');
+  const tr=document.createElement('tr'); tr.id='urow-'+id;
+  tr.innerHTML=`
+    <td class="inp"><input type="text" id="${id}-n" placeholder="e.g. Name tag"></td>
+    <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="uCalc()"></td>
+    <td class="inp" style="text-align:center"><input type="checkbox" id="${id}-wh" onchange="uCalc()" style="width:16px;height:16px;display:inline-block;accent-color:#0f766e" title="White underbase under the whole print area"></td>
+    <td class="inp" style="text-align:center"><input type="checkbox" id="${id}-pr" checked onchange="uCalc()" style="width:16px;height:16px;display:inline-block;accent-color:#0f766e" title="Primer wipe on each item"></td>
+    <td class="res dim" id="${id}-sf">—</td>
+    <td class="inp"><input type="number" id="${id}-b" placeholder="0.00" min="0" step="0.25" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-f" placeholder="auto" min="0" step="0.25" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-ik" placeholder="est" min="0" step="0.001" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-mn" placeholder="est" min="0" step="0.1" oninput="uCalc()"></td>
+    <td class="res dim" id="${id}-co">—</td>
+    <td class="res" id="${id}-rt">—</td>
+    <td class="res" id="${id}-pe">—</td>
+    <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="uRemoveRow('${id}')" title="Remove">✕</button></td>`;
+  tb.appendChild(tr); uCalc();
+}
+function uRemoveRow(id){
+  const el=document.getElementById('urow-'+id); if(el) el.remove();
+  uRows=uRows.filter(r=>r!==id); uCalc();
+}
+function toggleUVSettings(){
+  const wrap=document.getElementById('u-settings-wrap'), btn=document.getElementById('u-settings-btn');
+  const open=wrap.style.display==='none';
+  wrap.style.display=open?'':'none';
+  btn.textContent=open?'▲ Hide settings':'▼ Show settings';
+}
+function uFmtMin(m){
+  if(!(m>0)) return '—';
+  const t=Math.round(m*60), h=Math.floor(t/3600), mm=Math.floor((t%3600)/60), ss=t%60;
+  return [h>0?h+'h':'', mm>0?mm+'m':'', (h===0&&ss>0)?ss+'s':''].filter(Boolean).join(' ') || '0s';
+}
+function uCalc(){
+  // ── cost per sq ft breakdown ──
+  const purgeK  = uGet('u-purge')/100;
+  const inkSF   = uGet('u-ink-ml')*uGet('u-ink-use');
+  const purgeSF = inkSF*purgeK;
+  const headSF  = uGet('u-head-cost')/(uGet('u-head-life')||1);
+  const maintSF = uGet('u-maint');
+  const machSF  = uGet('u-mach');
+  const calcSF  = inkSF+purgeSF+headSF+maintSF+machSF;
+  const ovr     = uGet('u-cost-override');
+  const costSF  = ovr>0 ? ovr : calcSF;
+  const nonInkSF= ovr>0 ? Math.max(ovr-inkSF*(1+purgeK),0) : (headSF+maintSF+machSF);  // wear, maintenance, overhead per sq ft
+  const whiteInkSF = uGet('u-white-ml')*uGet('u-white-use');          // white ink $ per sq ft (no waste)
+  const whiteSF = whiteInkSF*(1+purgeK);                               // with cleaning waste
+  const primerEach = uGet('u-primer'), matJob = uGet('u-mat');
+  const tBase=uGet('u-time-base'), tWhite=uGet('u-time-white'), machHr=uGet('u-machine-hr');
+  uSet('u-bd-ink',rfmt(inkSF)); uSet('u-bd-white',rfmt(whiteSF)+' extra'); uSet('u-bd-purge',rfmt(purgeSF)); uSet('u-bd-head',rfmt(headSF));
+  uSet('u-bd-maint',rfmt(maintSF)); uSet('u-bd-mach',rfmt(machSF)); uSet('u-bd-total',rfmt(calcSF));
+  uSet('u-bd-used',rfmt(costSF)+(ovr>0?' (yours)':' (calc)')); uSet('u-bd-item',rfmt(primerEach)+' / item + '+rfmt(matJob)+' / job');
+  uSet('u-bd-time',tBase.toFixed(1)+' min  /  '+(tBase+tWhite).toFixed(1)+' min with white');
+  uSet('u-bd-machine',rfmt(machHr/60)+' / min');
+
+  // ── pricing settings ──
+  const basisEl=document.getElementById('u-basis');
+  const basis=basisEl?basisEl.value:'sqft';
+  const bedL=uGet('u-bed')||4.8, bedW=13;
+  const retailSF=uGet('u-retail-sqft'), minItem=uGet('u-min-item'), flatItem=uGet('u-flat-item'), blankMk=uGet('u-blank-mk')/100;
+  const inclEl=document.getElementById('u-min-incl'); const inclBlank=!inclEl||inclEl.checked;
+
+  let totArea=0, totCost=0, totRetail=0, totQty=0, totMin=0;
+  uRows.forEach(id=>{
+    const w=uGet(id+'-w'), h=uGet(id+'-h'), q=uGet(id+'-q'), blank=uGet(id+'-b'), flat=uGet(id+'-f');
+    const inkTyped=uGet(id+'-ik'), minTyped=uGet(id+'-mn');
+    const whEl=document.getElementById(id+'-wh'), white=!!(whEl&&whEl.checked);
+    const prEl=document.getElementById(id+'-pr'), primer=!!(prEl&&prEl.checked);
+    const sfEl=document.getElementById(id+'-sf'), coEl=document.getElementById(id+'-co');
+    const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
+    const ikEl=document.getElementById(id+'-ik'), mnEl=document.getElementById(id+'-mn');
+    const all=[sfEl,coEl,rtEl,peEl];
+    if(w>0&&h>0&&q>0){
+      const sqft=w*h/144;
+      const fits=(w<=bedW&&h<=bedL)||(h<=bedW&&w<=bedL);
+      const area=sqft*q;
+      // estimates (shown as placeholders so you can see what you'd be overriding)
+      const estInk=area*(inkSF+(white?whiteInkSF:0));
+      const estMin=q*(tBase+(white?tWhite:0));
+      if(ikEl) ikEl.placeholder='est '+estInk.toFixed(3);
+      if(mnEl) mnEl.placeholder='est '+estMin.toFixed(1);
+      // typed xTool numbers win over estimates
+      const mins = minTyped>0 ? minTyped : estMin;
+      let inkCost;
+      if(inkTyped>0) inkCost = inkTyped*(1+purgeK) + area*nonInkSF;      // xTool ink + cleaning waste + wear/maintenance/overhead
+      else           inkCost = area*(costSF+(white?whiteSF:0));
+      const cost = inkCost + q*((primer?primerEach:0)+blank) + (mins/60)*machHr;
+      const blankRetail=blank*(1+blankMk);
+      const calcPrint=sqft*retailSF;
+      let per, how;
+      if(inclBlank){
+        // minimum / flat price is all-in: print + blank
+        if(flat>0){ per=flat; how='flat price on this row (includes blank)'; }
+        else if(basis==='item'){ per=Math.max(flatItem, calcPrint+blankRetail); how=(flatItem>=calcPrint+blankRetail?'flat price per item (includes blank)':'print + blank exceeds the flat price'); }
+        else { per=Math.max(calcPrint+blankRetail, minItem); how=(calcPrint+blankRetail<minItem?'minimum $'+minItem.toFixed(2)+' applies (includes blank)':'$'+retailSF.toFixed(2)+'/sq ft + blank'); }
+      } else {
+        // blank is always an add-on
+        let printPer;
+        if(flat>0){ printPer=flat; how='flat price on this row + blank'; }
+        else if(basis==='item'){ printPer=flatItem; how='flat price per item + blank'; }
+        else { printPer=Math.max(calcPrint,minItem); how=(calcPrint<minItem?'minimum $'+minItem.toFixed(2)+' applies + blank':'$'+retailSF.toFixed(2)+'/sq ft + blank'); }
+        per=printPer+blankRetail;
+      }
+      const retail=q*per;
+      if(sfEl){ sfEl.textContent=sqft.toFixed(3)+(fits?'':' '+String.fromCharCode(9888)); sfEl.title=fits?'':'Larger than the selected print bed'; sfEl.style.color=fits?'':'#dc2626'; }
+      if(coEl){ coEl.textContent=rfmt(cost); coEl.title=(inkTyped>0?'ink from xTool':'ink estimated')+', '+(minTyped>0?'time from xTool':'time estimated')+' ('+uFmtMin(mins)+')'; }
+      if(rtEl) rtEl.textContent=rfmt(retail);
+      if(peEl){ peEl.textContent=rfmt(per); peEl.title=how; }
+      totArea+=area; totCost+=cost; totRetail+=retail; totQty+=q; totMin+=mins;
+    } else {
+      all.forEach(e=>{ if(e){ e.textContent='—'; e.style.color=''; e.title=''; } });
+      if(ikEl) ikEl.placeholder='est'; if(mnEl) mnEl.placeholder='est';
+    }
+  });
+  if(totQty>0) totCost+=matJob;     // mat / fixture is once per job
+  const shopLab = totQty>0 ? ((uGet('u-lab-setup') + uGet('u-lab-item')*totQty)/60)*uGet('u-rate') : 0;   // internal labour cost (setup + handling)
+  const setupFee=uGet('u-setup-fee'), setupModeEl=document.getElementById('u-setup-mode'), setupMode=setupModeEl?setupModeEl.value:'add';
+  let printRev=totRetail, setupAdd=0, setupTxt='—';
+  if(totQty>0){
+    if(setupMode==='min'){ printRev=Math.max(totRetail,setupFee); setupTxt = totRetail<setupFee ? 'minimum applies ('+rfmt(setupFee)+')' : 'not needed (over minimum)'; }
+    else { setupAdd=setupFee; setupTxt='+'+rfmt(setupFee)+' once'; }
+  }
+  uSet('u-setup', setupTxt);
+  uSet('u-sqft', totArea>0 ? rsfmt(totArea) : '0 sq ft');
+  uSet('u-count', totQty);
+  uSet('u-time', uFmtMin(totMin));
+  uSet('u-cost', rfmt(totCost));
+  uSet('u-retail', rfmt(totRetail));
+  uSet('u-per', totQty>0 ? rfmt(totRetail/totQty)+' avg' : '—');
+  uSet('u-costper', totQty>0 ? rfmt((totCost+shopLab)/totQty)+' each' : '—');
+
+  // ── totals ──
+  const labour=uGet('u-hrs')*uGet('u-rate');
+  uSet('u-labour-total', rfmt(labour));
+  const cost=totCost+shopLab+labour, quote=printRev+setupAdd+labour;
+  const profit=quote-cost, margin=quote>0?(profit/quote*100):0;
+  const hst=quote*U_HST, grand=quote+hst;
+  uSet('u-tt-cost', rfmt(cost));
+  uSet('u-tt-cost-sub', 'materials '+rfmt(totCost)+(shopLab>0?' + shop labour '+rfmt(shopLab):'')+(labour>0?' + billed labour '+rfmt(labour):'')+(totMin>0?', print time '+uFmtMin(totMin):''));
+  uSet('u-tt-quote', rfmt(quote));
+  uSet('u-tt-profit', rfmt(profit)+' profit - '+margin.toFixed(1)+'%'+(quote>0&&margin<50?'  '+String.fromCharCode(9888)+' low margin':''));
+  uSet('u-tt-grand', rfmt(grand));
+  uSet('u-tt-tax', 'HST (13%): '+rfmt(hst));
+}
+function resetUV(){
+  cobaConfirm('New UV estimate? This clears all UV fields.', ()=>{
+    const up=document.getElementById('u-proj'); if(up) up.value='';
+    document.getElementById('u-hrs').value='0';
+    uRows.forEach(id=>{ const r=document.getElementById('urow-'+id); if(r) r.remove(); });
+    uRows=[]; uId=0;
+    uAddRow();
+  });
+}
+['resetPaper','resetDTF','resetRoland','resetUV','resetEpson'].forEach(function(n){
+  const orig = window[n]; if(typeof orig !== 'function') return;
+  window[n] = function(){ jobsActive = null; jobsActiveHint(); return orig.apply(this, arguments); };
+});
+// ══════════════════════════════════════════════
 invLoad();
 jobsLoad();
 invRenderAll();
 rebuildDropdowns();
 addGarmentRow(); addGarmentRow();
 addImprintRow(); addImprintRow();
-pCalc(); dCalc(); rCalc(); eCalc();
+uAddRow();
+pCalc(); dCalc(); rCalc(); eCalc(); uCalc();
 cloudInit();
 </script>
 </body>
