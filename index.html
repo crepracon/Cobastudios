@@ -135,6 +135,20 @@
     /* coil binding */
     #p-coil-row td { vertical-align: top; padding-top: 9px; }
 
+    /* calendar + brochure references (v35) */
+    .ref-section { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:.8rem 1.25rem; margin-bottom:.75rem; }
+    #p-bro-box.ref-section { background:#f5f3ff; border-color:#ddd6fe; }
+    .ref-section-title { font-size:13px; font-weight:700; color:#1e40af; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    #p-bro-box .ref-section-title, #p-bro-box .ref-toggle { color:#5b21b6; }
+    .ref-toggle { display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-size:13px; font-weight:600; color:#1e40af; user-select:none; }
+    .ref-toggle input[type=checkbox] { width:16px; height:16px; cursor:pointer; accent-color:#2563eb; }
+    .ref-hint { font-size:11px; font-weight:400; color:#64748b; }
+    .ref-controls { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:.6rem 0 .5rem; }
+    .ref-controls select { font-size:12px; padding:4px 6px; }
+    .ref-out { background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; font-size:12px; color:#1a1a1a; line-height:1.7; }
+    .ref-out .ref-ladder { color:#64748b; }
+    .ref-out .ref-ladder b { color:#1a1a1a; }
+    .ref-note { font-size:11px; color:#64748b; margin-top:6px; line-height:1.5; }
     /* lamination section */
     .lam-section { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
     .lam-section-title { font-size: 13px; font-weight: 700; color: #c2410c; margin-bottom: .6rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -273,6 +287,54 @@
         </tr></thead>
         <tbody id="p-print-body"></tbody>
       </table>
+
+      <!-- CALENDAR + BROCHURE REFERENCES (v35): what VistaPrint charges for this job. Reference only: never changes the quote -->
+      <div class="ref-section no-print" id="p-cal-box">
+        <div class="ref-section-title">
+          <label class="ref-toggle"><input type="checkbox" id="p-cal-on" onchange="pRefToggle('cal')"> &#128197; Calendar</label>
+          <span class="ref-hint">check if this job is calendars: shows what VistaPrint charges for the same calendar (reference only, your quote is unchanged)</span>
+        </div>
+        <div id="p-cal-body" style="display:none">
+          <div class="ref-controls">
+            <div class="rate-item">Type: <select id="p-cal-type" onchange="pRefCalc()" style="width:360px"></select></div>
+            <div class="rate-item">Strategy: <select id="p-cal-strategy" onchange="pRefCalc()" style="width:auto">
+              <option value="auto" selected>Auto (default: &#128737;&#65039; Defend)</option>
+              <option value="defend">&#128737;&#65039; Defend</option>
+              <option value="compete">&#9878;&#65039; Compete</option>
+            </select></div>
+          </div>
+          <div id="p-cal-out" class="ref-out"></div>
+        </div>
+      </div>
+      <div class="ref-section no-print" id="p-bro-box">
+        <div class="ref-section-title">
+          <label class="ref-toggle"><input type="checkbox" id="p-bro-on" onchange="pRefToggle('bro')"> &#128240; Brochure</label>
+          <span class="ref-hint">check if this job is brochures: shows what VistaPrint charges for the same fold, size and paper (reference only, your quote is unchanged)</span>
+        </div>
+        <div id="p-bro-body" style="display:none">
+          <div class="ref-controls">
+            <div class="rate-item">Fold: <select id="p-bro-fold" onchange="pRefSizes();pRefCalc()" style="width:auto">
+              <option value="tri" selected>Tri-fold</option>
+              <option value="bi">Bi-fold</option>
+              <option value="z">Z-fold</option>
+            </select></div>
+            <div class="rate-item">Flat size: <select id="p-bro-size" onchange="pRefCalc()" style="width:auto"></select></div>
+            <div class="rate-item">Paper: <select id="p-bro-stock" onchange="pRefCalc()" style="width:auto">
+              <option value="glossy" selected>Glossy 5pt</option>
+              <option value="matte">Matte 5pt</option>
+              <option value="uncoated">Uncoated 5.5pt</option>
+              <option value="recycled">Recycled 6pt</option>
+            </select></div>
+            <div class="rate-item">Strategy: <select id="p-bro-strategy" onchange="pRefCalc()" style="width:auto">
+              <option value="auto" selected>Auto (default: &#9878;&#65039; Compete)</option>
+              <option value="defend">&#128737;&#65039; Defend</option>
+              <option value="compete">&#9878;&#65039; Compete</option>
+            </select></div>
+          </div>
+          <div id="p-bro-out" class="ref-out"></div>
+          <div class="ref-note">VistaPrint's standard stocks: glossy and matte 5pt (about 100# text), uncoated 5.5pt (about 70# text), recycled 6pt (about 80# text). Their premium stocks (9 to 11pt, about 80# cover) cost more and are not included. Brochures arrive folded.</div>
+        </div>
+      </div>
 
       <!-- LAMINATION SECTION — above cost summary -->
       <div class="lam-section" style="margin-bottom:1.25rem">
@@ -1998,7 +2060,7 @@ function snapRestore(tab, snap){
     const el = els[i]; if(!el) return;
     if('c' in f){ el.checked = !!f.c; } else { el.value = f.v; }
   });
-  if(tab==='paper') pPanelRepair();
+  if(tab==='paper'){ pPanelRepair(); pRefEnsure(); }
   (SNAP_CALCS[tab]||[]).forEach(fn=>{ try{ window[fn] ? window[fn]() : eval(fn+'()'); }catch(e){ console.error(fn, e); } });
 }
 // v31: Paper jobs saved before v31 were captured from a broken layout (a stray </div> left the market check, tiers
@@ -4039,6 +4101,7 @@ function pCalc(){
   pel('p-active-quote').textContent=pfmt(grand);
   pRenderTiers(totalR);
   pMarketCheck();
+  pRefCalc();
 }
 
 function pMarketCheck(){
@@ -4106,6 +4169,102 @@ function toggleTierTable(){
   btn.textContent = open ? '▲ Hide tiers' : '▼ Show tiers';
 }
 
+// ══════════════════════════════════════════════
+//  PAPER > CALENDAR / BROCHURE REFERENCES (v35)
+//  What VistaPrint charges for the same product at this job's Finished pieces. Reference only: nothing
+//  here changes pCalc's numbers. Data: MKP (JSON block id="market-print"). Boxes are no-print.
+// ══════════════════════════════════════════════
+const P_REF_PRISTINE = (()=>{ const a=document.getElementById('p-cal-box'), b=document.getElementById('p-bro-box'); return (a&&b) ? a.outerHTML + b.outerHTML : ''; })();
+const P_REF_CAL_TYPES = ['wall','desk','poster','magnetic','bookmark'];
+const P_REF_RUNGS = [1,5,10,20,30,50,100,250,500,1000];
+function pRefNum(id){ const e=document.getElementById(id); return e ? (parseFloat(String(e.textContent).replace(/[^0-9.\-]/g,''))||0) : 0; }
+function pRefCalLabel(s, z){
+  const dims = (z.w && z.h) ? (z.w + ' x ' + z.h + ' in') : '';
+  if(s.type==='wall'){
+    const base = String(z.label||'').replace(/\s*\(.*\)\s*$/,'');
+    return 'Wall, ' + base + ' - ' + (z.closed ? (z.closed[0] + ' x ' + z.closed[1] + ' in, opens to ' + dims) : dims);
+  }
+  if(s.type==='desk') return 'Desk, ' + String(z.label||'').replace(/ \(/,' ' + dims + ' (');
+  if(s.type==='poster') return 'Poster calendar, one sheet ' + dims;
+  if(s.type==='magnetic') return 'Magnetic calendar, ' + dims;
+  return s.label;
+}
+// fill the calendar types (and brochure sizes) from the data; keeps the current choice
+function pRefInit(){
+  const sel=document.getElementById('p-cal-type');
+  if(sel && !sel.options.length){
+    (MKP.sellers||[]).filter(x=>x.product==='calendar' && P_REF_CAL_TYPES.indexOf(x.type)>=0).forEach(x=>{
+      x.sizes.forEach((z,i)=>{ const o=document.createElement('option'); o.value=x.id+'|'+i; o.textContent=pRefCalLabel(x,z); sel.appendChild(o); });
+    });
+    const def=Array.from(sel.options).find(o=>/middle binding/.test(o.textContent) && /^Wall, Classic/.test(o.textContent));
+    if(def) sel.value=def.value;
+  }
+  const bs=document.getElementById('p-bro-size');
+  if(bs && !bs.options.length) pRefSizes();
+}
+function pRefSizes(){
+  const bs=document.getElementById('p-bro-size'); if(!bs) return;
+  const fold=(document.getElementById('p-bro-fold')||{}).value||'tri';
+  const cur=bs.value, sl=mkpSeller('vp-bro-'+fold+'-glossy');
+  bs.innerHTML='';
+  (sl ? sl.sizes : []).forEach(z=>{ const o=document.createElement('option'); o.value=z.label; o.textContent=z.label.replace(' flat',' in flat'); bs.appendChild(o); });
+  if(Array.from(bs.options).some(o=>o.value===cur)) bs.value=cur;
+  else { const d=Array.from(bs.options).find(o=>/^8\.5x11/.test(o.value)); if(d) bs.value=d.value; }
+}
+function pRefToggle(kind){
+  const on=document.getElementById('p-'+kind+'-on'), body=document.getElementById('p-'+kind+'-body');
+  if(body) body.style.display = (on && on.checked) ? '' : 'none';
+  pRefInit(); pRefCalc();
+}
+// v35: old Paper jobs were saved without these boxes; put them back after a restore (they never touch the quote)
+function pRefEnsure(){
+  if(document.getElementById('p-cal-box') || !P_REF_PRISTINE) return;
+  const lam=document.getElementById('lam-enabled'), box=lam && lam.closest('.lam-section');
+  if(box) box.insertAdjacentHTML('beforebegin', P_REF_PRISTINE);
+  pRefInit();
+}
+function pRefCalc(){
+  const fin = parseFloat((document.getElementById('p-finished-qty')||{}).value)||0;
+  const sets = parseFloat((document.getElementById('p-qty')||{}).value)||0;
+  const quote = pRefNum('p-quote-total'), cost = pRefNum('p-yourcost');
+  ['cal','bro'].forEach(kind=>{
+    const on=document.getElementById('p-'+kind+'-on'), out=document.getElementById('p-'+kind+'-out');
+    if(!on || !out || !on.checked) return;
+    let s=null, z=null, what='', stock='';
+    if(kind==='cal'){
+      const sel=document.getElementById('p-cal-type'), v=(sel&&sel.value)||'', parts=v.split('|');
+      s=mkpSeller(parts[0]); z=s && s.sizes[parseInt(parts[1],10)||0];
+      what = (sel && sel.selectedIndex>=0) ? sel.options[sel.selectedIndex].textContent : '';
+    } else {
+      const fold=(document.getElementById('p-bro-fold')||{}).value||'tri', size=(document.getElementById('p-bro-size')||{}).value||'';
+      stock=(document.getElementById('p-bro-stock')||{}).value||'glossy';
+      s=mkpSeller('vp-bro-'+fold+'-'+stock); z=s && s.sizes.find(x=>x.label===size);
+      what = (fold==='z'?'Z':fold.charAt(0).toUpperCase()+fold.slice(1)) + '-fold ' + size.replace(' flat','') + ' ' + stock;
+    }
+    if(!s || !z){ out.innerHTML='No VistaPrint price for this choice.'; return; }
+    const noun = kind==='cal' ? 'calendars' : 'brochures';
+    if(!(fin>0)){ out.innerHTML='Enter <strong>Finished pieces</strong> (the number of ' + noun + ') to compare.'; return; }
+    const t=mkpTier(z.ladder, fin, 1), ts=(z.ladder[0].length>2) ? mkpTier(z.ladder, fin, 2) : null;
+    const vpEach=t.each, yourEach=quote/fin, floor=cost/fin, diff=vpEach>0 ? (yourEach/vpEach-1)*100 : 0;
+    let h='<strong>VistaPrint</strong> (' + jobsEsc(what) + '): ' + pfmt(vpEach) + ' each &middot; ' + pfmt(t.total) + ' for ' + fin +
+      (t.tier!==fin && !t.next ? ' <span style="color:#64748b">(their price break at ' + t.tier + ')</span>' : '') + (t.note ? ' <span style="color:#b45309">- ' + t.note + '</span>' : '');
+    if(ts && ts.each < vpEach-0.005) h+=' &middot; <span style="color:#b45309">on sale when captured: ' + pfmt(ts.each) + ' each</span>';
+    h+='<br><strong>You</strong>: ' + (quote>0 ? pfmt(yourEach) + ' each (' + (diff>=0?'+':'') + diff.toFixed(0) + '% vs VistaPrint) &middot; your cost ' + pfmt(floor) + ' each' : 'build the estimate above to compare');
+    if(fin<=1 && sets>1) h+=' <span style="color:#b45309">- set Finished pieces to the number of ' + noun + ' to compare per piece</span>';
+    const L=z.ladder, rungs=L.length>10 ? L.filter(r=>P_REF_RUNGS.indexOf(r[0])>=0 || r[0]===t.tier) : L;
+    h+='<div class="ref-ladder">VistaPrint price breaks: ' + rungs.map(r=>(r[0]===t.tier?'<b>':'') + r[0] + ': ' + pfmt(r[1]) + (r[0]===t.tier?'</b>':'')).join(' &middot; ') + '</div>';
+    if(kind==='bro'){
+      const fold=s.fold, size=z.label;
+      const others=['glossy','matte','uncoated','recycled'].filter(x=>x!==stock).map(x=>{ const s2=mkpSeller('vp-bro-'+fold+'-'+x), z2=s2 && s2.sizes.find(y=>y.label===size), t2=z2 && mkpTier(z2.ladder, fin, 1); return t2 ? x + ' ' + pfmt(t2.each) : null; }).filter(Boolean);
+      if(others.length) h+='<div class="ref-ladder">Other papers at this quantity: ' + others.join(' &middot; ') + ' each</div>';
+    } else if(s.paper){
+      h+='<div class="ref-ladder">' + jobsEsc(s.paper) + '</div>';
+    }
+    if(quote>0) h+=stratAdvice(stratResolve('p-'+kind+'-strategy', kind==='cal'?'defend':'compete'), yourEach, floor, (ts ? Math.min(ts.each, vpEach) : vpEach), vpEach);
+    h+='<div class="ref-ladder">VistaPrint prices captured ' + jobsEsc(MKP.captured||'') + ', before tax; shipping extra ($5.99 standard, free over $100).</div>';
+    out.innerHTML=h;
+  });
+}
 function resetPaper(){
   cobaConfirm('New paper estimate? Clears all paper fields.', ()=>{
     ['p-notes'].forEach(id=>{ const el=pel(id); if(el) el.value=''; });
@@ -4124,6 +4283,7 @@ function resetPaper(){
     lamRows.forEach(id=>{ const r=document.getElementById('lrow-'+id); if(r) r.remove(); });
     const jt=document.getElementById('p-job-type'); if(jt) jt.value='';
     lamRows=[]; lamId=0;
+    ['cal','bro'].forEach(k=>{ const c=document.getElementById('p-'+k+'-on'), b=document.getElementById('p-'+k+'-body'); if(c) c.checked=false; if(b) b.style.display='none'; });
     pCalc();
   });
 }
@@ -4698,19 +4858,19 @@ let ucRows = [], ucId = 0;   // v34: coaster rows ('uc' prefix)
 // written by tools/market-refresh/print/apply-print.js; never hand-edit). Rows are [qty, price] or [qty, list, sale].
 const MKP = (()=>{ try{ return JSON.parse(document.getElementById('market-print').textContent); }catch(e){ return { sellers: [] }; } })();
 function mkpSeller(id){ return (MKP.sellers||[]).find(x=>x.id===id) || null; }
-// Price each at a quantity: the tier at or below q (VistaPrint sells tier quantities, so between tiers the
-// unit price of the lower tier is the fair comparison). col 1 = list price, col 2 = sale price when present.
+// VistaPrint cost for q pieces = the cheapest way to get at least q: q at the unit price of the price break at or
+// below q, or simply buying the next break up (10 brochures: their 25 for $40.29 beats 10 x the single-copy price).
+// col 1 = list price, col 2 = sale price when present. Returns each (= total / q), total, the break used, a note.
 function mkpTier(ladder, q, col){
   if(!ladder || !ladder.length || !(q>0)) return null;
   col = col || 1;
-  let t = null;
-  ladder.forEach(r=>{ if(r[0] <= q) t = r; });
-  let note = '';
-  if(!t){ t = ladder[0]; note = 'their minimum is ' + t[0]; }
+  const pr = r=>(r[col] != null ? r[col] : r[1]);
+  let lo = null, hi = null;
+  ladder.forEach(r=>{ if(r[0] <= q) lo = r; else if(!hi) hi = r; });
   const last = ladder[ladder.length-1];
-  if(q > last[0]) note = 'over ' + last[0] + ' they quote larger runs';
-  const price = (t[col] != null ? t[col] : t[1]);
-  return { each: price / t[0], tier: t[0], tierTotal: price, note: note };
+  const a = lo ? q*pr(lo)/lo[0] : Infinity, b = hi ? pr(hi) : Infinity;
+  if(a <= b) return { each: a/q, total: a, tier: lo[0], tierTotal: pr(lo), next: false, note: q > last[0] ? 'over ' + last[0] + ' they quote larger runs' : '' };
+  return { each: b/q, total: b, tier: hi[0], tierTotal: b, next: true, note: (lo ? 'cheaper to buy their ' : 'their minimum is ') + hi[0] + ' for $' + b.toFixed(2) };
 }
 const uGet = id => { const e=document.getElementById(id); return e ? (parseFloat(e.value)||0) : 0; };
 const uSet = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
@@ -4984,6 +5144,7 @@ rebuildDropdowns();
 addGarmentRow(); addGarmentRow();
 addImprintRow(); addImprintRow();
 uAddRow();
+pRefInit();
 pCalc(); dCalc(); rCalc(); eCalc(); uCalc();
 cloudInit();
 </script>
