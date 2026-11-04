@@ -239,8 +239,40 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const hh = H.w.eval('inventory.papers').filter(isHusky);
   ok(hh.length === 1 && hh[0].cost === 0.06, 'an existing Husky 11x17 entry is not duplicated or changed');
 
+  // ---------- v38: Double A 20# 11x17 + Rolland Enviro 100# cover 26x40 added; 13x19 repriced (26x40 cut 4-up) ----------
+  const isDA = p => /double a/i.test(p.brand || '') && p.size === '11x17';
+  const isR26 = p => /rolland/i.test(p.brand || '') && p.size === '26x40';
+  const isR13 = p => +p.weight === 100 && /rolland|sustana/i.test(p.brand || '') && p.size === '13x19';
+  const fp = F.w.eval('inventory.papers');
+  ok(fp.filter(isDA).length === 1 && fp.filter(isDA)[0].cost === 0.02117 && fp.filter(isR26).length === 1 && fp.filter(isR26)[0].cost === 0.937, 'fresh inventory: Double A 11x17 and Rolland 26x40 at their invoice prices');
+  ok(fp.filter(isR13).length === 1 && fp.filter(isR13)[0].cost === 0.23425 && !fp.some(p => /Sustana Cover/.test(p.brand || '')), 'fresh inventory: Rolland Enviro 13x19 at 937 / 4 / 1000');
+  ok(papers.filter(isR13).length === 1 && papers.filter(isDA).length === 1 && papers.filter(isR26).length === 1, 'an inventory with no Rolland 100# gets all three once');
+  // an inventory saved by v37: no v38 papers, the Sustana 100# default still 12x18 with the size unconfirmed
+  const v37 = JSON.parse(F.w.eval('JSON.stringify(inventory)'));
+  v37.added = v37.added.filter(t => !/-v38$/.test(t));
+  v37.papers = v37.papers.filter(p => !isDA(p) && !isR26(p)).map(p => isR13(p) ? Object.assign({}, p, { brand: 'Sustana Cover (100% recycled)', size: '12x18', cost: 0.21, unsure: ['size'] }) : p);
+  const I = openWin({ inventory: JSON.stringify(v37) }); await sleep(40);
+  const ip = I.w.eval('inventory.papers'), r13 = ip.filter(isR13);
+  ok(ip.filter(isDA).length === 1 && ip.filter(isR26).length === 1, 'v37 inventory gets Double A 11x17 and Rolland 26x40 once');
+  ok(r13.length === 1 && r13[0].cost === 0.23425 && r13[0].brand === 'Rolland Enviro Cover' && (r13[0].unsure || []).length === 0 && !ip.some(p => /Sustana Cover/.test(p.brand || '')), 'its Sustana 100# 12x18? becomes Rolland Enviro Cover 13x19 at $0.23425');
+  const iopts = Array.from(I.$('pp-s0').options).map(o => o.textContent);
+  ok(['20# Double A Everyday 11x17', '100# Rolland Enviro Cover 13x19', '100# Rolland Enviro Cover 26x40'].every(t => iopts.indexOf(t) >= 0), 'all three in the Paper tab dropdowns');
+  I.$('pp-s0').value = '0.23425'; I.w.pSetPaper(0);
+  ok(I.$('pp-c0').value === '0.234', 'choosing the 13x19 fills in $0.234 a sheet: ' + I.$('pp-c0').value);
+  // Chris's own 100# Rolland 13x19 entry gets the price; the unconfirmed Sustana default is then left alone
+  const v37b = JSON.parse(JSON.stringify(v37));
+  v37b.papers.push({ brand: 'Rolland Cover', weight: 100, unit: '#', size: '13x19', cost: 0.28, supplier: 'Spicer', unsure: [] });
+  const J = openWin({ inventory: JSON.stringify(v37b) }); await sleep(40);
+  const jp = J.w.eval('inventory.papers');
+  ok(jp.filter(isR13).length === 1 && jp.filter(isR13)[0].brand === 'Rolland Cover' && jp.filter(isR13)[0].cost === 0.23425 && jp.some(p => p.brand === 'Sustana Cover (100% recycled)' && p.size === '12x18'), 'an existing 100# Rolland 13x19 gets the new price, nothing else changes');
+  // once only: a price edited afterwards is kept
+  const after = JSON.parse(I.w.localStorage.getItem('coba-inventory-v2'));
+  after.papers.forEach(p => { if (isR13(p)) p.cost = 0.25; });
+  const K = openWin({ inventory: JSON.stringify(after) }); await sleep(40);
+  ok(K.w.eval('inventory.papers').filter(isR13)[0].cost === 0.25, 'the price change runs once: a later edit is kept');
+
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGH'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJK'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);

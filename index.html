@@ -2748,6 +2748,7 @@ const PAPER_SEED = [
   P("Padding board 12x18",null,'',"Padding Board","12x18",0.25),
   P("Padding board 13x19",null,'',"Padding Board","13x19",0.53),
   P('8.5x11 12up 2.5" circles',null,'',"Circle Labels 2.5in 12-up","8.5x11",0.35),
+  P("Double A Everyday 20# 11x17",20,'#',"Double A Everyday","11x17",0.02117),   // v38: Spicer DOUAE001, premium hi-bright white FSC, $21.17 / 1000 (2,500 / case)
   P("Lynx 24# 12x18",24,'#',"Lynx","12x18",0.07),
   P("Sustana 24#",24,'#',"Sustana","12x18",0.05,['size']),
   P("Husky Digital Opaque 24# 11x17",24,'#',"Husky Digital Opaque Smooth","11x17",0.05409),   // v37: Spicer HUS2362, 60# text = 24# bond, $54.09 / 1000 sheets
@@ -2768,7 +2769,8 @@ const PAPER_SEED = [
   P("100# gloss text (Creator)",100,'#',"Creator Gloss Text","12x18",0.12,['size']),
   P("Hammermill 100# cover 13x19",100,'#',"Hammermill Cover","13x19",0.28),
   P("Mohawk 18x12 100# eggshell",100,'#',"Mohawk Eggshell","12x18",0.90),
-  P("Sustana 100# Cover 100% recycled",100,'#',"Sustana Cover (100% recycled)","12x18",0.21,['size']),
+  P("Sustana 100# Cover 100% recycled",100,'#',"Rolland Enviro Cover","13x19",0.23425),   // v38: the 26x40 sheet below cut 4-up: $937 / 4 / 1000
+  P("Rolland Enviro Cover 100# 26x40",100,'#',"Rolland Enviro Cover","26x40",0.937),   // v38: invoice Nov 2026, ROLE1C400FSC (Sustana Enviro 100# cover, 400M, FSC recycled), $937.00 / 1000
   P("Supreme 100# gloss text 13x19",100,'#',"Supreme Gloss Text","13x19",0.16),
   P("Mohawk Felt 110# 18x12",110,'#',"Mohawk Felt","12x18",0.74),
   P("13x19 11pt Gloss Cover Invercote",11,'pt',"Invercote Gloss Cover","13x19",0.45),
@@ -2874,6 +2876,19 @@ function invLoad(){
       if(paperMigrate()) invSave();
       { const zod = inventory.papers.find(p=>(p.brand||'').toLowerCase().includes('zodia')); if(!zod){ const z=PAPER_SEED.find(x=>x.brand.indexOf('Zodia')===0); inventory.papers.push({brand:z.brand,weight:z.weight,unit:z.unit,size:z.size,cost:z.cost,supplier:z.supplier,unsure:[]}); paperSortApply(); invSave(); } else if(zod.cost===2.00){ zod.cost=0.50; invSave(); } }
       invAddPaperOnce('husky-11x17-v37', p=>/husky/i.test(p.brand||p.name||'') && /11\s*x\s*17/i.test(p.size||p.name||''));
+      invAddPaperOnce('doublea-11x17-v38', p=>/double\s*a\b/i.test(p.brand||'') && /^11\s*x\s*17$/i.test(p.size||''));
+      invAddPaperOnce('rolland-26x40-v38', p=>/rolland|sustana|enviro/i.test(p.brand||'') && /^26\s*x\s*40$/i.test(p.size||''));
+      // v38: 100# Rolland Enviro (Sustana) cover 13x19 = the 26x40 sheet ($937 / 1000) cut 4-up: $0.23425 a sheet.
+      // A saved 100# Rolland / Sustana 13x19 gets the price; otherwise the old default (12x18 with the size unconfirmed) becomes it.
+      invUpdatePaperOnce('rolland-13x19-v38', ps=>{
+        const r = ps.filter(p=>+p.weight===100 && p.unit==='#' && /rolland|sustana/i.test(p.brand||''));
+        const exact = r.filter(p=>/^13\s*x\s*19$/i.test(p.size||''));
+        return exact.length ? exact : r.filter(p=>/^12\s*x\s*18$/i.test(p.size||'') && (p.unsure||[]).indexOf('size')>=0);
+      }, p=>{
+        p.cost = 0.23425;
+        if(!/^13\s*x\s*19$/i.test(p.size||'')){ p.size = '13x19'; p.unsure = (p.unsure||[]).filter(u=>u!=='size'); }
+        if(p.brand === 'Sustana Cover (100% recycled)') p.brand = 'Rolland Enviro Cover';
+      }, p=>p.brand==='Rolland Enviro Cover' && p.size==='13x19');
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
@@ -2907,9 +2922,23 @@ function invAddPaperOnce(tag, match){
   inventory.added.push(tag);
   invSave();
 }
+// v38: a one-time change to papers already in saved inventories (new invoice prices). pick(papers) returns the papers
+// to change and apply(p) changes each one; if pick finds none, the default matching match() is added instead.
+// Once per device (tag in inventory.added), so a price Chris edits afterwards is never overwritten.
+function invUpdatePaperOnce(tag, pick, apply, match){
+  if(!Array.isArray(inventory.added)) inventory.added = [];
+  if(inventory.added.indexOf(tag)>=0) return;
+  if(!Array.isArray(inventory.papers)) inventory.papers = [];
+  const hits = pick(inventory.papers);
+  if(hits.length) hits.forEach(apply);
+  else { const def = DEFAULT_PAPERS.find(match); if(def) inventory.papers.push(JSON.parse(JSON.stringify(def))); }
+  paperSortApply();
+  inventory.added.push(tag);
+  invSave();
+}
 function invSetDefaults(){
   inventory = {
-    added:        ['nekoosa-v32', 'husky-11x17-v37'],
+    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38'],
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),
