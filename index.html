@@ -2766,6 +2766,7 @@ const PAPER_SEED = [
   P("23x35 Lynx Sheets",28,'#',"Lynx","23x35",0.16,['weight']),
   P("Cougar 100# text 12x18",100,'#',"Cougar Text","12x18",0.16),
   P("100# gloss text (Creator)",100,'#',"Creator Gloss Text","12x18",0.12,['size']),
+  P("Finesse Gloss Text 100# 12x18",100,'#',"Finesse Gloss Text","12x18",0.08342),   // v40: Spicer FING111, UPM Finesse Gloss NA Digital 100# text, 45M, white FSC, $83.42 / 1000 sheets
   P("Hammermill 100# cover 13x19",100,'#',"Hammermill Cover","13x19",0.28),
   P("Mohawk 18x12 100# eggshell",100,'#',"Mohawk Eggshell","12x18",0.90),
   P("Sustana 100# Cover 100% recycled",100,'#',"Rolland Enviro Cover","13x19",0.23425),   // v38: the 26x40 sheet below cut 4-up: $937 / 4 / 1000
@@ -2888,6 +2889,7 @@ function invLoad(){
         if(!/^13\s*x\s*19$/i.test(p.size||'')){ p.size = '13x19'; p.unsure = (p.unsure||[]).filter(u=>u!=='size'); }
         if(p.brand === 'Sustana Cover (100% recycled)') p.brand = 'Rolland Enviro Cover';
       }, p=>p.brand==='Rolland Enviro Cover' && p.size==='13x19');
+      invAddPaperOnce('finesse-12x18-v40', p=>/finesse/i.test(p.brand||'') && /^12\s*x\s*18$/i.test(p.size||''));
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
@@ -2937,7 +2939,7 @@ function invUpdatePaperOnce(tag, pick, apply, match){
 }
 function invSetDefaults(){
   inventory = {
-    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38'],
+    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40'],
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),

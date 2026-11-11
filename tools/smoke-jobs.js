@@ -271,8 +271,35 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const K = openWin({ inventory: JSON.stringify(after) }); await sleep(40);
   ok(K.w.eval('inventory.papers').filter(isR13)[0].cost === 0.25, 'the price change runs once: a later edit is kept');
 
+  // ---------- v40: Finesse Gloss Text 100# 12x18 (Spicer FING111, $83.42 / 1000) reaches every inventory once ----------
+  const isFin = p => /finesse/i.test(p.brand || '') && p.size === '12x18';
+  const ff = F.w.eval('inventory.papers').filter(isFin);
+  ok(ff.length === 1 && ff[0].weight === 100 && ff[0].unit === '#' && ff[0].cost === 0.08342 && F.w.eval('inventory.added').indexOf('finesse-12x18-v40') >= 0, 'fresh inventory: Finesse 100# 12x18 once at $83.42 / 1000');
+  ok(papers.filter(isFin).length === 1 && saved.added.indexOf('finesse-12x18-v40') >= 0, 'an older saved inventory gets it once, and tagged');
+  const v39 = JSON.parse(F.w.eval('JSON.stringify(inventory)'));   // an inventory saved by v39: no Finesse, no tag
+  v39.added = v39.added.filter(t => t !== 'finesse-12x18-v40');
+  v39.papers = v39.papers.filter(p => !isFin(p));
+  const L = openWin({ inventory: JSON.stringify(v39) }); await sleep(40);
+  const lf = L.w.eval('inventory.papers').filter(isFin);
+  ok(lf.length === 1 && lf[0].cost === 0.08342 && L.w.eval('inventory.added').indexOf('finesse-12x18-v40') >= 0, 'v39 inventory gets Finesse 100# 12x18 once, tagged');
+  const finOpt = Array.from(L.$('pp-s0').options).find(o => o.textContent === '100# Finesse Gloss Text 12x18');
+  ok(!!finOpt, 'Finesse in the Paper tab dropdowns as "100# Finesse Gloss Text 12x18"');
+  L.$('pp-s0').value = finOpt.value; L.w.pSetPaper(0);
+  ok(L.$('pp-c0').value === '0.083', 'choosing it fills in $0.083 a sheet: ' + L.$('pp-c0').value);
+  L.$('pp-n0').value = '1000'; L.w.pCalc();
+  ok(/83\.00/.test(L.$('pp-rc0').textContent) && /249\.00/.test(L.$('pp-rr0').textContent), '1000 sheets: cost ' + L.$('pp-rc0').textContent + ', retail ' + L.$('pp-rr0').textContent + ' (x3)');
+  const inv3 = JSON.parse(L.w.localStorage.getItem('coba-inventory-v2'));
+  inv3.papers = inv3.papers.filter(p => !isFin(p));   // Chris removes it
+  const M = openWin({ inventory: JSON.stringify(inv3) }); await sleep(40);
+  ok(M.w.eval('inventory.papers').filter(isFin).length === 0, 'a removed Finesse paper stays removed');
+  const v39b = JSON.parse(JSON.stringify(v39));   // a v39 inventory where Chris already typed in his own Finesse 12x18
+  v39b.papers.push({ brand: 'UPM Finesse Gloss', weight: 100, unit: '#', size: '12x18', cost: 0.09, supplier: 'Spicers', unsure: [] });
+  const N = openWin({ inventory: JSON.stringify(v39b) }); await sleep(40);
+  const nf = N.w.eval('inventory.papers').filter(isFin);
+  ok(nf.length === 1 && nf[0].brand === 'UPM Finesse Gloss' && nf[0].cost === 0.09, 'an existing Finesse 12x18 entry is not duplicated or changed');
+
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJK'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJKLMN'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
