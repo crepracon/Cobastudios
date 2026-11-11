@@ -272,18 +272,18 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(K.w.eval('inventory.papers').filter(isR13)[0].cost === 0.25, 'the price change runs once: a later edit is kept');
 
   // ---------- v40: Finesse Gloss Text 100# 12x18 (Spicer FING111, $83.42 / 1000) reaches every inventory once ----------
-  const isFin = p => /finesse/i.test(p.brand || '') && p.size === '12x18';
+  const isFin = p => /finesse/i.test(p.brand || '') && +p.weight === 100 && p.size === '12x18';   // v41: the 80# is 12x18 too
   const ff = F.w.eval('inventory.papers').filter(isFin);
   ok(ff.length === 1 && ff[0].weight === 100 && ff[0].unit === '#' && ff[0].cost === 0.08342 && F.w.eval('inventory.added').indexOf('finesse-12x18-v40') >= 0, 'fresh inventory: Finesse 100# 12x18 once at $83.42 / 1000');
   ok(papers.filter(isFin).length === 1 && saved.added.indexOf('finesse-12x18-v40') >= 0, 'an older saved inventory gets it once, and tagged');
-  const v39 = JSON.parse(F.w.eval('JSON.stringify(inventory)'));   // an inventory saved by v39: no Finesse, no tag
-  v39.added = v39.added.filter(t => t !== 'finesse-12x18-v40');
-  v39.papers = v39.papers.filter(p => !isFin(p));
+  const v39 = JSON.parse(F.w.eval('JSON.stringify(inventory)'));   // an inventory saved by v39: no Finesse, no Finesse tags
+  v39.added = v39.added.filter(t => !/^finesse-/.test(t));
+  v39.papers = v39.papers.filter(p => !/finesse/i.test(p.brand || ''));
   const L = openWin({ inventory: JSON.stringify(v39) }); await sleep(40);
   const lf = L.w.eval('inventory.papers').filter(isFin);
   ok(lf.length === 1 && lf[0].cost === 0.08342 && L.w.eval('inventory.added').indexOf('finesse-12x18-v40') >= 0, 'v39 inventory gets Finesse 100# 12x18 once, tagged');
-  const finOpt = Array.from(L.$('pp-s0').options).find(o => o.textContent === '100# Finesse Gloss Text 12x18');
-  ok(!!finOpt, 'Finesse in the Paper tab dropdowns as "100# Finesse Gloss Text 12x18"');
+  const finOpt = Array.from(L.$('pp-s0').options).find(o => o.textContent === '100# UPM Finesse Gloss Text 12x18');
+  ok(!!finOpt, 'Finesse in the Paper tab dropdowns as "100# UPM Finesse Gloss Text 12x18"');
   L.$('pp-s0').value = finOpt.value; L.w.pSetPaper(0);
   ok(L.$('pp-c0').value === '0.083', 'choosing it fills in $0.083 a sheet: ' + L.$('pp-c0').value);
   L.$('pp-n0').value = '1000'; L.w.pCalc();
@@ -298,8 +298,39 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const nf = N.w.eval('inventory.papers').filter(isFin);
   ok(nf.length === 1 && nf[0].brand === 'UPM Finesse Gloss' && nf[0].cost === 0.09, 'an existing Finesse 12x18 entry is not duplicated or changed');
 
+  // ---------- v41: UPM in both Finesse names; Finesse 80# 12x18 (Spicer FING108, $66.74 / 1000) added ----------
+  const isFin80 = p => /finesse/i.test(p.brand || '') && +p.weight === 80 && p.size === '12x18';
+  const fp41 = F.w.eval('inventory.papers'), fa41 = F.w.eval('inventory.added');
+  ok(fp41.filter(isFin80).length === 1 && fp41.filter(isFin80)[0].cost === 0.06674 && fp41.filter(isFin80)[0].unit === '#' && fa41.indexOf('finesse-80-12x18-v41') >= 0 && fa41.indexOf('finesse-upm-v41') >= 0, 'fresh inventory: Finesse 80# 12x18 once at $66.74 / 1000, tagged');
+  ok(fp41.filter(p => /finesse/i.test(p.brand || '')).every(p => p.brand === 'UPM Finesse Gloss Text'), 'fresh inventory: both Finesse papers named UPM Finesse Gloss Text');
+  const lp = L.w.eval('inventory.papers');
+  ok(lp.filter(isFin).length === 1 && lp.filter(isFin80).length === 1, 'v39 inventory gets the 100# and the 80# once each (matched by weight, neither blocks the other)');
+  const lopts = Array.from(L.$('pp-s1').options).map(o => o.textContent);
+  ok(['80# UPM Finesse Gloss Text 12x18', '100# UPM Finesse Gloss Text 12x18'].every(t => lopts.indexOf(t) >= 0) && !lopts.some(t => /\d# Finesse/.test(t)), 'Paper tab dropdowns: 80# and 100# UPM Finesse Gloss Text 12x18');
+  const fin80Opt = Array.from(L.$('pp-s1').options).find(o => o.textContent === '80# UPM Finesse Gloss Text 12x18');
+  L.$('pp-s1').value = fin80Opt.value; L.w.pSetPaper(1); L.$('pp-n1').value = '1000'; L.w.pCalc();
+  ok(L.$('pp-c1').value === '0.067' && /67\.00/.test(L.$('pp-rc1').textContent) && /201\.00/.test(L.$('pp-rr1').textContent), '80#, 1000 sheets: $' + L.$('pp-c1').value + ' a sheet, cost ' + L.$('pp-rc1').textContent + ', retail ' + L.$('pp-rr1').textContent + ' (x3)');
+  // an inventory saved by v40: its 100# is still "Finesse Gloss Text" (here at a price Chris edited), no 80# yet
+  const v40 = JSON.parse(F.w.eval('JSON.stringify(inventory)'));
+  v40.added = v40.added.filter(t => !/-v41$/.test(t));
+  v40.papers = v40.papers.filter(p => !isFin80(p)).map(p => isFin(p) ? Object.assign({}, p, { brand: 'Finesse Gloss Text', cost: 0.085 }) : p);
+  const O = openWin({ inventory: JSON.stringify(v40) }); await sleep(40);
+  const op = O.w.eval('inventory.papers');
+  ok(op.filter(isFin).length === 1 && op.filter(isFin)[0].brand === 'UPM Finesse Gloss Text' && op.filter(isFin)[0].cost === 0.085, 'v40 inventory: the 100# is renamed UPM Finesse Gloss Text, its price left alone');
+  ok(op.filter(isFin80).length === 1 && !op.some(p => p.brand === 'Finesse Gloss Text'), 'v40 inventory: the 80# added once, no old name left');
+  // a v40 inventory where Chris deleted the 100#: the rename does not bring it back
+  const v40b = JSON.parse(JSON.stringify(v40));
+  v40b.papers = v40b.papers.filter(p => !isFin(p));
+  const Q = openWin({ inventory: JSON.stringify(v40b) }); await sleep(40);
+  ok(Q.w.eval('inventory.papers').filter(isFin).length === 0 && Q.w.eval('inventory.papers').filter(isFin80).length === 1, 'a deleted 100# stays deleted; the 80# still arrives');
+  // a removed 80# stays removed
+  const inv4 = JSON.parse(O.w.localStorage.getItem('coba-inventory-v2'));
+  inv4.papers = inv4.papers.filter(p => !isFin80(p));
+  const R = openWin({ inventory: JSON.stringify(inv4) }); await sleep(40);
+  ok(R.w.eval('inventory.papers').filter(isFin80).length === 0, 'a removed 80# Finesse stays removed');
+
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K, L, M, N].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJKLMN'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJKLMNOQR'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);

@@ -2760,18 +2760,19 @@ const PAPER_SEED = [
   P("80# Hammermill Cover",80,'#',"Hammermill Cover","12x18",0.19,['size']),
   P("80# Rolland Cover",80,'#',"Rolland Cover","12x18",0.19,['size']),
   P('Sundance Fiber 80# cover 8.5x11"',80,'#',"Sundance Fiber Cover","8.5x11",0.17),
+  P("UPM Finesse Gloss Text 80# 12x18",80,'#',"UPM Finesse Gloss Text","12x18",0.06674),   // v41: Spicer FING108, UPM Finesse Gloss NA Digital 80# text, 36M, white FSC, $66.74 / 1000 sheets
   P("Astro Bright 11x17",80,'#',"Astro Bright Cover","11x17",0.15,['weight']),
   P("Astro Bright 11x17",24,'#',"Astro Bright Text","11x17",0.15,['weight']),
   P("23x35 Lynx Sheets",24,'#',"Lynx","23x35",0.16,['weight']),
   P("23x35 Lynx Sheets",28,'#',"Lynx","23x35",0.16,['weight']),
   P("Cougar 100# text 12x18",100,'#',"Cougar Text","12x18",0.16),
   P("100# gloss text (Creator)",100,'#',"Creator Gloss Text","12x18",0.12,['size']),
-  P("Finesse Gloss Text 100# 12x18",100,'#',"Finesse Gloss Text","12x18",0.08342),   // v40: Spicer FING111, UPM Finesse Gloss NA Digital 100# text, 45M, white FSC, $83.42 / 1000 sheets
   P("Hammermill 100# cover 13x19",100,'#',"Hammermill Cover","13x19",0.28),
   P("Mohawk 18x12 100# eggshell",100,'#',"Mohawk Eggshell","12x18",0.90),
   P("Sustana 100# Cover 100% recycled",100,'#',"Rolland Enviro Cover","13x19",0.23425),   // v38: the 26x40 sheet below cut 4-up: $937 / 4 / 1000
   P("Rolland Enviro Cover 100# 26x40",100,'#',"Rolland Enviro Cover","26x40",0.937),   // v38: invoice Nov 2026, ROLE1C400FSC (Sustana Enviro 100# cover, 400M, FSC recycled), $937.00 / 1000
   P("Supreme 100# gloss text 13x19",100,'#',"Supreme Gloss Text","13x19",0.16),
+  P("UPM Finesse Gloss Text 100# 12x18",100,'#',"UPM Finesse Gloss Text","12x18",0.08342),   // v40: Spicer FING111, UPM Finesse Gloss NA Digital 100# text, 45M, white FSC, $83.42 / 1000 sheets (v41: UPM in the name)
   P("Mohawk Felt 110# 18x12",110,'#',"Mohawk Felt","12x18",0.74),
   P("13x19 11pt Gloss Cover Invercote",11,'pt',"Invercote Gloss Cover","13x19",0.45),
   P("12pt CS1 12x18",12,'pt',"CS1","12x18",0.15),
@@ -2889,7 +2890,10 @@ function invLoad(){
         if(!/^13\s*x\s*19$/i.test(p.size||'')){ p.size = '13x19'; p.unsure = (p.unsure||[]).filter(u=>u!=='size'); }
         if(p.brand === 'Sustana Cover (100% recycled)') p.brand = 'Rolland Enviro Cover';
       }, p=>p.brand==='Rolland Enviro Cover' && p.size==='13x19');
-      invAddPaperOnce('finesse-12x18-v40', p=>/finesse/i.test(p.brand||'') && /^12\s*x\s*18$/i.test(p.size||''));
+      // v41: Finesse comes in 80# and 100# at 12x18, so its matches include the weight (brand + size alone would let one block the other)
+      invAddPaperOnce('finesse-12x18-v40', p=>/finesse/i.test(p.brand||'') && +p.weight===100 && /^12\s*x\s*18$/i.test(p.size||''));
+      invUpdatePaperOnce('finesse-upm-v41', ps=>ps.filter(p=>p.brand==='Finesse Gloss Text'), p=>{ p.brand='UPM Finesse Gloss Text'; }, null);   // v40's name gets UPM; price untouched, a deleted one stays deleted
+      invAddPaperOnce('finesse-80-12x18-v41', p=>/finesse/i.test(p.brand||'') && +p.weight===80 && /^12\s*x\s*18$/i.test(p.size||''));
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
@@ -2924,7 +2928,8 @@ function invAddPaperOnce(tag, match){
   invSave();
 }
 // v38: a one-time change to papers already in saved inventories (new invoice prices). pick(papers) returns the papers
-// to change and apply(p) changes each one; if pick finds none, the default matching match() is added instead.
+// to change and apply(p) changes each one; if pick finds none, the default matching match() is added instead
+// (v41: match null = add nothing, so a rename never brings back a paper Chris deleted).
 // Once per device (tag in inventory.added), so a price Chris edits afterwards is never overwritten.
 function invUpdatePaperOnce(tag, pick, apply, match){
   if(!Array.isArray(inventory.added)) inventory.added = [];
@@ -2932,14 +2937,14 @@ function invUpdatePaperOnce(tag, pick, apply, match){
   if(!Array.isArray(inventory.papers)) inventory.papers = [];
   const hits = pick(inventory.papers);
   if(hits.length) hits.forEach(apply);
-  else { const def = DEFAULT_PAPERS.find(match); if(def) inventory.papers.push(JSON.parse(JSON.stringify(def))); }
+  else if(match){ const def = DEFAULT_PAPERS.find(match); if(def) inventory.papers.push(JSON.parse(JSON.stringify(def))); }
   paperSortApply();
   inventory.added.push(tag);
   invSave();
 }
 function invSetDefaults(){
   inventory = {
-    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40'],
+    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40', 'finesse-upm-v41', 'finesse-80-12x18-v41'],
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),
