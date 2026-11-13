@@ -5,7 +5,7 @@ Self-contained offline pricing calculator for Coba Studios (Brockville, ON). Sin
 **Live app:** https://crepracon.github.io/Cobastudios/ (once Pages is enabled)
 
 ## Tabs
-Paper Estimator · DTF Heat Transfer · Vinyl/Roland · Epson · Inventory
+Paper Estimator · Walk-ins · DTF Heat Transfer · Vinyl/Roland · UV Printing · Epson · Jobs · Inventory
 
 ## How updates work
 1. Changes are made to `index.html` (with Claude, via targeted edits + Node syntax validation)
@@ -18,4 +18,4 @@ Paper Estimator · DTF Heat Transfer · Vinyl/Roland · Epson · Inventory
 - To use offline: save the page from the browser, or download `index.html` from this repo
 - Version history lives in Git — old versions recoverable via tags/commits
 
-Currently at: **v43** (version history: see CLAUDE.md)
+Currently at: **v44** (version history: see CLAUDE.md)

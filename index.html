@@ -258,6 +258,77 @@
       .rem-box { position:static; flex:none; width:100%; order:-1; }
       .rem-list { max-height:50vh; }
     }
+    /* ===== WALK-INS TAB (v44) ===== */
+    .w-layout { display:flex; gap:1.25rem; align-items:flex-start; }
+    .w-menu { flex:1; min-width:0; }
+    .w-intro { font-size:12px; color:#888; margin:-2px 0 14px; line-height:1.5; }
+    .w-copy { margin-bottom:.35rem; }
+    .w-copy th { background:#f5f5f2; font-size:12px; font-weight:600; color:#555; text-align:center; white-space:nowrap; }
+    .w-copy th.w-row { text-align:left; }
+    .w-copy th.w-row span { font-weight:400; color:#999; }
+    .w-copy td { padding:4px; }
+    .w-pbtn { width:100%; min-width:62px; padding:9px 4px; font-size:14px; font-weight:600; font-family:inherit; border:1px solid #d9d9d4; border-radius:6px; background:#fff; color:#1a1a1a; cursor:pointer; }
+    .w-pbtn.col { color:#1e40af; }
+    .w-pbtn:hover, .w-ibtn:hover { background:#eff6ff; border-color:#93c5fd; }
+    .w-breaks { font-size:11px; color:#888; margin:0 0 1.1rem; line-height:1.6; }
+    .w-btns { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin-bottom:1.1rem; }
+    .w-ibtn { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:9px 11px; text-align:left; font-size:13px; font-family:inherit; color:#1a1a1a; border:1px solid #d9d9d4; border-radius:6px; background:#fff; cursor:pointer; }
+    .w-ibtn span { font-size:12px; color:#666; }
+    .w-src { border:1px solid #e5e5e5; border-radius:8px; padding:10px 12px; background:#fafaf8; }
+    .w-src summary { cursor:pointer; font-size:12px; font-weight:600; color:#555; }
+    .w-src table { margin:10px 0 0; background:#fff; }
+    .w-src th { background:#f5f5f2; font-size:11px; text-align:left; }
+    .w-src td { font-size:11.5px; vertical-align:top; line-height:1.45; }
+    .w-src .w-note { font-size:11px; color:#888; line-height:1.55; margin-top:8px; }
+    .w-sale { flex:0 0 410px; width:410px; position:sticky; top:12px; border:1px solid #e5e5e5; border-top:3px solid #2f6f4f; border-radius:8px; background:#fafaf8; padding:12px 14px 14px; }
+    .w-sale-head { display:flex; justify-content:space-between; align-items:baseline; font-size:14px; font-weight:700; margin-bottom:6px; }
+    .w-sale-head span { font-size:12px; font-weight:400; color:#888; }
+    .w-lines { margin-bottom:6px; }
+    .w-lhead, .w-line { display:grid; grid-template-columns:minmax(0,1fr) 54px 66px 64px 22px; gap:6px; align-items:center; }
+    .w-lhead { font-size:11px; font-weight:600; color:#888; border-bottom:1px solid #e5e5e5; padding:0 0 4px; }
+    .w-lhead span:nth-child(4) { text-align:right; }
+    .w-line { padding:6px 0; border-bottom:1px solid #eee; }
+    .w-line input[type=text], .w-line input[type=number] { min-width:0; padding:5px 6px; font-size:13px; }
+    .w-line .w-amt { text-align:right; font-family:monospace; font-size:13px; white-space:nowrap; }
+    .w-empty { font-size:12px; color:#999; text-align:center; padding:16px 0 12px; }
+    .w-tot { display:flex; justify-content:space-between; font-size:13px; padding:3px 2px; }
+    .w-tot.grand { font-size:18px; font-weight:700; border-top:1px solid #ddd; margin-top:4px; padding-top:8px; }
+    .w-tot span:last-child { font-family:monospace; }
+    .w-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    .w-link { background:none; border:none; padding:4px 0; margin-left:auto; color:#2563eb; font-size:12px; font-family:inherit; text-decoration:underline; cursor:pointer; }
+    #w-receipt { display:none; width:3.3in; margin:0 auto; padding:.15in 0; font-size:12px; line-height:1.4; color:#000; }
+    #w-receipt .r-biz { text-align:center; margin-bottom:8px; }
+    #w-receipt .r-biz b { font-size:15px; }
+    #w-receipt .r-meta { text-align:center; font-size:11px; margin-bottom:8px; }
+    #w-receipt table { margin:0; border-top:1px dashed #000; border-bottom:1px dashed #000; }
+    #w-receipt td { border:none; padding:4px 0; font-size:12px; vertical-align:top; }
+    #w-receipt td.r-amt { text-align:right; white-space:nowrap; padding-left:8px; }
+    #w-receipt .r-sub { display:block; font-size:11px; color:#333; }
+    #w-receipt .r-tot { display:flex; justify-content:space-between; padding:2px 0; }
+    #w-receipt .r-grand { font-size:14px; font-weight:700; border-top:1px solid #000; margin-top:3px; padding-top:4px; }
+    #w-receipt .r-thanks { text-align:center; margin-top:10px; }
+    @media print {
+      body.w-printing { padding:0; background:#fff; }
+      body.w-printing .wrapper { display:none !important; }
+      body.w-printing #w-receipt { display:block !important; }
+    }
+    @media (max-width:900px){
+      .w-layout { flex-direction:column; align-items:stretch; }
+      .w-sale { position:static; flex:none; width:100%; }
+    }
+    @media (max-width:480px){
+      .w-copy th { white-space:normal; }
+      .w-copy th.w-row span { display:block; }
+      .w-pbtn { min-width:0; padding:9px 2px; font-size:13px; }
+      .w-lhead, .w-line { grid-template-columns:repeat(3,minmax(0,1fr)) 24px; }
+      .w-lhead span:first-child { display:none; }
+      .w-line .w-d { grid-column:1 / -1; }
+    }
+    /* phones: one row of tabs that scrolls sideways instead of squeezing every label (v44, 8 tabs) */
+    @media (max-width:680px){
+      .tab-bar { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      .tab-bar .tab-btn { flex:none; white-space:nowrap; }
+    }
   </style>
 </head>
 <body>
@@ -286,6 +357,7 @@
   <!-- TABS -->
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('paper',this)">📄 Paper Estimator</button>
+    <button class="tab-btn" onclick="switchTab('walkin',this)">🧾 Walk-ins</button>
     <button class="tab-btn" onclick="switchTab('dtf',this)">🔥 DTF Heat Transfer</button>
     <button class="tab-btn" onclick="switchTab('vinyl',this)">🎨 Vinyl / Roland</button>
     <button class="tab-btn" onclick="switchTab('uv',this)">🖨 UV Printing</button>
@@ -658,6 +730,51 @@
     <div class="action-bar no-print">
       <button class="btn-light" onclick="resetPaper()">↺ New estimate</button>
       <button class="btn-dark" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ WALK-INS (v44) ═══════════════ -->
+  <div class="tab-panel" id="panel-walkin">
+    <div class="panel-body">
+      <div class="w-layout">
+        <div class="w-menu">
+          <h2 style="margin:0 0 8px">Walk-ins</h2>
+          <div class="w-intro">Quick counter jobs: copies, scans and one-off prints. Tap an item to add it to the sale; tap again for one more, or type the quantity. Every price can be changed on the sale. Prices are what Staples and others charge (Nov 2026) &mdash; see <b>Prices &amp; where they come from</b> below.</div>
+          <div class="sec-title">Copies &amp; prints <span style="font-weight:400;color:#888;font-size:12px">price per sheet, on plain paper</span></div>
+          <div class="scroll-x">
+            <table class="w-copy">
+              <thead><tr><th class="w-row">Size</th><th>B&amp;W 1-sided</th><th>B&amp;W 2-sided</th><th>Colour 1-sided</th><th>Colour 2-sided</th></tr></thead>
+              <tbody id="w-copy-body"></tbody>
+            </table>
+          </div>
+          <div class="w-breaks" id="w-breaks"></div>
+          <div class="sec-title">Photo prints &amp; posters</div>
+          <div class="w-btns" id="w-btns-photo"></div>
+          <div class="sec-title">Scanning &amp; other</div>
+          <div class="w-btns" id="w-btns-other"></div>
+          <details class="w-src no-print">
+            <summary>Prices &amp; where they come from</summary>
+            <div id="w-src-body"></div>
+          </details>
+        </div>
+        <div class="w-sale">
+          <div class="w-sale-head">Sale <span id="w-count">no items yet</span></div>
+          <div class="w-lines" id="w-lines-table" style="display:none">
+            <div class="w-lhead"><span>Item</span><span>Qty</span><span>Each $</span><span>Total</span><span></span></div>
+            <div id="w-lines"></div>
+          </div>
+          <div class="w-empty" id="w-empty">Tap an item to start a sale.</div>
+          <div class="w-tot"><span>Subtotal</span><span id="w-sub">$0.00</span></div>
+          <div class="w-tot"><span>HST (13%)</span><span id="w-hst">$0.00</span></div>
+          <div class="w-tot grand"><span>Total</span><span id="w-grand">$0.00</span></div>
+          <div class="w-actions no-print">
+            <button class="cb-save-btn" onclick="wPrint()">&#129534; Print receipt</button>
+            <button class="jobs-btn" onclick="wCopy()">Copy receipt</button>
+            <button class="jobs-btn" onclick="resetWalkin()">&#8634; New sale</button>
+            <button class="w-link" onclick="wDetailsOpen()">Receipt details</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1690,6 +1807,21 @@
       </div>
     </div>
   </div>
+  <!-- Walk-ins receipt details (v44): kept on this device, never in a saved job -->
+  <div id="w-details-wrap" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:10px;padding:20px 22px;max-width:400px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.25)">
+      <div style="font-weight:700;margin-bottom:10px">Receipt details</div>
+      <label class="field-label" for="w-det-biz">Top of the receipt (first line in bold)</label>
+      <textarea id="w-det-biz" rows="4" style="margin-bottom:10px"></textarea>
+      <label class="field-label" for="w-det-hst">HST registration number</label>
+      <input type="text" id="w-det-hst" placeholder="e.g. 123456789 RT0001" style="margin-bottom:6px">
+      <div style="font-size:11px;color:#888;line-height:1.5;margin-bottom:14px">Business customers need it on receipts of $30 and up to claim the HST back. Saved on this device.</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="jobs-btn" onclick="wDetailsClose(false)">Cancel</button>
+        <button class="cb-save-btn" onclick="wDetailsClose(true)">Save</button>
+      </div>
+    </div>
+  </div>
 
   <div class="tab-panel" id="panel-inventory">
     <div class="panel-body">
@@ -1871,6 +2003,8 @@
   </div>
 
 </div><!-- /wrapper -->
+<!-- Walk-ins receipt (v44): filled by wPrint(), printed on its own (body.w-printing) -->
+<div id="w-receipt"></div>
 
 <!-- Sticker market prices (v28). Refreshed by tools/market-refresh; only the JSON inside changes. -->
 <script type="application/json" id="market-data">
@@ -2016,7 +2150,7 @@ function cobaConfirmAnswer(yes){
 }
 function notify(msg){ jobsToast(msg); }
 const JOBS_KEY = 'coba-jobs-v1';
-const JOBS_TABS = { paper:'Paper', dtf:'DTF', vinyl:'Vinyl/Roland', uv:'UV Print', epson:'Epson' };
+const JOBS_TABS = { paper:'Paper', walkin:'Walk-in', dtf:'DTF', vinyl:'Vinyl/Roland', uv:'UV Print', epson:'Epson' };
 const JOBS_STATUSES = [
   { v:'Waiting',       label:'Waiting (approval / details)', cls:'st-wait', dot:'dot-wait' },
   { v:'In Production', label:'Accepted - in production',     cls:'st-go',   dot:'dot-go' },
@@ -2067,6 +2201,8 @@ function jobsToast(msg){
 const SNAP_STATE = {
   paper:  { get: ()=>({ lamRows:[...lamRows], lamId }),
             set: s=>{ lamRows=[...(s.lamRows||[])]; lamId=s.lamId||0; } },
+  walkin: { get: ()=>({ wLines:[...wLines], wId }),
+            set: s=>{ wLines=[...(s.wLines||[])]; wId=s.wId||0; } },
   dtf:    { get: ()=>({ dGarmentRows:[...dGarmentRows], dImprintRows:[...dImprintRows], gId, iId }),
             set: s=>{ dGarmentRows=[...(s.dGarmentRows||[])]; dImprintRows=[...(s.dImprintRows||[])]; gId=s.gId||0; iId=s.iId||0; } },
   vinyl:  { get: ()=>({ rStkRows:[...rStkRows], rBanRows:[...rBanRows], rSgnRows:[...rSgnRows], rCanRows:[...rCanRows], rSId, rBId, rGId, rCId }),
@@ -2078,12 +2214,13 @@ const SNAP_STATE = {
 };
 const SNAP_TOTALS = {
   paper: { cost:'p-yourcost', quote:'p-quote-total', grand:'p-grand' },
+  walkin:{ quote:'w-sub', grand:'w-grand' },
   dtf:   { cost:'d-tt-cost',  quote:'d-tt-quote',    grand:'d-tt-grand' },
   vinyl: { cost:'r-tt-cost',  quote:'r-tt-quote',    grand:'r-tt-grand' },
   uv:    { cost:'u-tt-cost',  quote:'u-tt-quote',    grand:'u-tt-grand' },
   epson: { cost:'e-tt-cost',  quote:'e-tt-quote',    grand:'e-tt-grand' }
 };
-const SNAP_CALCS = { paper:['pCalc'], dtf:['dCalc'], vinyl:['rCalc'], uv:['uCalc'], epson:['eCalc'] };
+const SNAP_CALCS = { paper:['pCalc'], walkin:['wMenuBuild','wCalc'], dtf:['dCalc'], vinyl:['rCalc'], uv:['uCalc'], epson:['eCalc'] };
 
 function snapCapture(tab){
   const panel = document.getElementById('panel-'+tab);
@@ -2818,6 +2955,247 @@ function remCloudApply(first){
     remItems = list;
   }
   remSort(); remStore(); remRender();
+}
+
+// ══════════════════════════════════════════════
+//  WALK-INS  (v44: counter sales with a one-tap receipt; receipt details: coba-walkin-v1)
+// ══════════════════════════════════════════════
+// Copies, scans and one-off prints for people at the counter. Tapping an item adds it to the sale
+// (tapping again adds one more); a quantity change re-prices copies by quantity break unless the
+// price was typed in (hidden <id>-m = 1). Print receipt prints only #w-receipt (body.w-printing,
+// the receipt sits outside .wrapper); Copy receipt copies it as plain text. Rows use the 'wl' id
+// prefix and are registered in SNAP_STATE, so a sale kept with Save estimate reopens at the prices
+// it was rung up at. Prices checked Nov 13 2026 (table "Prices & where they come from" on the tab):
+//   copies = median of Staples Canada, Staples US (US$ x W_FX) and The UPS Store Canada at the first
+//            quantity break, rounded (5 cents under $1, 25 cents from $1); bigger quantities follow
+//            The UPS Store's steps; 2-sided = 2 x 1-sided, as Staples Canada charges
+//   photo prints and posters = Staples Canada same-day; scan = median of UPS Canada and US guides
+const W_HST = 0.13, W_FX = 1.4122;
+const W_KEY = 'coba-walkin-v1';
+const W_NL = String.fromCharCode(10);
+const W_BIZ_DEFAULT = ['Coba Studios', 'Brockville, ON', 'cobastudios.com'].join(W_NL);
+const W_SIZES = [ ['let', 'Letter', '8.5x11'], ['leg', 'Legal', '8.5x14'], ['tab', 'Tabloid', '11x17'] ];
+const W_BREAKS = {   // [from quantity, $ a sheet printed 1-sided]
+  'bw-let':  [[1, 0.40], [51, 0.30], [201, 0.20], [501, 0.15], [1001, 0.10]],
+  'bw-leg':  [[1, 0.50], [51, 0.40], [201, 0.30], [501, 0.20], [1001, 0.15]],
+  'bw-tab':  [[1, 0.80], [51, 0.70], [201, 0.60], [501, 0.50], [1001, 0.45]],
+  'col-let': [[1, 0.90], [11, 0.80], [200, 0.70]],
+  'col-leg': [[1, 0.90], [11, 0.80], [200, 0.70]],
+  'col-tab': [[1, 1.50], [11, 0.80], [200, 0.65]]
+};
+const W_OTHER = [
+  { k: 'ph-4x6',   g: 'photo', name: 'Photo print 4x6',  price: 0.36 },
+  { k: 'ph-5x7',   g: 'photo', name: 'Photo print 5x7',  price: 1.29 },
+  { k: 'ph-8x10',  g: 'photo', name: 'Photo print 8x10', price: 4.85 },
+  { k: 'po-12x18', g: 'photo', name: 'Poster 12x18',     price: 11.99 },
+  { k: 'po-18x24', g: 'photo', name: 'Poster 18x24',     price: 20.99 },
+  { k: 'po-24x36', g: 'photo', name: 'Poster 24x36',     price: 31.99 },
+  { k: 'scan',     g: 'other', name: 'Scan, per page',   price: 1.00 },
+  { k: 'file',     g: 'other', name: 'Print from email or USB (file handling)', price: 2.00 },
+  { k: 'custom',   g: 'other', name: 'Custom item',      price: 0 }
+];
+// sources behind each price: [key, item, Staples Canada, Staples US in CAD, The UPS Store Canada]
+const W_SRC = [
+  ['bw-let',  'B&W letter',    '$0.39 a copy; from $0.07 at volume', 'from $0.45-0.48 (US$0.32-0.34)', '$0.40 / 0.30 / 0.20 / 0.15 / 0.10 (1, 51, 201, 501, 1001+)'],
+  ['bw-leg',  'B&W legal',     '-', '-', '$0.50 / 0.40 / 0.30 / 0.20 / 0.15'],
+  ['bw-tab',  'B&W 11x17',     '-', '-', '$0.80 / 0.70 / 0.60 / 0.50 / 0.45'],
+  ['col-let', 'Colour letter', '$0.56 (menus, newsletters; any quantity)', 'from $1.13-1.16 (US$0.80-0.82)', '$0.90 / 0.80 / 0.70 (1, 11, 200+)'],
+  ['col-leg', 'Colour legal',  '$0.80', '-', '$1.00 / 0.90 / 0.80'],
+  ['col-tab', 'Colour 11x17',  '$0.99', '-', '$1.85 / 1.00 / 0.80'],
+  ['ph',      'Photo prints 4x6 / 5x7 / 8x10', 'same-day $0.36 / $1.29 / $4.85 (8x10 enlargement); next-day $0.28 / $0.99 / $2.79', '-', '-'],
+  ['po',      'Posters 12x18 / 18x24 / 24x36', '$11.99 / $20.99 / $31.99', '-', '-'],
+  ['scan',    'Scan, per page', '-', 'US price guides: B&W about $0.21, colour about $1.06', '$1.50 letter, $1.65 legal, $1.75 11x17'],
+  ['file',    'File from email or USB', '-', '-', '$2.00 for up to 10 files']
+];
+let wLines = [], wId = 0, wPrintAt = 0;
+
+function wMoney(n){ return '$' + (Math.round((n || 0) * 100) / 100).toFixed(2); }
+function wVal(id, f){ const el = document.getElementById(id + '-' + f); return el ? el.value : ''; }
+function wItem(k){
+  const m = /^(bw|col)-(let|leg|tab)-([12])$/.exec(k || '');
+  if(m){
+    const s = W_SIZES.find(x=>x[0] === m[2]);
+    return { k, copy: m[1] + '-' + m[2], sides: +m[3], name: (m[1] === 'bw' ? 'B&W' : 'Colour') + ' ' + s[2] + ', ' + m[3] + '-sided' };
+  }
+  return W_OTHER.find(x=>x.k === k) || null;
+}
+// price of one sheet / item when q are ordered
+function wUnit(k, q){
+  const it = wItem(k); if(!it) return 0;
+  if(!it.copy) return it.price;
+  const br = W_BREAKS[it.copy];
+  let p = br[0][1];
+  br.forEach(b=>{ if(q >= b[0]) p = b[1]; });
+  return Math.round(p * it.sides * 100) / 100;
+}
+function wMenuBuild(){
+  const body = document.getElementById('w-copy-body'); if(!body) return;
+  body.innerHTML = W_SIZES.map(s=>'<tr><th class="w-row">' + s[1] + ' <span>' + s[2] + '</span></th>' +
+    ['bw', 'col'].map(ink=>[1, 2].map(sd=>{
+      const k = ink + '-' + s[0] + '-' + sd;
+      return '<td><button class="w-pbtn' + (ink === 'col' ? ' col' : '') + '" title="' + jobsEsc(wItem(k).name) + '" onclick="wAdd(\'' + k + '\')">' + wMoney(wUnit(k, 1)) + '</button></td>';
+    }).join('')).join('') + '</tr>').join('');
+  const br = c=>W_BREAKS[c].slice(1).map(b=>b[0] + '+ ' + wMoney(b[1])).join(', ');
+  document.getElementById('w-breaks').innerHTML = 'Cheaper by the sheet as the quantity goes up (applied as you type it): B&amp;W letter ' + br('bw-let') +
+    ' &middot; colour letter ' + br('col-let') + '. 2-sided is double the 1-sided price. Other sizes: see the table below.';
+  ['photo', 'other'].forEach(g=>{
+    document.getElementById('w-btns-' + g).innerHTML = W_OTHER.filter(x=>x.g === g).map(x=>
+      '<button class="w-ibtn" onclick="wAdd(\'' + x.k + '\')"><b>' + jobsEsc(x.name) + '</b><span>' + (x.k === 'custom' ? 'you type the price' : wMoney(x.price)) + '</span></button>').join('');
+  });
+  const fixed = ks=>ks.map(k=>wMoney(W_OTHER.find(x=>x.k === k).price)).join(' / ');
+  const yours = k=> W_BREAKS[k] ? W_BREAKS[k].map((b, i)=>(i ? b[0] + '+ ' : '') + wMoney(b[1])).join('; ')
+    : k === 'ph' ? fixed(['ph-4x6', 'ph-5x7', 'ph-8x10']) : k === 'po' ? fixed(['po-12x18', 'po-18x24', 'po-24x36']) : fixed([k]);
+  document.getElementById('w-src-body').innerHTML = '<div class="scroll-x"><table><thead><tr><th>Item</th><th>Your price</th><th>Staples Canada</th><th>Staples US, in CAD</th><th>The UPS Store Canada</th></tr></thead><tbody>' +
+    W_SRC.map(r=>'<tr><td><b>' + jobsEsc(r[1]) + '</b></td><td>' + jobsEsc(yours(r[0])) + '</td><td>' + jobsEsc(r[2]) + '</td><td>' + jobsEsc(r[3]) + '</td><td>' + jobsEsc(r[4]) + '</td></tr>').join('') +
+    '</tbody></table></div><div class="w-note">Checked Nov 13 2026 on staplescopyandprint.ca, staples.ca, staples.com and The UPS Store Canada&#39;s online price list. ' +
+    'US prices converted at 1.4122 (mid-market rate, Nov 10 2026). Copies: your price is the median of the sources at the first quantity break, rounded; ' +
+    'the cheaper prices for bigger quantities follow The UPS Store&#39;s steps. Staples only shows &quot;from&quot; prices for copies online, so treat those as rough. ' +
+    'Photo prints and posters are Staples Canada&#39;s same-day prices. The scan price leans on US price guides, the weakest source here.</div>';
+}
+function wAdd(k){
+  const it = wItem(k); if(!it) return;
+  if(k !== 'custom'){
+    const same = wLines.find(x=>wVal(x, 'k') === k);
+    if(same){
+      const q = document.getElementById(same + '-q');
+      q.value = (parseFloat(q.value) || 0) + 1;
+      wQty(same);
+      jobsToast(it.name + ': ' + q.value + ' on the sale');
+      return;
+    }
+  }
+  const id = 'wl' + wId++;
+  wLines.push(id);
+  const row = document.createElement('div'); row.className = 'w-line'; row.id = 'wrow-' + id;
+  row.innerHTML =
+    '<input type="hidden" id="' + id + '-k" value="' + jobsEsc(k) + '"><input type="hidden" id="' + id + '-m" value="' + (k === 'custom' ? '1' : '0') + '">' +
+    '<input type="text" class="w-d" id="' + id + '-d" value="' + (k === 'custom' ? '' : jobsEsc(it.name)) + '" placeholder="What is it?" oninput="wCalc()">' +
+    '<input type="number" class="w-q" id="' + id + '-q" value="1" min="0" step="1" title="Quantity" oninput="wQty(\'' + id + '\')">' +
+    '<input type="number" class="w-p" id="' + id + '-p" value="' + wUnit(k, 1).toFixed(2) + '" min="0" step="0.01" title="Price each" oninput="wPrice(\'' + id + '\')">' +
+    '<span class="w-amt" id="' + id + '-t"></span>' +
+    '<button class="btn-remove" title="Remove" onclick="wRemove(\'' + id + '\')">&times;</button>';
+  document.getElementById('w-lines').appendChild(row);
+  wCalc();
+  if(k === 'custom') document.getElementById(id + '-d').focus();
+  else jobsToast('Added: ' + it.name);
+}
+function wQty(id){
+  if(wVal(id, 'm') !== '1'){
+    const q = parseFloat(wVal(id, 'q')) || 0;
+    document.getElementById(id + '-p').value = wUnit(wVal(id, 'k'), Math.max(q, 1)).toFixed(2);
+  }
+  wCalc();
+}
+function wPrice(id){ const m = document.getElementById(id + '-m'); if(m) m.value = '1'; wCalc(); }
+function wRemove(id){
+  const r = document.getElementById('wrow-' + id); if(r) r.remove();
+  wLines = wLines.filter(x=>x !== id);
+  wCalc();
+}
+function wTotals(){
+  const lines = wLines.map(id=>{
+    const q = Math.max(0, parseFloat(wVal(id, 'q')) || 0), p = Math.max(0, parseFloat(wVal(id, 'p')) || 0);
+    return { id, d: wVal(id, 'd').trim() || 'Item', q, p, t: Math.round(q * p * 100) / 100 };
+  });
+  const sub = Math.round(lines.reduce((a, x)=>a + x.t, 0) * 100) / 100;
+  const hst = Math.round(sub * W_HST * 100) / 100;
+  return { lines, sub, hst, grand: Math.round((sub + hst) * 100) / 100 };
+}
+function wCalc(){
+  if(!document.getElementById('w-sub')) return;
+  const T = wTotals(), n = T.lines.length;
+  T.lines.forEach(x=>{ const el = document.getElementById(x.id + '-t'); if(el) el.textContent = wMoney(x.t); });
+  document.getElementById('w-sub').textContent = wMoney(T.sub);
+  document.getElementById('w-hst').textContent = wMoney(T.hst);
+  document.getElementById('w-grand').textContent = wMoney(T.grand);
+  document.getElementById('w-lines-table').style.display = n ? '' : 'none';
+  document.getElementById('w-empty').style.display = n ? 'none' : '';
+  document.getElementById('w-count').textContent = n ? n + (n === 1 ? ' item' : ' items') : 'no items yet';
+}
+function resetWalkin(){
+  if(!wLines.length){ wCalc(); return; }
+  cobaConfirm('Start a new sale? This clears the items on the current one.', ()=>{
+    wLines.forEach(id=>{ const r = document.getElementById('wrow-' + id); if(r) r.remove(); });
+    wLines = []; wId = 0;
+    wCalc();
+  });
+}
+// --- receipt ---
+function wSettings(){
+  let s = null; try{ s = JSON.parse(localStorage.getItem(W_KEY) || 'null'); }catch(e){}
+  return { biz: (s && typeof s.biz === 'string' && s.biz.trim()) ? s.biz : W_BIZ_DEFAULT, hst: (s && typeof s.hst === 'string') ? s.hst.trim() : '' };
+}
+function wStamp(){
+  const d = new Date();
+  try{ return d.toLocaleString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }catch(e){ return d.toLocaleString(); }
+}
+function wReady(){
+  const T = wTotals();
+  T.lines = T.lines.filter(x=>x.q > 0);
+  if(!T.lines.length){ notify('Add something to the sale first.'); return null; }
+  return T;
+}
+function wReceiptHTML(T, s, when, cust){
+  const biz = s.biz.split(W_NL).map(x=>x.trim()).filter(Boolean);
+  return '<div class="r-biz"><b>' + jobsEsc(biz[0] || '') + '</b>' + biz.slice(1).map(x=>'<br>' + jobsEsc(x)).join('') + '</div>' +
+    '<div class="r-meta">' + (s.hst ? 'HST # ' + jobsEsc(s.hst) + '<br>' : '') + 'Receipt &middot; ' + jobsEsc(when) + (cust ? '<br>Customer: ' + jobsEsc(cust) : '') + '</div>' +
+    '<table>' + T.lines.map(x=>'<tr><td>' + jobsEsc(x.d) + '<span class="r-sub">' + x.q + ' &times; ' + wMoney(x.p) + '</span></td><td class="r-amt">' + wMoney(x.t) + '</td></tr>').join('') + '</table>' +
+    '<div class="r-tot"><span>Subtotal</span><span>' + wMoney(T.sub) + '</span></div>' +
+    '<div class="r-tot"><span>HST (13%)</span><span>' + wMoney(T.hst) + '</span></div>' +
+    '<div class="r-tot r-grand"><span>Total</span><span>' + wMoney(T.grand) + '</span></div>' +
+    '<div class="r-thanks">Thank you!</div>';
+}
+function wReceiptText(T, s, when, cust){
+  const W = 36, rule = '-'.repeat(W);
+  const pad = (a, b)=>a + ' '.repeat(Math.max(1, W - a.length - b.length)) + b;
+  const out = s.biz.split(W_NL).map(x=>x.trim()).filter(Boolean);
+  if(s.hst) out.push('HST # ' + s.hst);
+  out.push('Receipt - ' + when);
+  if(cust) out.push('Customer: ' + cust);
+  out.push(rule);
+  T.lines.forEach(x=>{ out.push(x.d); out.push(pad('  ' + x.q + ' x ' + wMoney(x.p), wMoney(x.t))); });
+  out.push(rule, pad('Subtotal', wMoney(T.sub)), pad('HST (13%)', wMoney(T.hst)), pad('Total', wMoney(T.grand)), '', 'Thank you!');
+  return out.join(W_NL);
+}
+function wPrint(){
+  const T = wReady(); if(!T) return;
+  document.getElementById('w-receipt').innerHTML = wReceiptHTML(T, wSettings(), wStamp(), document.getElementById('cb-name').value.trim());
+  wPrintAt = Date.now();
+  document.body.classList.add('w-printing');
+  window.print();
+}
+// the receipt-only print layout is dropped when that print ends, and is never used by another tab's Print button
+window.addEventListener('beforeprint', ()=>{ if(Date.now() - wPrintAt > 10000) document.body.classList.remove('w-printing'); });
+window.addEventListener('afterprint', ()=>{ document.body.classList.remove('w-printing'); });
+function wCopy(){
+  const T = wReady(); if(!T) return;
+  const txt = wReceiptText(T, wSettings(), wStamp(), document.getElementById('cb-name').value.trim());
+  const done = 'Receipt copied - paste it into an email or a text';
+  const fallback = ()=>{
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
+    ta.remove();
+    jobsToast(ok ? done : 'Could not copy here - use Print receipt instead');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>jobsToast(done), fallback);
+  else fallback();
+}
+function wDetailsOpen(){
+  const s = wSettings();
+  document.getElementById('w-det-biz').value = s.biz;
+  document.getElementById('w-det-hst').value = s.hst;
+  document.getElementById('w-details-wrap').style.display = 'flex';
+}
+function wDetailsClose(save){
+  if(save){
+    try{
+      localStorage.setItem(W_KEY, JSON.stringify({ biz: document.getElementById('w-det-biz').value, hst: document.getElementById('w-det-hst').value.trim() }));
+      jobsToast('Receipt details saved on this device');
+    }catch(e){ notify('Could not save the receipt details: ' + e.message); }
+  }
+  document.getElementById('w-details-wrap').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════
@@ -5385,7 +5763,7 @@ function resetUV(){
     uAddRow();
   });
 }
-['resetPaper','resetDTF','resetRoland','resetUV','resetEpson'].forEach(function(n){
+['resetPaper','resetWalkin','resetDTF','resetRoland','resetUV','resetEpson'].forEach(function(n){
   const orig = window[n]; if(typeof orig !== 'function') return;
   window[n] = function(){ jobsActive = null; jobsActiveHint(); return orig.apply(this, arguments); };
 });
@@ -5393,6 +5771,7 @@ function resetUV(){
 invLoad();
 jobsLoad();
 remLoad(); remRender();
+wMenuBuild(); wCalc();
 invRenderAll();
 rebuildDropdowns();
 addGarmentRow(); addGarmentRow();
