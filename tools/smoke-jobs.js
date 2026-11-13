@@ -247,6 +247,27 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(remDocs().some(d => d.text === 'After sign-out') && rem(B).some(x => x.text === 'After sign-out'), 'sent after signing back in');
   ok(rem(B)[0].text === 'After sign-out', 'newest name at the top');
 
+  // ---------- v43: construction plans at Staples 1-hour rates; a plan job saved at the old rates keeps its quote ----------
+  const P = openWin({ joined: true }); await connect(P, server);
+  P.w.switchTabByName('epson');
+  ok(P.$('e-plan-bw-rate').value === '1.35' && P.$('e-plan-col-rate').value === '4.25', 'plan rates default to $1.35 B&W and $4.25 colour a sq ft');
+  P.$('e-plan-on').checked = true; P.w.eToggle('plan');
+  const pr = P.w.eval('ePlanRows');
+  P.set(pr[0] + '-w', 24); P.set(pr[0] + '-h', 36); P.w.ePlanCalcRow(pr[0]);
+  P.$(pr[1] + '-bw').value = 'colour'; P.set(pr[1] + '-w', 24); P.set(pr[1] + '-h', 36); P.w.ePlanCalcRow(pr[1]);
+  ok(P.$(pr[0] + '-r').value === '8.10' && P.$(pr[1] + '-r').value === '25.50', '24x36 plans: B&W $' + P.$(pr[0] + '-r').value + ', colour $' + P.$(pr[1] + '-r').value);
+  const P2 = openWin({ joined: true }); await connect(P2, server);
+  P2.w.switchTabByName('epson');
+  P2.set('e-plan-bw-rate', '0.90'); P2.set('e-plan-col-rate', '3.50');   // an Epson job quoted before v43
+  P2.$('e-plan-on').checked = true; P2.w.eToggle('plan');
+  const pr2 = P2.w.eval('ePlanRows');
+  P2.set(pr2[0] + '-w', 24); P2.set(pr2[0] + '-h', 36); P2.w.ePlanCalcRow(pr2[0]);
+  const oldPlanQuote = P2.$('e-tt-quote').textContent;
+  P2.set('cb-name', 'Plan Cust'); P2.set('cb-title', 'old plan job'); P2.w.saveEstimate(); await sleep(80);
+  const planCust = jd(P).customers.find(c => c.name === 'Plan Cust');
+  P.w.loadEstimate(planCust.id, planCust.estimates[0].id, false); P.w.cobaConfirmAnswer(true);
+  ok(P2.$(pr2[0] + '-r').value === '5.40' && P.$('e-tt-quote').textContent === oldPlanQuote && P.$('e-plan-bw-rate').value === '0.90', 'a plan job saved at $0.90 reopens at its quote (' + oldPlanQuote + ')');
+
   // ---------- structured paper inventory: migration from the old name-only list ----------
   const oldInv = JSON.stringify({
     papers: [
@@ -385,7 +406,7 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(R.w.eval('inventory.papers').filter(isFin80).length === 0, 'a removed 80# Finesse stays removed');
 
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJKLMNOQRS'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);

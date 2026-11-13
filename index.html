@@ -1388,7 +1388,7 @@
           <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#166534;cursor:pointer">
             <input type="checkbox" id="e-plan-on" onchange="eToggle('plan')" style="width:16px;height:16px;accent-color:#16a34a"> 📐 Construction Plans
           </label>
-          <span style="font-size:11px;color:#166534;background:#f0fdf4;padding:3px 8px;border-radius:20px;border:1px solid #bbf7d0">20# bond · B&amp;W plans $0.90/sqft · Colour draft posters $3.50/sqft · for photo-quality colour use Art Reproduction</span>
+          <span style="font-size:11px;color:#166534;background:#f0fdf4;padding:3px 8px;border-radius:20px;border:1px solid #bbf7d0">20# bond · B&amp;W plans $1.35/sqft · Colour plans/posters $4.25/sqft (Staples 1-hour rates) · for photo-quality colour use Art Reproduction</span>
         </div>
         <div id="e-plan-section" style="display:none">
           <div class="scroll-x">
@@ -1410,7 +1410,7 @@
             </table>
           </div>
           <button class="btn-add no-print" onclick="eAddPlan()" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">+ Add plan</button>
-          <div style="font-size:11px;color:#888;margin-top:6px">Retail auto-calculated at $0.90/sqft (Staples rate). Edit the retail field per row if needed. Staples reference: 18×24" $2.69 · 24×36" $5.39 · 30×42" $7.99 · 36×48" $10.99</div>
+          <div style="font-size:11px;color:#888;margin-top:6px;line-height:1.5">Retail auto-calculated from the plan rates in Epson settings. Edit the retail field per row if needed.<br>Staples Canada 1-hour, per print (Oct 30 2026): B&amp;W 18×24" $3.49 · 24×36" $6.79 · 36×48" $13.49 · other sizes $1.35/sqft &nbsp;|&nbsp; Colour 18×24" $10.99 · 24×36" $25.99 · 36×48" $53.99 · other sizes $4.25/sqft &nbsp;|&nbsp; plus $2.99 per order</div>
           <div class="info-bar" style="margin-top:8px">
             <div class="info-item">Your cost: <strong id="e-plan-cost">$0.00</strong></div>
             <div class="info-item">Plans retail: <strong id="e-plan-retail">$0.00</strong></div>
@@ -1578,9 +1578,9 @@
       </div>
       <div id="e-settings-wrap" style="display:none">
         <div class="rate-bar" style="flex-wrap:wrap;gap:10px;margin-bottom:.75rem">
-          <div class="rate-item">Plans retail B&amp;W: $<input type="number" id="e-plan-bw-rate" value="0.90" min="0" step="0.05" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(Staples rate)</span></div>
+          <div class="rate-item">Plans retail B&amp;W: $<input type="number" id="e-plan-bw-rate" value="1.35" min="0" step="0.05" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(Staples 1-hour, Oct 2026)</span></div>
           <div class="rate-div"></div>
-          <div class="rate-item">Plans/poster retail Colour: $<input type="number" id="e-plan-col-rate" value="3.50" min="0" step="0.25" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(bond/draft · Staples ~$2.50–4/sqft)</span></div>
+          <div class="rate-item">Plans/poster retail Colour: $<input type="number" id="e-plan-col-rate" value="4.25" min="0" step="0.25" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(bond/draft · Staples 1-hour, Oct 2026)</span></div>
           <div class="rate-div"></div>
           <div class="rate-item">Print margin: <input type="number" id="e-art-margin" value="1" min="0" step="0.5" oninput="eCalc()" style="width:45px"> in</div>
           <div class="rate-div"></div>
@@ -1591,7 +1591,7 @@
           <div class="rate-item">Bond paper cost: $<input type="number" id="e-bond-cost" value="0.13" min="0" step="0.01" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">($32/300sqft roll)</span></div>
           <div class="rate-div"></div>
           <div class="rate-item">Art retail rate: $<input type="number" id="e-art-rate" value="14.00" min="0" step="0.50" oninput="eCalc()" style="width:65px">/sq ft <span style="font-size:10px;color:#888">(Posterjack: $15–27/sqft)</span></div>
-          <div style="margin-left:auto;font-size:11px;color:#888">Staples: 18×24" $2.69 · 24×36" $5.39 · 30×42" $7.99 · 36×48" $10.99</div>
+          <div style="margin-left:auto;font-size:11px;color:#888">Staples 1-hour B&amp;W: 18×24" $3.49 · 24×36" $6.79 · 36×48" $13.49 · custom $1.35/sqft</div>
         </div>
       </div>
 
@@ -4883,8 +4883,8 @@ function ePlanCalcRow(id){
     ? (parseFloat((document.getElementById('e-ink-colour')||{}).value)||0.41)
     : (parseFloat((document.getElementById('e-ink')||{}).value)||0.04);
   const retailRate = isColour
-    ? (parseFloat((document.getElementById('e-plan-col-rate')||{}).value)||7.00)
-    : (parseFloat((document.getElementById('e-plan-bw-rate')||{}).value)||0.90);
+    ? (parseFloat((document.getElementById('e-plan-col-rate')||{}).value)||4.25)
+    : (parseFloat((document.getElementById('e-plan-bw-rate')||{}).value)||1.35);
   const sfEl=document.getElementById(id+'-sf');
   const cEl=document.getElementById(id+'-c');
   const rEl=document.getElementById(id+'-r');
