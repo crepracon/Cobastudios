@@ -51,6 +51,27 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   ok(A.w.document.querySelectorAll('#w-btns-photo .w-ibtn').length === 6 && A.w.document.querySelectorAll('#w-btns-other .w-ibtn').length === 3, 'photo / poster and other buttons');
   ok(A.w.document.querySelectorAll('#w-src-body tbody tr').length === A.w.eval('W_SRC.length'), 'sources table has a row per price');
   ok(/51\+ \$0\.30/.test(A.$('w-breaks').textContent), 'quantity breaks shown under the copy table');
+  // v47: Staples Canada's real copy prices (per printed side, tiers by sides in the order) and The UPS Store's list,
+  // as captured Nov 13 2026. No walk-in copy price may be below BOTH at any quantity.
+  const STP = { 'bw-let': [[1, .23], [500, .13], [1000, .11], [10000, .09], [20000, .07]], 'bw-leg': [[1, .26], [500, .14], [1000, .09], [20000, .08]],
+    'bw-tab': [[1, .30], [500, .18], [1000, .13], [10000, .10], [20000, .08]], 'col-let': [[1, .63], [500, .51], [1000, .45], [3000, .36], [5000, .31], [8000, .23]],
+    'col-leg': [[1, .90], [500, .65], [1000, .60], [3000, .42], [5000, .32], [8000, .26]], 'col-tab': [[1, 1.00], [500, .96], [1000, .91], [3000, .73], [5000, .64], [8000, .58]] };
+  const UPS = { 'bw-let': [[1, .40], [51, .30], [201, .20], [501, .15], [1001, .10]], 'bw-leg': [[1, .50], [51, .40], [201, .30], [501, .20], [1001, .15]],
+    'bw-tab': [[1, .80], [51, .70], [201, .60], [501, .50], [1001, .45]], 'col-let': [[1, .90], [11, .80], [200, .70]], 'col-leg': [[1, 1.00], [11, .90], [200, .80]], 'col-tab': [[1, 1.85], [11, 1.00], [200, .80]] };
+  const at = (L, q) => L.reduce((p, b) => q >= b[0] ? b[1] : p, L[0][1]);
+  const W = A.w.eval('JSON.parse(JSON.stringify(W_BREAKS))'), under = [];
+  Object.keys(STP).forEach(k => {
+    const qs = [].concat(W[k], STP[k], UPS[k]).map(b => b[0]);
+    qs.forEach(q => { if (at(W[k], q) < Math.min(at(STP[k], q), at(UPS[k], q)) - 1e-9) under.push(k + ' at ' + q + ': ' + at(W[k], q)); });
+  });
+  ok(under.length === 0, 'v47: no copy price below both Staples Canada and The UPS Store: ' + under.join(', '));
+  ok(A.w.wUnit('col-leg-1', 11) === 0.9 && A.w.wUnit('col-leg-1', 200) === 0.8 && A.w.wUnit('col-tab-1', 11) === 1 && A.w.wUnit('col-tab-1', 200) === 0.8 && A.w.wUnit('col-tab-2', 11) === 2,
+    'v47: colour legal 11+ $0.90 / 200+ $0.80, colour 11x17 11+ $1.00 / 200+ $0.80 (2-sided $2.00)');
+  ok(A.w.wUnit('bw-let-1', 1) === 0.4 && A.w.wUnit('bw-let-1', 51) === 0.3 && A.w.wUnit('col-let-1', 11) === 0.8 && A.w.wUnit('col-leg-1', 1) === 0.9 && A.w.wUnit('col-tab-1', 1) === 1.5 && A.w.wUnit('bw-tab-1', 1) === 0.8,
+    'v47: every other copy price unchanged');
+  const srcTxt = A.$('w-src-body').textContent;
+  ok(/\$0\.23 a side; \$0\.13 from 500 sides/.test(srcTxt) && /\$1\.00 a side/.test(srcTxt) && /\$2\.99 per same-day order/.test(srcTxt) && !/from&quot; prices|treat those as rough/.test(srcTxt),
+    'v47: sources table shows Staples Canada per-side prices and the same-day fee');
   ok(A.$('w-empty').style.display !== 'none' && A.$('w-lines-table').style.display === 'none' && A.$('w-grand').textContent === '$0.00', 'empty sale to start');
 
   // ---------- tap to add, quantity breaks ----------
