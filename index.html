@@ -1505,7 +1505,7 @@
           <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#166534;cursor:pointer">
             <input type="checkbox" id="e-plan-on" onchange="eToggle('plan')" style="width:16px;height:16px;accent-color:#16a34a"> 📐 Construction Plans
           </label>
-          <span style="font-size:11px;color:#166534;background:#f0fdf4;padding:3px 8px;border-radius:20px;border:1px solid #bbf7d0">20# bond · B&amp;W plans $1.35/sqft · Colour plans/posters $4.25/sqft (Staples 1-hour rates) · for photo-quality colour use Art Reproduction</span>
+          <span style="font-size:11px;color:#166534;background:#f0fdf4;padding:3px 8px;border-radius:20px;border:1px solid #bbf7d0">20# bond · B&amp;W plans $1.15/sqft (Staples 1-hour, standard sizes) · Colour plans/posters $4.25/sqft (Staples 1-hour) · for photo-quality colour use Art Reproduction</span>
         </div>
         <div id="e-plan-section" style="display:none">
           <div class="scroll-x">
@@ -1695,7 +1695,7 @@
       </div>
       <div id="e-settings-wrap" style="display:none">
         <div class="rate-bar" style="flex-wrap:wrap;gap:10px;margin-bottom:.75rem">
-          <div class="rate-item">Plans retail B&amp;W: $<input type="number" id="e-plan-bw-rate" value="1.35" min="0" step="0.05" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(Staples 1-hour, Oct 2026)</span></div>
+          <div class="rate-item">Plans retail B&amp;W: $<input type="number" id="e-plan-bw-rate" value="1.15" min="0" step="0.05" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(Staples 1-hour standard sizes, Oct 2026)</span></div>
           <div class="rate-div"></div>
           <div class="rate-item">Plans/poster retail Colour: $<input type="number" id="e-plan-col-rate" value="4.25" min="0" step="0.25" oninput="eCalc()" style="width:60px">/sq ft <span style="font-size:10px;color:#888">(bond/draft · Staples 1-hour, Oct 2026)</span></div>
           <div class="rate-div"></div>
@@ -2974,6 +2974,7 @@ const W_HST = 0.13, W_FX = 1.4122;
 const W_KEY = 'coba-walkin-v1';
 const W_NL = String.fromCharCode(10);
 const W_BIZ_DEFAULT = ['Coba Studios', 'Brockville, ON', 'cobastudios.com'].join(W_NL);
+const W_HST_DEFAULT = '822863999 RT0001';   // v45: Coba Studios' GST/HST number, printed on every receipt unless Receipt details says otherwise
 const W_SIZES = [ ['let', 'Letter', '8.5x11'], ['leg', 'Legal', '8.5x14'], ['tab', 'Tabloid', '11x17'] ];
 const W_BREAKS = {   // [from quantity, $ a sheet printed 1-sided]
   'bw-let':  [[1, 0.40], [51, 0.30], [201, 0.20], [501, 0.15], [1001, 0.10]],
@@ -3123,7 +3124,7 @@ function resetWalkin(){
 // --- receipt ---
 function wSettings(){
   let s = null; try{ s = JSON.parse(localStorage.getItem(W_KEY) || 'null'); }catch(e){}
-  return { biz: (s && typeof s.biz === 'string' && s.biz.trim()) ? s.biz : W_BIZ_DEFAULT, hst: (s && typeof s.hst === 'string') ? s.hst.trim() : '' };
+  return { biz: (s && typeof s.biz === 'string' && s.biz.trim()) ? s.biz : W_BIZ_DEFAULT, hst: (s && typeof s.hst === 'string' && s.hst.trim()) ? s.hst.trim() : W_HST_DEFAULT };
 }
 function wStamp(){
   const d = new Date();
@@ -5262,7 +5263,7 @@ function ePlanCalcRow(id){
     : (parseFloat((document.getElementById('e-ink')||{}).value)||0.04);
   const retailRate = isColour
     ? (parseFloat((document.getElementById('e-plan-col-rate')||{}).value)||4.25)
-    : (parseFloat((document.getElementById('e-plan-bw-rate')||{}).value)||1.35);
+    : (parseFloat((document.getElementById('e-plan-bw-rate')||{}).value)||1.15);
   const sfEl=document.getElementById(id+'-sf');
   const cEl=document.getElementById(id+'-c');
   const rEl=document.getElementById(id+'-r');

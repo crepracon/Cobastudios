@@ -103,8 +103,10 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   const css = HTML.match(/body\.w-printing \.wrapper \{ display:none !important; \}/) && HTML.indexOf('<div id="w-receipt"></div>') > HTML.indexOf('</div><!-- /wrapper -->');
   ok(!!css, 'print CSS hides the page and the receipt sits outside it');
 
+  ok(/HST # 822863999 RT0001/.test(rc.querySelector('.r-meta').textContent), 'v45: a fresh device prints the Coba Studios HST number');
   // ---------- receipt details ----------
   A.w.wDetailsOpen();
+  ok(A.$('w-det-hst').value === '822863999 RT0001', 'Receipt details shows the built-in HST number');
   ok(A.$('w-details-wrap').style.display === 'flex' && /Coba Studios/.test(A.$('w-det-biz').value), 'Receipt details opens with the default top lines');
   A.set('w-det-hst', ' 123456789 RT0001 '); A.w.wDetailsClose(true);
   ok(JSON.parse(A.w.localStorage.getItem('coba-walkin-v1')).hst === '123456789 RT0001' && A.$('w-details-wrap').style.display === 'none', 'HST number saved on the device');
