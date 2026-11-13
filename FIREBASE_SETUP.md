@@ -40,7 +40,7 @@ service cloud.firestore {
 | permission-denied (red) | Signed in, but email not in the rules | Add the email to the rules and Publish |
 
 ## Where things live in Firebase
-- Jobs data: **Databases & Storage** -> **Firestore** -> **Data** tab. Two collections: `customers` and `estimates`.
+- Jobs data: **Databases & Storage** -> **Firestore** -> **Data** tab. Three collections: `customers`, `estimates`, and `reminders` (the To-Do / To-Invoice box on the Jobs tab, one document per name, added v42).
 - Logins: **Security** -> **Authentication** -> **Users** tab.
 - Allowed websites: **Security** -> **Authentication** -> **Settings** tab -> **Authorized domains** (has `crepracon.github.io`).
 - App config: left sidebar **Settings** -> **General** -> scroll to **Your apps**. Already built into index.html.

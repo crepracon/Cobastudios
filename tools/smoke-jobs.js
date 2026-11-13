@@ -7,7 +7,8 @@
 // statuses (old Quote / Approved jobs shown and saved in the new set), date + time taken,
 // manual log, status / notes / delete propagation between devices, a job saved offline pushed
 // on reconnect, first-time device merge, UV Printing jobs saved and reopened on another device,
-// and the structured paper inventory migration. Plain ASCII only.
+// the To-Do / To-Invoice box (v42: add / flip / delete / undo across devices, changes made offline
+// or signed out sent on reconnect), and the structured paper inventory migration. Plain ASCII only.
 const fs = require('fs'), path = require('path');
 const { JSDOM } = require('jsdom');
 const SRC = process.argv[2] || path.resolve(__dirname, '..', 'index.html');
@@ -18,7 +19,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL: ' + m); 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---- fake Firestore: one server, any number of client windows ----
-function makeServer() { return { cols: { customers: new Map(), estimates: new Map() }, listeners: [], writes: 0 }; }
+function makeServer() { return { cols: { customers: new Map(), estimates: new Map(), reminders: new Map() }, listeners: [], writes: 0 }; }
 function deliver(server, l) {
   const m = server.cols[l.name], changes = [];
   m.forEach((data, id) => {
@@ -67,6 +68,7 @@ function openWin(opts) {
       if (opts.lastsync) w.localStorage.setItem('coba-jobs-cloud-lastsync-v1', String(opts.lastsync));
       if (opts.jobs) w.localStorage.setItem('coba-jobs-v1', JSON.stringify(opts.jobs));
       if (opts.inventory) w.localStorage.setItem('coba-inventory-v2', opts.inventory);
+      if (opts.reminders) w.localStorage.setItem('coba-reminders-v1', opts.reminders);
       w.addEventListener('error', e => errs.push(String(e.message)));
       w.console.error = function () { const s = Array.prototype.map.call(arguments, String).join(' '); if (!/cloud init failed/.test(s)) errs.push(s); };
       w.console.warn = function () {};
@@ -191,6 +193,59 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   D.w.cloudMergeLocal(); await sleep(80);
   const leg = Array.from(server.cols.estimates.values()).find(d => d.title === 'old quote');
   ok(leg && leg.status === 'In Production', 'merged job reaches the cloud with the new status');
+
+  // ---------- v42: To-Do / To-Invoice box ----------
+  const rem = win => win.w.eval('remItems');
+  const remDocs = () => Array.from(server.cols.reminders.values());
+  ok(A.$('rem-box') && A.$('rem-box').closest('#panel-jobs'), 'To-Do / To-Invoice box sits on the Jobs tab');
+  ok(A.$('rem-tab-todo').classList.contains('on') && /Nothing/.test(A.$('rem-list').textContent), 'box opens on To-Do, empty');
+  A.set('rem-input', '   '); A.w.remAdd();
+  ok(rem(A).length === 0, 'a blank name is not added');
+  A.set('rem-input', '  Bob   Plumbing  '); A.w.remAdd(); await sleep(60);
+  ok(rem(A).length === 1 && rem(A)[0].text === 'Bob Plumbing' && rem(A)[0].list === 'todo', 'name added to To-Do (spaces tidied)');
+  ok(A.$('rem-input').value === '' && A.$('rem-n-todo').textContent === '1', 'add box cleared, To-Do count 1');
+  ok(remDocs().length === 1 && remDocs()[0].list === 'todo' && remDocs()[0].text === 'Bob Plumbing' && remDocs()[0].t > 0, 'saved to the cloud as its own doc');
+  ok(rem(B).some(x => x.text === 'Bob Plumbing') && B.$('rem-n-todo').textContent === '1' && /Bob Plumbing/.test(B.$('rem-list').textContent), 'B sees it in To-Do');
+  A.w.remShow('invoice');
+  ok(A.$('rem-box').getAttribute('data-view') === 'invoice' && A.$('rem-input').placeholder === 'Add to To-Invoice...' && A.$('rem-tab-invoice').classList.contains('on') && !A.$('rem-tab-todo').classList.contains('on'), 'header flips the box to To-Invoice');
+  ok(!/Bob Plumbing/.test(A.$('rem-list').textContent) && /Nobody/.test(A.$('rem-list').textContent), 'To-Invoice does not show To-Do names');
+  A.set('rem-input', 'Kelly <b>Signs</b>'); A.w.remAdd(); await sleep(60);
+  ok(rem(A).find(x => x.list === 'invoice') && B.$('rem-n-invoice').textContent === '1' && B.$('rem-n-todo').textContent === '1', 'B counts 1 to do and 1 to invoice');
+  ok(B.$('rem-box').getAttribute('data-view') === 'todo', 'each device keeps its own view');
+  B.w.remShow('invoice');
+  ok(/Kelly <b>Signs<\/b>/.test(B.$('rem-list').textContent) && !B.$('rem-list').querySelector('.rem-text b'), 'names are shown as typed, never as markup');
+  const bobId = rem(B).find(x => x.text === 'Bob Plumbing').id;
+  B.w.remShow('todo'); B.w.remDelete(bobId); await sleep(60);
+  ok(!server.cols.reminders.has(bobId) && !rem(A).some(x => x.id === bobId) && A.$('rem-n-todo').textContent === '0', 'delete removes it everywhere');
+  ok(B.$('rem-undo').style.display === 'flex' && /Bob Plumbing/.test(B.$('rem-undo-msg').textContent), 'Undo offered after a delete');
+  B.w.remUndo(); await sleep(60);
+  ok(server.cols.reminders.has(bobId) && rem(A).some(x => x.id === bobId) && B.$('rem-undo').style.display === 'none', 'Undo puts it back everywhere');
+  ok(JSON.parse(B.w.localStorage.getItem('coba-reminders-v1')).items.length === 2, 'B keeps a local copy');
+
+  // offline device: adds and deletes wait on the device, sent when the cloud list loads
+  const kellyId = rem(A).find(x => x.list === 'invoice').id;
+  const S = openWin({ joined: true, reminders: B.w.localStorage.getItem('coba-reminders-v1') });
+  await sleep(60);
+  ok(rem(S).length === 2 && S.$('rem-n-todo').textContent === '1' && S.$('rem-n-invoice').textContent === '1', 'offline device shows its saved copy');
+  S.w.remShow('todo'); S.set('rem-input', 'Offline Co'); S.w.remAdd();
+  S.set('rem-input', 'typo'); S.w.remAdd();
+  const typoId = rem(S).find(x => x.text === 'typo').id;
+  S.w.remDelete(typoId); S.w.remDelete(kellyId);
+  const out = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1')).out;
+  ok(Object.keys(out.add).length === 1 && out.del[kellyId] === true && !out.add[typoId] && !out.del[typoId], 'offline changes wait on the device');
+  await connect(S, server); await sleep(60);
+  ok(remDocs().some(d => d.text === 'Offline Co') && !server.cols.reminders.has(kellyId) && !remDocs().some(d => d.text === 'typo'), 'offline add and delete sent on reconnect');
+  ok(rem(A).some(x => x.text === 'Offline Co') && !rem(A).some(x => x.id === kellyId), 'A sees the offline changes');
+  ok(rem(S).length === 2 && !rem(S).some(x => x.id === kellyId), 'reconnected device matches the cloud');
+  const st = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1'));
+  ok(Object.keys(st.out.add).length === 0 && Object.keys(st.out.del).length === 0, 'nothing left waiting');
+  // signed out: changes wait, then go up on the next sign-in
+  S.w.cloudStop(); S.w.eval('cloudUser = null');
+  S.set('rem-input', 'After sign-out'); S.w.remAdd(); await sleep(30);
+  ok(!remDocs().some(d => d.text === 'After sign-out') && rem(S).some(x => x.text === 'After sign-out'), 'signed out: stays on the device');
+  S.w.eval("cloudUser = { email:'chris@example.com' }; cloudStart();"); await sleep(80);
+  ok(remDocs().some(d => d.text === 'After sign-out') && rem(B).some(x => x.text === 'After sign-out'), 'sent after signing back in');
+  ok(rem(B)[0].text === 'After sign-out', 'newest name at the top');
 
   // ---------- structured paper inventory: migration from the old name-only list ----------
   const oldInv = JSON.stringify({
@@ -330,7 +385,7 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(R.w.eval('inventory.papers').filter(isFin80).length === 0, 'a removed 80# Finesse stays removed');
 
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJKLMNOQR'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S].forEach((x, i) => ok(x.errs.length === 0, 'window ' + 'ABCDEFGHIJKLMNOQRS'[i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
