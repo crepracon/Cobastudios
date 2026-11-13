@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Writes the VistaPrint calendar / coaster / brochure price grid into index.html as
+// Writes the print price grid (VistaPrint calendars, coasters, brochures; since v46 also postcards, flyers, rack
+// cards, note cards, posters and Staples Canada's paper products) into index.html as
 //   <script type="application/json" id="market-print"> ... </script>
 // (placed right after the sticker block id="market-data", which this never touches).
 //   node tools/market-refresh/print/apply-print.js [data/vistaprint-print-YYYY-MM-DD.json]
@@ -12,7 +13,8 @@ const file = process.argv[2] ? path.resolve(process.argv[2])
 const grid = JSON.parse(fs.readFileSync(file, 'utf8'));
 
 // sanity checks before anything is written
-const need = ['vp-coaster-ceramic', 'vp-cal-wall', 'vp-cal-desk', 'vp-cal-poster', 'vp-cal-magnet', 'vp-bro-tri-glossy', 'vp-bro-bi-glossy', 'vp-bro-z-glossy'];
+const need = ['vp-coaster-ceramic', 'vp-cal-wall', 'vp-cal-desk', 'vp-cal-poster', 'vp-cal-magnet', 'vp-bro-tri-glossy', 'vp-bro-bi-glossy', 'vp-bro-z-glossy',
+  'vp-pc-glossy', 'vp-fly-glossy', 'vp-rack-glossy', 'vp-note-flat', 'vp-note-folded', 'vp-poster-pmatte', 'stp-pc-1', 'stp-fly-1'];
 const ids = new Set(grid.sellers.map(s => s.id));
 need.forEach(id => { if (!ids.has(id)) throw new Error('missing seller ' + id); });
 grid.sellers.forEach(s => s.sizes.forEach(z => z.ladder.forEach(r => {

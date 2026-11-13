@@ -1,0 +1,32 @@
+{
+ "captured": "2026-11-13",
+ "source": "shop.staplescopyandprint.ca product pages, read in the built-in browser (pack-size price tables; Shopify variants for size and sides)",
+ "fees": "Service fee up to $2.99 per order; shipping $9.99 (free over $75) or free store pickup",
+ "products": [
+  { "id": "stp-pc", "product": "postcard", "label": "Postcard, glossy or matte (same price)", "url": "https://shop.staplescopyandprint.ca/products/postcard",
+    "note": "Sold in packs of 50, 100, 250, 500, 1000 and 1500. Standard glossy or matte stock; their premium stocks (Premium Gloss, Premium Matte, Premium 100% Recycled) cost more and are not included here.",
+    "sizes": { "4 x 6|1": [[50,19.99],[100,34.99],[250,74.99],[500,129.99],[1000,164.99],[1500,199.99]],
+               "4 x 6|2": [[50,29.99],[100,44.99],[250,79.99],[500,149.99],[1000,199.99],[1500,229.99]],
+               "5 x 7|1": [[50,24.99],[100,44.99],[250,99.99],[500,199.99],[1000,299.99],[1500,374.99]],
+               "5 x 7|2": [[50,34.99],[100,54.99],[250,109.99],[500,199.99],[1000,339.99],[1500,399.99]] } },
+  { "id": "stp-rack", "product": "rack", "label": "Rack card", "url": "https://shop.staplescopyandprint.ca/products/rack-cards",
+    "note": "Sold in packs of 50 to 1500. From 500 up, their 2-sided price is lower than their 1-sided price (that is how their page shows it).",
+    "sizes": { "3.5 x 8.5|1": [[50,27.99],[100,44.99],[250,70.99],[500,124.99],[1000,183.99],[1500,234.09]],
+               "3.5 x 8.5|2": [[50,34.99],[100,49.99],[250,79.99],[500,119.99],[1000,174.99],[1500,219.99]] } },
+  { "id": "stp-fly", "product": "flyer", "label": "Flyer, glossy or matte", "url": "https://shop.staplescopyandprint.ca/products/flyers",
+    "note": "Sold in packs of 25 to 1000.",
+    "sizes": { "8.5 x 11|1": [[25,15.99],[50,31.99],[100,64.99],[250,154.99],[500,275.99],[1000,450.99]],
+               "8.5 x 11|2": [[25,28.99],[50,59.99],[100,119.99],[250,257.99],[500,515.99],[1000,870.99]],
+               "11 x 17|1": [[25,29.99],[50,59.99],[100,119.99],[250,290.99],[500,565.99],[1000,1040.99]],
+               "11 x 17|2": [[25,53.99],[50,108.99],[100,217.99],[250,520.99],[500,990.99],[1000,1940.99]] } },
+  { "id": "stp-folded", "product": "folded", "label": "Folded greeting card 5 x 7, envelope included", "url": "https://shop.staplescopyandprint.ca/products/folded-cards",
+    "note": "Same price per card at any quantity (singles or packs of 6 to 48), envelope included. 1-sided was on sale on Nov 13 2026: $1.25 a card (regular $2.09).",
+    "sizes": { "5 x 7|1": [[1,2.09,1.25]], "5 x 7|2": [[1,2.09]] } },
+  { "id": "stp-flat", "product": "flat", "label": "Flat card 5 x 7, envelope included", "url": "https://shop.staplescopyandprint.ca/products/flat-card",
+    "note": "Same price per card at any quantity, envelope included. On sale on Nov 13 2026: $0.99 a card (regular $1.69 1-sided, $1.59 2-sided, as their page shows it).",
+    "sizes": { "5 x 7|1": [[1,1.69,0.99]], "5 x 7|2": [[1,1.59,0.99]] } },
+  { "id": "stp-encl", "product": "flat", "label": "Enclosure / RSVP card 4.25 x 5.5", "url": "https://shop.staplescopyandprint.ca/products/enclosure-card",
+    "note": "Same price per card at any quantity. 1-sided was on sale on Nov 13 2026: $0.47 a card (regular $0.89).",
+    "sizes": { "4.25 x 5.5|1": [[1,0.89,0.47]], "4.25 x 5.5|2": [[1,0.89]] } }
+ ]
+}

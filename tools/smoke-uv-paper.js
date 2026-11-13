@@ -36,6 +36,7 @@ const lastQty = ladder => ladder[ladder.length - 1][0];
 // what the Paper reference line must say for q pieces (prices as pfmt shows them: $ and 2 decimals, no commas)
 const refLine = (ladder, q) => {
   const t = vpInfo(ladder, q), parts = ['$' + (t.total / q).toFixed(2) + ' each', '$' + t.total.toFixed(2) + ' for ' + q];
+  if (ladder.length === 1 && ladder[0][0] === 1) { parts.push('same price each at any quantity'); return parts; }   // per-piece (Staples cards)
   if (t.tier !== q && !t.next) parts.push('their price break at ' + t.tier);
   if (t.next) parts.push((t.lo ? 'cheaper to buy their ' : 'their minimum is ') + t.tier + ' for $' + t.total.toFixed(2));
   return parts;
@@ -187,7 +188,7 @@ function openWin(ls, html) {
   const q30 = money(P.$('p-quote-total').textContent);
   ok(out.indexOf('$' + (q30 / 30).toFixed(2) + ' each (') >= 0, 'your price per calendar = quote / finished pieces');
   ok(/Defend/.test(out), 'calendars default to Defend guidance');
-  ok(out.indexOf('VistaPrint prices captured ' + DATA.captured) >= 0, 'capture date shown');
+  ok(out.indexOf('VistaPrint prices captured ' + (seller('vp-cal-wall').captured || DATA.captured)) >= 0, 'capture date shown (the product\'s own, v46)');
   P.set('p-finished-qty', 50); P.w.pCalc(); out = P.$('p-cal-out').innerHTML;
   ok(hasAll(out, refLine(wall, 50)), 'wall calendar at 50, between or on breaks (missing: ' + missing(out, refLine(wall, 50)) + ')');
   P.set('p-finished-qty', 1); P.w.pCalc(); out = P.$('p-cal-out').innerHTML;
@@ -235,7 +236,86 @@ function openWin(ls, html) {
   Q.w.resetPaper(); Q.w.cobaConfirmAnswer(true);
   ok(!Q.$('p-cal-on').checked && Q.$('p-cal-body').style.display === 'none', 'New estimate switches the references off');
 
-  [A, B, R, K, F, P, Q].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
+  // ---------- v46: Paper > Postcards, flyers, cards & posters (VistaPrint first, Staples Canada second) ----------
+  const G = openWin(); await sleep(40);
+  const pgOut = () => G.$('p-pg-out').innerHTML;
+  const lad = (id, label) => { const s = seller(id); const z = s && s.sizes.find(x => x.label === label); return z ? z.ladder : null; };
+  ok(G.$('p-pg-box') && G.$('p-pg-box').classList.contains('no-print') && !G.$('p-pg-on').checked && G.$('p-pg-body').style.display === 'none', 'new reference box present, off by default, never prints');
+  ['vp-pc-glossy', 'vp-fly-matte', 'vp-rack-uncoated', 'vp-note-flat', 'vp-note-folded', 'vp-poster-pmatte', 'stp-pc-1', 'stp-pc-2', 'stp-fly-1', 'stp-rack-2', 'stp-folded-1', 'stp-encl-1'].forEach(id => ok(!!seller(id), 'price data has ' + id));
+  G.set('p-qty', 100); G.set('p-finished-qty', 100);
+  G.set('pp-n0', 25); G.set('pp-c0', 0.234); G.set('pt-n0', 100); G.set('pt-c0', 0.06); G.set('p-hrs', 0.25);
+  G.w.pCalc();
+  const gq0 = G.$('p-quote-total').textContent + '|' + G.$('p-grand').textContent;
+  G.chk('p-pg-on', true); G.w.pRefToggle('pg');
+  ok(G.$('p-quote-total').textContent + '|' + G.$('p-grand').textContent === gq0, 'turning it on never changes the quote');
+  ok(G.$('p-pg-prod').value === 'postcard' && G.$('p-pg-size').value === '4 x 6' && G.$('p-pg-stock').value === 'glossy' && G.$('p-pg-sides').value === '1', 'defaults: postcard 4 x 6 glossy 1-sided');
+  const pcSizes = Array.from(G.$('p-pg-size').options).map(o => o.value);
+  ok(['4.2 x 5.5', '4 x 6', '5 x 7', '5.5 x 8.5', '6 x 9', '6 x 11'].every(s => pcSizes.indexOf(s) >= 0), 'postcard sizes include 4.2 x 5.5, 4 x 6, 5 x 7, 5.5 x 8.5, 6 x 9, 6 x 11: ' + pcSizes.join(', '));
+  let gout = pgOut();
+  ok(hasAll(gout, refLine(lad('vp-pc-glossy', '4 x 6'), 100)), 'VistaPrint 4 x 6 glossy at 100: ' + missing(gout, refLine(lad('vp-pc-glossy', '4 x 6'), 100)));
+  ok(hasAll(gout, refLine(lad('stp-pc-1', '4 x 6'), 100)) && /Staples Canada<\/strong> \(4 x 6 in, 1-sided\)/.test(gout), 'Staples 4 x 6 1-sided at 100');
+  const gq = money(G.$('p-quote-total').textContent);
+  ok(gout.indexOf('$' + (gq / 100).toFixed(2) + ' each (') >= 0 && /% vs VistaPrint\)/.test(gout), 'your price each compared with VistaPrint for 1-sided work');
+  ok(/Other VistaPrint papers at this quantity: matte \$/.test(gout) && /Compete/.test(gout), 'other papers listed; postcards default to Compete');
+  // 2-sided: VistaPrint is front only, so compare with Staples
+  G.set('p-pg-sides', '2'); G.w.pCalc(); gout = pgOut();
+  ok(/prints the front only at this price/.test(gout) && hasAll(gout, refLine(lad('stp-pc-2', '4 x 6'), 100)) && /% vs Staples\)/.test(gout), '2-sided: front-only warning, Staples 2-sided price, compared with Staples');
+  G.set('p-pg-sides', '1');
+  // between quantities: 30 postcards = VistaPrint 30 at the 25 break, or their 50
+  G.set('p-finished-qty', 30); G.w.pCalc();
+  ok(hasAll(pgOut(), refLine(lad('vp-pc-glossy', '4 x 6'), 30)) && hasAll(pgOut(), refLine(lad('stp-pc-1', '4 x 6'), 30)), '30 postcards priced like VistaPrint and Staples sell them');
+  G.set('p-finished-qty', 100);
+  // 6 x 11 is not sold in recycled
+  G.set('p-pg-size', '6 x 11'); G.set('p-pg-stock', 'recycled'); G.w.pCalc();
+  ok(/VistaPrint<\/strong>: not sold in this size in recycled/.test(pgOut()), '6 x 11 recycled: not offered');
+  // rack cards: VistaPrint 3.74 x 8.27 and Staples 3.5 x 8.5 are the same product size
+  G.set('p-pg-prod', 'rack'); G.w.pPgOptions(); G.w.pCalc(); gout = pgOut();
+  ok(G.$('p-pg-size').options.length === 1 && /3\.74 x 8\.27 in \(Staples 3\.5 x 8\.5\)/.test(G.$('p-pg-size').options[0].textContent), 'rack card size lists the Staples 3.5 x 8.5 beside it');
+  ok(hasAll(gout, refLine(lad('vp-rack-glossy', '3.74 x 8.27'), 100)) && /3\.5 x 8\.5 in, closest size, 1-sided/.test(gout) && hasAll(gout, refLine(lad('stp-rack-1', '3.5 x 8.5'), 100)), 'rack cards: both sellers at 100');
+  // flyers / prints on paper
+  G.set('p-pg-prod', 'flyer'); G.w.pPgOptions();
+  ok(G.$('p-pg-size').value === '8.5 x 11' && G.$('p-pg-stock').value === 'glossy', 'flyers default to 8.5 x 11');
+  G.set('p-pg-size', '11 x 17'); G.set('p-pg-stock', 'matte'); G.set('p-finished-qty', 250); G.w.pCalc(); gout = pgOut();
+  ok(hasAll(gout, refLine(lad('vp-fly-matte', '11 x 17'), 250)) && hasAll(gout, refLine(lad('stp-fly-1', '11 x 17'), 250)), '11 x 17 flyers at 250: VistaPrint and Staples');
+  // posters: VistaPrint poster stock, no Staples poster at 8.5 x 11
+  G.set('p-pg-prod', 'poster'); G.w.pPgOptions(); G.set('p-finished-qty', 5); G.w.pCalc(); gout = pgOut();
+  ok(G.$('p-pg-size').value === '8.5 x 11' && hasAll(gout, refLine(lad('vp-poster-pmatte', '8.5 x 11'), 5)) && !/Staples Canada/.test(gout.split('<div')[0]) && /Defend/.test(gout), 'posters: VistaPrint premium matte 8.5 x 11 at 5, no Staples line, Defend');
+  // folded greeting cards: VistaPrint folds 4 x 5.5 only; Staples sells 5 x 7 folded (with a sale on)
+  G.set('p-pg-prod', 'folded'); G.w.pPgOptions(); G.set('p-finished-qty', 25); G.w.pCalc(); gout = pgOut();
+  const fz = Array.from(G.$('p-pg-size').options).map(o => o.textContent);
+  ok(G.$('p-pg-stock-wrap').style.display === 'none' && fz.some(t => /^4 x 5\.5 in$/.test(t)) && fz.some(t => /^5 x 7 in - Staples only$/.test(t)) && G.$('p-pg-size').value === '5 x 7', 'folded sizes: 4 x 5.5 (VistaPrint) and 5 x 7 (Staples only); paper choice hidden');
+  ok(/their folded cards are 4 x 5\.5 only/.test(gout) && hasAll(gout, refLine(lad('stp-folded-1', '5 x 7'), 25)) && /on sale when captured: \$1\.25 each/.test(gout) && /% vs Staples\)/.test(gout), 'folded 5 x 7: Staples price (sale noted), compared with Staples');
+  ok(!/price break at 1|over 1 they quote/.test(gout) && /Staples: Same price per card at any quantity/.test(gout) && !/Rows are/.test(gout), 'per-card Staples price: no price-break notes, plain-language note');
+  G.set('p-pg-size', '4 x 5.5'); G.w.pCalc();
+  ok(hasAll(pgOut(), refLine(lad('vp-note-folded', '4 x 5.5'), 25)), 'folded 4 x 5.5: VistaPrint note card price');
+  // v46 fix: a Defend job under the market low says so (it used to say "no need to chase them down to $low")
+  const dUnder = G.w.stratAdvice('defend', 1.33, 0.63, 2.09, 2.09), dOver = G.w.stratAdvice('defend', 2.50, 0.63, 2.09, 2.09);
+  ok(/under the market low \(\$2\.09\)/.test(dUnder) && /room to charge more/.test(dUnder) && !/chase/.test(dUnder) && /at or above market/.test(dOver), 'Defend advice: under the market low says there is room to charge more');
+  // flat note cards: VistaPrint 4 x 5.5 and the Staples 4.25 x 5.5 enclosure card
+  G.set('p-pg-prod', 'flat'); G.w.pPgOptions(); G.set('p-pg-size', '4 x 5.5'); G.w.pCalc(); gout = pgOut();
+  ok(hasAll(gout, refLine(lad('vp-note-flat', '4 x 5.5'), 25)) && /4\.25 x 5\.5 in, closest size, 1-sided/.test(gout), 'flat 4 x 5.5: VistaPrint and the Staples 4.25 x 5.5 card');
+  ok(!/\$2\.00 each/.test(gout.split('<br>')[0]), 'the VistaPrint single sample card is not used as an order price');
+  // save with the box on, reopen; a job saved before v46 gets the box back, switched off
+  G.set('cb-name', 'Card Cust'); G.set('cb-title', '25 note cards'); G.w.saveEstimate(); await sleep(20);
+  const gSavedOut = pgOut(), gSavedQuote = G.$('p-quote-total').textContent;
+  G.w.document.getElementById('p-pg-box').remove();
+  G.set('cb-title', 'pre-v46 job'); G.w.eval('jobsActive = null'); G.w.saveEstimate(); await sleep(20);
+  const H = openWin({ 'coba-jobs-v1': G.w.localStorage.getItem('coba-jobs-v1') }); await sleep(40);
+  const hc = H.w.eval('jobsData.customers[0]'), hId = t => hc.estimates.find(e => e.title === t).id;
+  H.w.loadEstimate(hc.id, hId('25 note cards'), false); H.w.cobaConfirmAnswer(true);
+  ok(H.$('p-quote-total').textContent === gSavedQuote && H.$('p-pg-on').checked && H.$('p-pg-prod').value === 'flat' && H.$('p-pg-out').innerHTML === gSavedOut, 'job reopens with the box as it was');
+  H.w.loadEstimate(hc.id, hId('pre-v46 job'), false); H.w.cobaConfirmAnswer(true);
+  ok(H.$('p-quote-total').textContent === gSavedQuote && !!H.$('p-pg-box') && !H.$('p-pg-on').checked && H.$('p-pg-size').options.length > 0, 'a job saved before v46 reopens at its price with the new box put back, off');
+  ok(H.$('p-pg-box').previousElementSibling && H.$('p-pg-box').previousElementSibling.id === 'p-bro-box', 'put back right after the brochure box');
+  H.chk('p-pg-on', true); H.w.pRefToggle('pg'); H.w.resetPaper(); H.w.cobaConfirmAnswer(true);
+  ok(!H.$('p-pg-on').checked && H.$('p-pg-body').style.display === 'none', 'New estimate switches it off');
+  // the old Market check: postcards and colour flyers moved to the new box; plan rows at Staples Canada's range
+  const jt = Array.from(H.$('p-job-type').options);
+  ok(!jt.some(o => o.value === 'postcards' || o.value === 'colour-flyers'), 'old Market check no longer lists postcards or colour flyers');
+  const p24 = jt.find(o => o.value === 'plan-bw-24x36'), p36 = jt.find(o => o.value === 'plan-bw-36x48');
+  ok(p24 && p24.dataset.low === '4.39' && p24.dataset.high === '6.79' && p36 && p36.dataset.low === '8.69' && p36.dataset.high === '13.49', 'plan rows at Staples 2-4 day to 1-hour');
+
+  [A, B, R, K, F, P, Q, G, H].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.log('FAIL: test crashed: ' + (e && e.stack || e)); process.exit(1); });

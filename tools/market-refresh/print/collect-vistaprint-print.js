@@ -1,4 +1,5 @@
-// VistaPrint (CA) calendars, coasters and brochures price collector.
+// VistaPrint (CA) print price collector: calendars, coasters, brochures and (since v46) postcards, flyers,
+// rack cards and note cards.
 // Run this file's full text with javascript_tool in a built-in browser tab that is already open on ONE of the
 // product pages listed in README.md (wait ~3 s after opening). It picks each option the way a customer would,
 // one radio at a time, waits for the shown prices to change, and reads the price VistaPrint shows for every
@@ -15,6 +16,11 @@
   const SIZE = ['size', v => /^\d+(\.\d+)?" x \d+(\.\d+)?"$/.test(v)];
   const STOCK = ['stock', v => ['Glossy', 'Matte', 'Uncoated', 'Recycled'].indexOf(v) >= 0];
   const BRO = { fixed: [SAMPLE_NO], opts: [SIZE, STOCK] };
+  // paper grid (Nov 2026): product-page prices are Backside: Blank (1-sided) and the default thickness
+  // (postcards / rack cards Standard, flyers Budget, note cards Standard Matte 14pt uncoated)
+  const PC_STOCK = ['stock', v => ['Glossy (front only)', 'Matte', 'Uncoated', 'Recycled'].indexOf(v) >= 0];
+  const RACK_STOCK = ['stock', v => ['Glossy Front Only', 'Matte', 'Uncoated', 'Recycled Matte'].indexOf(v) >= 0];
+  const FOLD = ['fold', v => v === 'Flat' || v === 'Folded'];
   const PAGES = {
     'wall-calendars': { opts: [['size', v => ['A5', 'A4', 'A3', 'Double A4', 'Large Wall Calendar'].indexOf(v) >= 0]] },
     'desk-calendars': { opts: [['size', v => v === 'Rectangular desk calendar' || v === '20x20']] },
@@ -26,7 +32,11 @@
     'photo-coasters': {},
     'custom-ceramic-coasters': {},
     'tri-fold': BRO, 'bi-fold': BRO,
-    'z-fold': { fixed: [SAMPLE_NO], opts: [STOCK] }                          // one size (8.5 x 11 flat), no size option
+    'z-fold': { fixed: [SAMPLE_NO], opts: [STOCK] },                         // one size (8.5 x 11 flat), no size option
+    'standard-postcards': { opts: [SIZE, PC_STOCK] },                        // 8 sizes, 4.2x5.5 to 6x11
+    'flyers': { opts: [SIZE, STOCK] },                                       // 11 sizes, 2.5x4 to 11x17
+    'rack-cards': { opts: [RACK_STOCK] },                                    // one size, 3.74 x 8.27
+    'note-cards': { opts: [SIZE, FOLD] }                                     // 5.5x4 and 5x7, flat or folded; envelopes included
   };
   const page = location.pathname.replace(/\/+$/, '').split('/').pop();
   const d = new Date(), z = n => (n < 10 ? '0' : '') + n;

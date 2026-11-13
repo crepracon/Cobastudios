@@ -26,8 +26,19 @@ const SINGLE = { 'poster-calendars': 'vp-cal-poster', 'magnetic-calendars': 'vp-
   'mouse-pad-calendars': 'vp-cal-mousepad', 'paper-coasters': 'vp-coaster-paper', 'photo-coasters': 'vp-coaster-photo',
   'custom-ceramic-coasters': 'vp-coaster-ceramic' };
 const FOLD = { 'tri-fold': 'tri', 'bi-fold': 'bi', 'z-fold': 'z' };
+// paper products (v46, seeded by seed-paper.js): option value on the page -> stock in the seller id
+const PC_STOCK = { 'Glossy (front only)': 'glossy', 'Matte': 'matte', 'Uncoated': 'uncoated', 'Recycled': 'recycled' };
+const FLY_STOCK = { 'Glossy': 'glossy', 'Matte': 'matte', 'Uncoated': 'uncoated', 'Recycled': 'recycled' };
+const RACK_STOCK = { 'Glossy Front Only': 'glossy', 'Matte': 'matte', 'Uncoated': 'uncoated', 'Recycled Matte': 'recycled' };
+const sizeLabel = v => { const n = String(v || '').match(/[\d.]+/g); if (!n || n.length < 2) return ''; return Math.min(+n[0], +n[1]) + ' x ' + Math.max(+n[0], +n[1]); };
 function targets(page, o) {
   const s = id => grid.sellers.find(x => x.id === id);
+  const bySize = (id, size) => { const x = s(id); if (!x) return []; const i = x.sizes.findIndex(z => z.label === sizeLabel(size)); return i >= 0 ? [[id, i]] : []; };
+  if (page === 'standard-postcards') return PC_STOCK[o.stock] ? bySize('vp-pc-' + PC_STOCK[o.stock], o.size) : [];
+  if (page === 'flyers') return FLY_STOCK[o.stock] ? bySize('vp-fly-' + FLY_STOCK[o.stock], o.size) : [];
+  if (page === 'rack-cards') { const id = 'vp-rack-' + RACK_STOCK[o.stock]; return s(id) ? [[id, 0]] : []; }
+  // note cards: Folded switches the page back to 5.5 x 4, so a "5 x 7 Folded" result matches nothing (reported, ignored)
+  if (page === 'note-cards') return o.fold === 'Folded' ? bySize('vp-note-folded', o.size) : o.fold === 'Flat' ? bySize('vp-note-flat', o.size) : [];
   if (page === 'wall-calendars') return WALL[o.size] != null ? [['vp-cal-wall', WALL[o.size]]] : [];
   if (page === 'desk-calendars') return DESK[o.size] != null ? [['vp-cal-desk', DESK[o.size]]] : [];
   if (SINGLE[page]) { const x = s(SINGLE[page]); return x ? x.sizes.map((_, i) => [x.id, i]) : []; }   // ceramic: square + round share one price
@@ -49,6 +60,7 @@ files.forEach(f => {
   if (r.done === false) problems.push(r.page + ': collection stopped early (done: false) - run the collector again on that tab');
   if (r.captured && (!captured || r.captured < captured)) captured = r.captured;
   (r.items || []).forEach(it => {
+    if (r.page === 'note-cards') it.ladder = (it.ladder || []).filter(x => x[0] > 1);   // qty 1 = a one-off sample card
     const t = targets(r.page, it.opts || {});
     if (!t.length) problems.push(r.page + ': no product matches ' + JSON.stringify(it.opts));
     t.forEach(([id, i]) => { (incoming[id] = incoming[id] || {})[i] = it.ladder; });
@@ -59,7 +71,10 @@ if (!captured) { console.log('No collector results in ' + IN); process.exit(1); 
 const pct = (a, b) => ((b / a - 1) * 100);
 const lines = [], held = [];
 let changedSellers = 0;
+const byHand = grid.sellers.filter(s => s.refresh).map(s => s.id);
+if (byHand.length) lines.push('- not part of this refresh (refresh: manual / art): ' + byHand.join(', '));
 grid.sellers.forEach(s => {
+  if (s.refresh) return;   // Staples Canada paper products (read by hand) and VistaPrint posters (art capture)
   const inc = incoming[s.id];
   if (!inc) { held.push(s.id + ': not collected, kept the old prices'); return; }
   const accept = ACCEPT.indexOf(s.id) >= 0, bigMoves = [];

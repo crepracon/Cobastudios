@@ -18,4 +18,4 @@ Paper Estimator · Walk-ins · DTF Heat Transfer · Vinyl/Roland · UV Printing 
 - To use offline: save the page from the browser, or download `index.html` from this repo
 - Version history lives in Git — old versions recoverable via tags/commits
 
-Currently at: **v45** (version history: see CLAUDE.md)
+Currently at: **v46** (version history: see CLAUDE.md)
