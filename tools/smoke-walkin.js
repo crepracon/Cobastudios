@@ -6,7 +6,7 @@
 // 2-sided = double, a typed price survives quantity changes, custom item, HST totals, remove,
 // receipt print (receipt-only layout on, then off; never reused by another tab's print), receipt
 // details saved on the device, copy as text (clipboard and fallback), New sale, and a sale saved with
-// Save estimate reopening at its rung-up prices. Plain ASCII only.
+// Save estimate reopening at its rung-up prices. v48: every price is 3 x the market-based one. Plain ASCII only.
 const fs = require('fs'), path = require('path');
 const { JSDOM } = require('jsdom');
 const SRC = process.argv[2] || path.resolve(__dirname, '..', 'index.html');
@@ -46,11 +46,11 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   // ---------- menu ----------
   const pb = Array.from(A.w.document.querySelectorAll('#w-copy-body .w-pbtn')).map(b => b.textContent);
   ok(pb.length === 12, '12 copy buttons (3 sizes x B&W/colour x 1/2-sided): ' + pb.length);
-  ok(pb.slice(0, 4).join(' ') === '$0.40 $0.80 $0.90 $1.80', 'letter row: ' + pb.slice(0, 4).join(' '));
-  ok(pb.slice(8, 12).join(' ') === '$0.80 $1.60 $1.50 $3.00', '11x17 row: ' + pb.slice(8, 12).join(' '));
+  ok(pb.slice(0, 4).join(' ') === '$1.20 $2.40 $2.70 $5.40', 'letter row: ' + pb.slice(0, 4).join(' '));
+  ok(pb.slice(8, 12).join(' ') === '$2.40 $4.80 $4.50 $9.00', '11x17 row: ' + pb.slice(8, 12).join(' '));
   ok(A.w.document.querySelectorAll('#w-btns-photo .w-ibtn').length === 6 && A.w.document.querySelectorAll('#w-btns-other .w-ibtn').length === 3, 'photo / poster and other buttons');
   ok(A.w.document.querySelectorAll('#w-src-body tbody tr').length === A.w.eval('W_SRC.length'), 'sources table has a row per price');
-  ok(/51\+ \$0\.30/.test(A.$('w-breaks').textContent), 'quantity breaks shown under the copy table');
+  ok(/51\+ \$0\.90/.test(A.$('w-breaks').textContent), 'quantity breaks shown under the copy table');
   // v47: Staples Canada's real copy prices (per printed side, tiers by sides in the order) and The UPS Store's list,
   // as captured Nov 13 2026. No walk-in copy price may be below BOTH at any quantity.
   const STP = { 'bw-let': [[1, .23], [500, .13], [1000, .11], [10000, .09], [20000, .07]], 'bw-leg': [[1, .26], [500, .14], [1000, .09], [20000, .08]],
@@ -65,10 +65,21 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
     qs.forEach(q => { if (at(W[k], q) < Math.min(at(STP[k], q), at(UPS[k], q)) - 1e-9) under.push(k + ' at ' + q + ': ' + at(W[k], q)); });
   });
   ok(under.length === 0, 'v47: no copy price below both Staples Canada and The UPS Store: ' + under.join(', '));
-  ok(A.w.wUnit('col-leg-1', 11) === 0.9 && A.w.wUnit('col-leg-1', 200) === 0.8 && A.w.wUnit('col-tab-1', 11) === 1 && A.w.wUnit('col-tab-1', 200) === 0.8 && A.w.wUnit('col-tab-2', 11) === 2,
-    'v47: colour legal 11+ $0.90 / 200+ $0.80, colour 11x17 11+ $1.00 / 200+ $0.80 (2-sided $2.00)');
-  ok(A.w.wUnit('bw-let-1', 1) === 0.4 && A.w.wUnit('bw-let-1', 51) === 0.3 && A.w.wUnit('col-let-1', 11) === 0.8 && A.w.wUnit('col-leg-1', 1) === 0.9 && A.w.wUnit('col-tab-1', 1) === 1.5 && A.w.wUnit('bw-tab-1', 1) === 0.8,
-    'v47: every other copy price unchanged');
+  ok(A.w.wUnit('col-leg-1', 11) === 2.7 && A.w.wUnit('col-leg-1', 200) === 2.4 && A.w.wUnit('col-tab-1', 11) === 3 && A.w.wUnit('col-tab-1', 200) === 2.4 && A.w.wUnit('col-tab-2', 11) === 6,
+    'v47 x 3: colour legal 11+ $2.70 / 200+ $2.40, colour 11x17 11+ $3.00 / 200+ $2.40 (2-sided $6.00)');
+  ok(A.w.wUnit('bw-let-1', 1) === 1.2 && A.w.wUnit('bw-let-1', 51) === 0.9 && A.w.wUnit('col-let-1', 11) === 2.4 && A.w.wUnit('col-leg-1', 1) === 2.7 && A.w.wUnit('col-tab-1', 1) === 4.5 && A.w.wUnit('bw-tab-1', 1) === 2.4,
+    'v48: every other copy price is 3 x its v47 price');
+  // v48: the market-based tables are the v47 prices; what is charged is exactly 3 x those, to the cent
+  const BB = A.w.eval('JSON.parse(JSON.stringify(W_BASE_BREAKS))'), BO = A.w.eval('JSON.parse(JSON.stringify(W_BASE_OTHER))'), WO = A.w.eval('JSON.parse(JSON.stringify(W_OTHER))');
+  ok(A.w.eval('W_X') === 3 && JSON.stringify(BB['bw-let']) === '[[1,0.4],[51,0.3],[201,0.2],[501,0.15],[1001,0.1]]' && BB['col-tab'][0][1] === 1.5 && BO.find(x => x.k === 'po-24x36').price === 31.99,
+    'v48: market-based prices kept as they were in v47');
+  const off = [];
+  Object.keys(BB).forEach(k => BB[k].forEach((b, i) => { if (W[k][i][0] !== b[0] || Math.abs(W[k][i][1] - Math.round(b[1] * 300) / 100) > 1e-9) off.push(k + ' ' + b[0]); }));
+  BO.forEach((x, i) => { if (WO[i].k !== x.k || Math.abs(WO[i].price - Math.round(x.price * 300) / 100) > 1e-9) off.push(x.k); });
+  ok(off.length === 0 && Object.keys(W).length === Object.keys(BB).length && WO.length === BO.length, 'v48: every walk-in price is 3 x its market-based price: ' + off.join(', '));
+  ok(A.w.wUnit('ph-4x6', 1) === 1.08 && A.w.wUnit('ph-8x10', 1) === 14.55 && A.w.wUnit('po-24x36', 1) === 95.97 && A.w.wUnit('scan', 1) === 3 && A.w.wUnit('file', 1) === 6 && A.w.wUnit('custom', 1) === 0,
+    'v48: photo prints, posters, scan and file fee tripled; custom item still typed');
+  ok(/3 times the market-based prices/.test(A.$('w-src-body').textContent) && /3 times what Staples/.test(A.$('panel-walkin').textContent), 'v48: the tab says prices are 3 times the market');
   const srcTxt = A.$('w-src-body').textContent;
   ok(/\$0\.23 a side; \$0\.13 from 500 sides/.test(srcTxt) && /\$1\.00 a side/.test(srcTxt) && /\$2\.99 per same-day order/.test(srcTxt) && !/from&quot; prices|treat those as rough/.test(srcTxt),
     'v47: sources table shows Staples Canada per-side prices and the same-day fee');
@@ -77,24 +88,24 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   // ---------- tap to add, quantity breaks ----------
   A.w.wAdd('bw-let-1');
   let L = lines(A);
-  ok(L.length === 1 && val(A, L[0], 'q') === '1' && val(A, L[0], 'p') === '0.40' && /^B&W 8\.5x11, 1-sided$/.test(val(A, L[0], 'd')), 'B&W letter added at $0.40');
+  ok(L.length === 1 && val(A, L[0], 'q') === '1' && val(A, L[0], 'p') === '1.20' && /^B&W 8\.5x11, 1-sided$/.test(val(A, L[0], 'd')), 'B&W letter added at $1.20');
   A.w.wAdd('bw-let-1');
   ok(lines(A).length === 1 && val(A, L[0], 'q') === '2', 'tapping again adds one more on the same line');
-  typeQty(A, L[0], 60);  ok(val(A, L[0], 'p') === '0.30', '60 sheets: $' + val(A, L[0], 'p'));
-  typeQty(A, L[0], 250); ok(val(A, L[0], 'p') === '0.20', '250 sheets: $' + val(A, L[0], 'p'));
-  typeQty(A, L[0], 1500); ok(val(A, L[0], 'p') === '0.10' && A.$(L[0] + '-t').textContent === '$150.00', '1500 sheets: $0.10 = ' + A.$(L[0] + '-t').textContent);
-  typeQty(A, L[0], 10); ok(val(A, L[0], 'p') === '0.40' && A.$(L[0] + '-t').textContent === '$4.00', 'back to 10: $0.40');
+  typeQty(A, L[0], 60);  ok(val(A, L[0], 'p') === '0.90', '60 sheets: $' + val(A, L[0], 'p'));
+  typeQty(A, L[0], 250); ok(val(A, L[0], 'p') === '0.60', '250 sheets: $' + val(A, L[0], 'p'));
+  typeQty(A, L[0], 1500); ok(val(A, L[0], 'p') === '0.30' && A.$(L[0] + '-t').textContent === '$450.00', '1500 sheets: $0.30 = ' + A.$(L[0] + '-t').textContent);
+  typeQty(A, L[0], 10); ok(val(A, L[0], 'p') === '1.20' && A.$(L[0] + '-t').textContent === '$12.00', 'back to 10: $1.20');
   A.w.wAdd('bw-let-2'); L = lines(A);
-  typeQty(A, L[1], 60); ok(val(A, L[1], 'p') === '0.60', '2-sided is double: 60 sheets $' + val(A, L[1], 'p'));
+  typeQty(A, L[1], 60); ok(val(A, L[1], 'p') === '1.80', '2-sided is double: 60 sheets $' + val(A, L[1], 'p'));
   A.w.wAdd('col-let-1'); L = lines(A);
-  typeQty(A, L[2], 12); ok(val(A, L[2], 'p') === '0.80', 'colour letter 12: $' + val(A, L[2], 'p'));
-  typeQty(A, L[2], 250); ok(val(A, L[2], 'p') === '0.70', 'colour letter 250: $' + val(A, L[2], 'p'));
+  typeQty(A, L[2], 12); ok(val(A, L[2], 'p') === '2.40', 'colour letter 12: $' + val(A, L[2], 'p'));
+  typeQty(A, L[2], 250); ok(val(A, L[2], 'p') === '2.10', 'colour letter 250: $' + val(A, L[2], 'p'));
   // a typed price is kept when the quantity changes
   A.set(L[2] + '-p', '0.55'); A.w.wPrice(L[2]);
   typeQty(A, L[2], 5); ok(val(A, L[2], 'p') === '0.55' && A.$(L[2] + '-t').textContent === '$2.75', 'typed price kept: 5 x $0.55 = ' + A.$(L[2] + '-t').textContent);
   // photo print, custom item
   A.w.wAdd('ph-5x7'); A.w.wAdd('ph-5x7'); A.w.wAdd('ph-5x7'); L = lines(A);
-  ok(val(A, L[3], 'q') === '3' && val(A, L[3], 'p') === '1.29', 'three 5x7 prints at $1.29');
+  ok(val(A, L[3], 'q') === '3' && val(A, L[3], 'p') === '3.87', 'three 5x7 prints at $3.87');
   A.w.wAdd('custom'); L = lines(A);
   ok(L.length === 5 && val(A, L[4], 'd') === '' && val(A, L[4], 'p') === '0.00' && A.w.document.activeElement.id === L[4] + '-d', 'custom item: blank line, cursor in the description');
   A.set(L[4] + '-d', 'Laminate <b>menu</b>'); A.set(L[4] + '-p', '3'); A.w.wPrice(L[4]);
@@ -102,8 +113,8 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   A.w.wRemove(lines(A)[5]); ok(lines(A).length === 5, 'remove a line');
 
   // ---------- totals ----------
-  // 10 x 0.40 + 60 x 0.60 + 5 x 0.55 + 3 x 1.29 + 1 x 3.00 = 4 + 36 + 2.75 + 3.87 + 3 = 49.62; HST 6.45; total 56.07
-  ok(A.$('w-sub').textContent === '$49.62' && A.$('w-hst').textContent === '$6.45' && A.$('w-grand').textContent === '$56.07', 'totals: ' + [A.$('w-sub'), A.$('w-hst'), A.$('w-grand')].map(e => e.textContent).join(' / '));
+  // 10 x 1.20 + 60 x 1.80 + 5 x 0.55 + 3 x 3.87 + 1 x 3.00 = 12 + 108 + 2.75 + 11.61 + 3 = 137.36; HST 17.86; total 155.22
+  ok(A.$('w-sub').textContent === '$137.36' && A.$('w-hst').textContent === '$17.86' && A.$('w-grand').textContent === '$155.22', 'totals: ' + [A.$('w-sub'), A.$('w-hst'), A.$('w-grand')].map(e => e.textContent).join(' / '));
   ok(A.$('w-count').textContent === '5 items' && A.$('w-lines-table').style.display === '', 'sale header counts 5 items');
 
   // ---------- receipt: print ----------
@@ -113,9 +124,9 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   const rc = A.$('w-receipt');
   ok(/Coba Studios/.test(rc.querySelector('.r-biz b').textContent) && /Brockville/.test(rc.textContent), 'receipt top: Coba Studios, Brockville');
   ok(/Customer: Riverfront Dental/.test(rc.textContent) && /Receipt/.test(rc.textContent), 'customer name from the customer bar');
-  ok(rc.querySelectorAll('table tr').length === 5 && /60 . \$0\.60/.test(rc.textContent) && /\$36\.00/.test(rc.textContent), 'one receipt row per line with qty x each');
+  ok(rc.querySelectorAll('table tr').length === 5 && /60 . \$1\.80/.test(rc.textContent) && /\$108\.00/.test(rc.textContent), 'one receipt row per line with qty x each');
   ok(/Laminate <b>menu<\/b>/.test(rc.textContent) && !rc.querySelector('td b'), 'typed text printed as text, never as markup');
-  ok(/Subtotal\$49\.62/.test(rc.textContent.replace(/\s+/g, '')) && /Total\$56\.07/.test(rc.textContent.replace(/\s+/g, '')), 'receipt totals');
+  ok(/Subtotal\$137\.36/.test(rc.textContent.replace(/\s+/g, '')) && /Total\$155\.22/.test(rc.textContent.replace(/\s+/g, '')), 'receipt totals');
   A.w.dispatchEvent(new A.w.Event('afterprint'));
   ok(!A.w.document.body.classList.contains('w-printing'), 'receipt layout off after printing');
   A.w.document.body.classList.add('w-printing'); A.w.eval('wPrintAt = Date.now() - 60000');
@@ -138,7 +149,7 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   let copied = null;
   Object.defineProperty(A.w.navigator, 'clipboard', { configurable: true, value: { writeText: t => { copied = t; return Promise.resolve(); } } });
   A.w.wCopy(); await sleep(20);
-  ok(copied && /^Coba Studios/.test(copied) && /HST # 123456789 RT0001/.test(copied) && /Total +\$56\.07/.test(copied) && /60 x \$0\.60 +\$36\.00/.test(copied), 'Copy receipt puts a plain-text receipt on the clipboard');
+  ok(copied && /^Coba Studios/.test(copied) && /HST # 123456789 RT0001/.test(copied) && /Total +\$155\.22/.test(copied) && /60 x \$1\.80 +\$108\.00/.test(copied), 'Copy receipt puts a plain-text receipt on the clipboard');
   ok(/[^\x00-\x7F]/.test(copied) === false, 'copied receipt is plain ASCII');
   Object.defineProperty(A.w.navigator, 'clipboard', { configurable: true, value: undefined });
   let execd = false; A.w.document.execCommand = cmd => { execd = cmd === 'copy'; return true; };
@@ -161,7 +172,7 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   ok(A.w.eval('currentTab') === 'walkin' && L.length === 5 && A.$('w-grand').textContent === quote, 'Load reopens the sale at its prices (' + A.$('w-grand').textContent + ')');
   ok(val(A, L[2], 'p') === '0.55' && val(A, L[2], 'm') === '1' && val(A, L[4], 'd') === 'Laminate <b>menu</b>', 'typed prices and custom text come back');
   typeQty(A, L[2], 300); ok(val(A, L[2], 'p') === '0.55', 'a reopened typed price is still kept');
-  typeQty(A, L[0], 60); ok(val(A, L[0], 'p') === '0.30', 'a reopened menu line still re-prices by quantity');
+  typeQty(A, L[0], 60); ok(val(A, L[0], 'p') === '0.90', 'a reopened menu line still re-prices by quantity');
   A.w.wAdd('ph-5x7'); ok(lines(A).length === 5 && val(A, L[3], 'q') === '4', 'tapping an item already on a reopened sale adds one more');
   ok(A.w.document.querySelectorAll('#w-copy-body .w-pbtn').length === 12, 'menu rebuilt after reopening');
 
