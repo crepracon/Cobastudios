@@ -8,7 +8,9 @@
 // manual log, status / notes / delete propagation between devices, a job saved offline pushed
 // on reconnect, first-time device merge, UV Printing jobs saved and reopened on another device,
 // the To-Do / To-Invoice box (v42: add / flip / delete / undo across devices, changes made offline
-// or signed out sent on reconnect), and the structured paper inventory migration. Plain ASCII only.
+// or signed out sent on reconnect; v48: reorder synced as one small write per move, moves made
+// offline sent on reconnect, a name deleted elsewhere never comes back, the date added coloured by
+// age), and the structured paper inventory migration. Plain ASCII only.
 const fs = require('fs'), path = require('path');
 const { JSDOM } = require('jsdom');
 const SRC = process.argv[2] || path.resolve(__dirname, '..', 'index.html');
@@ -43,10 +45,13 @@ function makeFs(server) {
       const ops = [];
       return {
         set(ref, data) { ops.push(['set', ref, JSON.parse(JSON.stringify(data))]); },
+        update(ref, data) { ops.push(['upd', ref, JSON.parse(JSON.stringify(data))]); },
         delete(ref) { ops.push(['del', ref]); },
         commit() {
-          return new Promise(res => setTimeout(() => {
-            ops.forEach(o => { const m = server.cols[o[1].name]; server.writes++; if (o[0] === 'set') m.set(o[1].id, o[2]); else m.delete(o[1].id); });
+          return new Promise((res, rej) => setTimeout(() => {
+            // like Firestore: an update of a missing doc fails the whole batch with not-found
+            if (ops.some(o => o[0] === 'upd' && !server.cols[o[1].name].has(o[1].id))) { server.notFound = (server.notFound || 0) + 1; rej({ code: 'not-found', message: 'No document to update' }); return; }
+            ops.forEach(o => { const m = server.cols[o[1].name]; server.writes++; if (o[0] === 'set') m.set(o[1].id, o[2]); else if (o[0] === 'upd') m.set(o[1].id, Object.assign({}, m.get(o[1].id), o[2])); else m.delete(o[1].id); });
             server.listeners.slice().forEach(l => deliver(server, l));
             res();
           }, 5));
@@ -247,6 +252,117 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(remDocs().some(d => d.text === 'After sign-out') && rem(B).some(x => x.text === 'After sign-out'), 'sent after signing back in');
   ok(rem(B)[0].text === 'After sign-out', 'newest name at the top');
 
+  // ---------- v48: drag to reorder (synced), date added coloured by age ----------
+  const todo = win => rem(win).filter(x => x.list === 'todo').map(x => x.text);
+  const shown = win => Array.from(win.$('rem-list').querySelectorAll('.rem-item .rem-text')).map(el => el.textContent);
+  const rid = (win, t) => rem(win).find(x => x.text === t).id;
+  A.w.remShow('todo'); B.w.remShow('todo');
+  for (const t of ['Alpha', 'Bravo', 'Charlie']) { A.set('rem-input', t); A.w.remAdd(); await sleep(4); }
+  await sleep(60);
+  const start = ['Charlie', 'Bravo', 'Alpha', 'After sign-out', 'Offline Co', 'Bob Plumbing'];
+  ok(todo(A).join() === start.join() && todo(B).join() === start.join(), 'v48: start order, newest on top: ' + todo(B).join(', '));
+  const it0 = A.$('rem-list').querySelector('.rem-item');
+  ok(it0 && it0.children[0].className === 'rem-grip' && it0.children[1].className === 'rem-text' && it0.children[2].className === 'rem-date' && it0.children[3].className === 'rem-del',
+    'v48: each name = grip, text, date on the right, delete');
+  ok(it0.getAttribute('data-id') === rid(A, 'Charlie') && it0.querySelector('.rem-grip').getAttribute('onpointerdown').indexOf(rid(A, 'Charlie')) > 0, 'v48: grip wired to its name');
+  let w0 = server.writes;
+  ok(A.w.remMove(rid(A, 'Alpha'), 0) === true, 'v48: move Alpha to the top');
+  await sleep(60);
+  let want = ['Alpha', 'Charlie', 'Bravo', 'After sign-out', 'Offline Co', 'Bob Plumbing'];
+  ok(todo(A).join() === want.join() && shown(A).join() === want.join(), 'v48: A shows the new order: ' + shown(A).join(', '));
+  ok(todo(B).join() === want.join() && shown(B).join() === want.join(), 'v48: B gets the new order: ' + shown(B).join(', '));
+  ok(server.writes === w0 + 1 && typeof server.cols.reminders.get(rid(A, 'Alpha')).o === 'number', 'v48: one move = one write (o on that name only)');
+  const alpha = server.cols.reminders.get(rid(A, 'Alpha'));
+  ok(alpha.text === 'Alpha' && alpha.list === 'todo' && alpha.t > 0, 'v48: a move keeps the name, list and date added');
+  ok(A.w.remMove(rid(A, 'Alpha'), 0) === false && server.writes === w0 + 1, 'v48: dropping a name where it already is writes nothing');
+  B.w.remMove(rid(B, 'Charlie'), 99); await sleep(60);   // past the end = bottom
+  want = ['Alpha', 'Bravo', 'After sign-out', 'Offline Co', 'Bob Plumbing', 'Charlie'];
+  ok(shown(A).join() === want.join() && shown(B).join() === want.join(), 'v48: move to the bottom from B, A follows: ' + shown(A).join(', '));
+  A.w.remMove(rid(A, 'Bob Plumbing'), 1); await sleep(60);
+  want = ['Alpha', 'Bob Plumbing', 'Bravo', 'After sign-out', 'Offline Co', 'Charlie'];
+  ok(shown(B).join() === want.join(), 'v48: move into the middle: ' + shown(B).join(', '));
+  ok(B.$('rem-n-todo').textContent === '6' && rem(B).filter(x => x.list === 'invoice').length === rem(A).filter(x => x.list === 'invoice').length, 'v48: counts unchanged, To-Invoice untouched');
+  // keyboard: arrow keys on the grip move the name one place
+  B.w.remGripKey({ key: 'ArrowDown', preventDefault() {} }, rid(B, 'Alpha')); await sleep(60);
+  ok(shown(B).slice(0, 2).join() === 'Bob Plumbing,Alpha' && shown(A).slice(0, 2).join() === 'Bob Plumbing,Alpha', 'v48: Arrow Down moves a name down one (A follows)');
+  ok(B.w.document.activeElement && B.w.document.activeElement.className === 'rem-grip' && B.w.document.activeElement.parentNode.getAttribute('data-id') === rid(B, 'Alpha'), 'v48: the grip keeps focus after a keyboard move');
+  B.w.remGripKey({ key: 'ArrowUp', preventDefault() {} }, rid(B, 'Alpha')); await sleep(60);
+  B.w.remGripKey({ key: 'ArrowUp', preventDefault() {} }, rid(B, 'Alpha')); await sleep(60);
+  ok(shown(B)[0] === 'Alpha' && shown(A)[0] === 'Alpha', 'v48: Arrow Up at the top stays at the top');
+  // drop lookups: under a name, over a name, or at the top
+  ok(A.w.remMoveNear(rid(A, 'Charlie'), rid(A, 'Alpha'), null) === true, 'v48: drop under a name');
+  await sleep(60);
+  ok(shown(B).slice(0, 2).join() === 'Alpha,Charlie', 'v48: dropped right under it: ' + shown(B).join(', '));
+  ok(A.w.remMoveNear(rid(A, 'Charlie'), 'gone-on-another-device', rid(A, 'Offline Co')) === true, 'v48: drop over a name when the one above is gone');
+  await sleep(60);
+  ok(shown(B)[shown(B).indexOf('Offline Co') - 1] === 'Charlie', 'v48: dropped right over it: ' + shown(B).join(', '));
+  // a new name still lands on top, a moved name keeps its place through delete + undo
+  A.set('rem-input', 'Delta'); A.w.remAdd(); await sleep(60);
+  ok(shown(A)[0] === 'Delta' && shown(B)[0] === 'Delta', 'v48: a new name still lands on top');
+  A.w.remMove(rid(A, 'Bravo'), 1); await sleep(60);
+  const bravoAt = shown(B).indexOf('Bravo');
+  A.w.remDelete(rid(A, 'Bravo')); await sleep(60);
+  A.w.remUndo(); await sleep(60);
+  ok(bravoAt === 1 && shown(A).indexOf('Bravo') === 1 && shown(B).indexOf('Bravo') === 1, 'v48: Undo puts a moved name back in its place');
+  // no room left between two neighbours: the list is numbered again, order kept, everyone follows
+  // (two names given the same o on the cloud, as if 20-odd moves had used up the room between them)
+  A.w.eval("const P = remItems.filter(x => x.list === 'todo').slice(1, 3); P.forEach(x => { x.o = remKey(P[0]); }); remWriteOrder(P); remSort(); remRender();");
+  await sleep(80);
+  const top3 = shown(A).slice(0, 3), third = shown(A)[4];
+  const w48 = server.writes;
+  A.w.remMove(rid(A, third), 2); await sleep(80);
+  const keys = rem(A).filter(x => x.list === 'todo').map(x => A.w.remKey(x));
+  ok(shown(A).slice(0, 4).join() === [top3[0], top3[1], third, top3[2]].join() && keys.every((k, i) => !i || keys[i - 1] > k), 'v48: no room between two names: list numbered again: ' + shown(A).join(', '));
+  ok(server.writes > w48 + 1 && keys[0] <= Date.now() + 5, 'v48: renumbering writes the list once and keeps new names landing on top');
+  ok(shown(B).join() === shown(A).join(), 'v48: B follows the renumbered list');
+  // offline: a move waits on the device and is sent on reconnect; one deleted elsewhere stays deleted
+  S.w.cloudStop(); S.w.eval('cloudUser = null');
+  S.w.remShow('todo');
+  const sTop = shown(S)[0], sLast = shown(S)[shown(S).length - 1];
+  S.w.remMove(rid(S, sLast), 0);
+  S.w.remMove(rid(S, 'Alpha'), 99);
+  const goneId = rid(S, 'Alpha');
+  let st2 = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1')).out;
+  ok(typeof st2.mov[rid(S, sLast)] === 'number' && typeof st2.mov[goneId] === 'number' && shown(S)[0] === sLast, 'v48: offline moves wait on the device (' + sLast + ' to the top)');
+  A.w.remDelete(goneId); await sleep(60);   // Alpha deleted on A while S is offline
+  const nf48 = server.notFound || 0;
+  S.w.eval("cloudUser = { email:'chris@example.com' }; cloudStart();"); await sleep(100);
+  ok(shown(A)[0] === sLast && shown(B)[0] === sLast && shown(A)[1] === sTop, 'v48: offline move sent on reconnect: ' + shown(A).join(', '));
+  ok(!server.cols.reminders.has(goneId) && !rem(S).some(x => x.id === goneId) && !rem(A).some(x => x.id === goneId), 'v48: a name moved offline but deleted elsewhere stays deleted');
+  ok((server.notFound || 0) === nf48, 'v48: no write sent for the deleted name');
+  st2 = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1')).out;
+  ok(Object.keys(st2.mov).length === 0 && Object.keys(st2.add).length === 0 && Object.keys(st2.del).length === 0, 'v48: nothing left waiting');
+  // a live move of a name deleted a moment ago on another device does not bring it back
+  const ghost = rid(A, 'Delta');
+  A.w.remDelete(ghost); B.w.eval("remItems = remItems.concat([]);");
+  B.w.eval("remCloud.set('" + ghost + "', { list:'todo', text:'Delta', t: 1 });");   // B has not heard of the delete yet
+  B.w.remWriteOrder([{ id: ghost, o: 9e12 }]); await sleep(80);
+  ok(!server.cols.reminders.has(ghost) && (server.notFound || 0) === nf48 + 1 && B.errs.length === 0 && !/failed/.test(B.$('cloud-status') ? B.$('cloud-status').textContent : ''), 'v48: a move of a just-deleted name fails quietly, name stays deleted');
+  serverPoke(server); await sleep(30);
+  // a v42 copy on a device (no mov waiting list) still loads and can wait for moves offline
+  const V = openWin({ reminders: JSON.stringify({ items: [{ id: 'r1-aaaa', list: 'todo', text: 'Old one', t: 1700000000000 }, { id: 'r2-bbbb', list: 'todo', text: 'Old two', t: 1700000100000 }], out: { add: {}, del: {} }, view: 'todo' }) });
+  await sleep(40);
+  ok(shown(V).join() === 'Old two,Old one', 'v48: a v42 copy loads in its order');
+  V.w.remMove('r1-aaaa', 0);
+  ok(shown(V).join() === 'Old one,Old two' && typeof JSON.parse(V.w.localStorage.getItem('coba-reminders-v1')).out.mov['r1-aaaa'] === 'number', 'v48: and keeps an offline move waiting');
+  // date added: on the right, coloured by age
+  const now = Date.now(), DAY = 864e5;
+  ok(A.w.remAgeHue(now, now) === 120 && A.w.remAgeHue(now + DAY, now) === 120 && A.w.remAgeHue(now - 1.5 * DAY, now) === 90 && A.w.remAgeHue(now - 3 * DAY, now) === 60 &&
+    A.w.remAgeHue(now - 4.5 * DAY, now) === 30 && A.w.remAgeHue(now - 6 * DAY, now) === 0 && A.w.remAgeHue(now - 40 * DAY, now) === 0,
+    'v48: colour fades green (new) - yellow (3 days) - orange (4.5) - red (6 and older)');
+  const d0 = A.$('rem-list').querySelector('.rem-date');
+  ok(d0 && /hsl\(120,/.test(d0.getAttribute('style')) && /^[A-Z][a-z]{2} \d{1,2}$/.test(d0.textContent) && /^Added .* \((less than an hour|\d+ hours?) ago\)$/.test(d0.title),
+    'v48: a name added today shows its date in green: ' + (d0 && d0.textContent + ' / ' + d0.title));
+  ok(/^Added .* \(2 days ago\)$/.test(A.w.remAgeTitle(now - 2.2 * DAY, now)) && /\(1 day ago\)$/.test(A.w.remAgeTitle(now - 1.1 * DAY, now)), 'v48: hover tells how old it is');
+  d0.setAttribute('data-t', String(now - 7 * DAY)); A.w.remAgeRefresh();
+  ok(/hsl\(0,/.test(d0.getAttribute('style')) && /7 days ago/.test(d0.title), 'v48: colours are refreshed while the page stays open');
+  const old = { id: 'r1-cccc', list: 'invoice', text: 'Week-old invoice', t: now - 5 * DAY };
+  A.w.remPut(old); await sleep(60);
+  B.w.remShow('invoice');
+  const dB = Array.from(B.$('rem-list').querySelectorAll('.rem-item')).find(el => /Week-old/.test(el.textContent)).querySelector('.rem-date');
+  ok(/hsl\(20,/.test(dB.getAttribute('style')), 'v48: To-Invoice names are coloured too (5 days = ' + dB.getAttribute('style').slice(0, 18) + ')');
+  B.w.remShow('todo'); A.w.remDelete(old.id); await sleep(60);
+
   // ---------- v43/v45: construction plans at Staples 1-hour rates (B&W at their standard-size level, v45); ----------
   // ---------- a plan job saved at the old rates keeps its quote ----------
   const P = openWin({ joined: true }); await connect(P, server);
@@ -407,7 +523,7 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(R.w.eval('inventory.papers').filter(isFin80).length === 0, 'a removed 80# Finesse stays removed');
 
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);

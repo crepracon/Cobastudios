@@ -246,10 +246,18 @@
     .rem-add input[type=text] { flex:1; min-width:0; }
     .rem-add-btn { flex:none; width:34px; border:none; border-radius:6px; background:#2563eb; color:#fff; font-size:20px; line-height:1; font-family:inherit; cursor:pointer; }
     .rem-box[data-view=invoice] .rem-add-btn { background:#16a34a; }
-    .rem-list { max-height:60vh; overflow-y:auto; padding:0 10px 4px; }
-    .rem-item { display:flex; align-items:center; gap:4px; background:#fff; border:1px solid #eee; border-radius:6px; padding:6px 4px 6px 10px; margin-bottom:6px; }
+    .rem-list { position:relative; max-height:60vh; overflow-y:auto; padding:0 10px 4px; }
+    .rem-item { display:flex; align-items:center; gap:4px; background:#fff; border:1px solid #eee; border-radius:6px; padding:4px 4px 4px 2px; margin-bottom:6px; }
     .rem-text { flex:1; min-width:0; font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
-    .rem-date { display:block; font-size:11px; color:#999; }
+    /* v48: drag grip (CSS dots) and the date added, coloured by age in JS (remAgeStyle) */
+    .rem-grip { flex:none; align-self:stretch; position:relative; width:20px; min-height:28px; padding:0; border:none; border-radius:4px; background:transparent; cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
+    .rem-grip::before { content:''; position:absolute; left:50%; top:50%; width:8px; height:14px; margin:-7px 0 0 -4px; background:radial-gradient(circle, #b8b8b2 1.2px, transparent 1.6px) 0 0 / 4px 4.667px; }
+    .rem-grip:hover { background:#f3f3ef; }
+    .rem-grip:hover::before, .rem-grip:focus-visible::before { background-image:radial-gradient(circle, #555 1.2px, transparent 1.6px); }
+    .rem-item.rem-dragging { position:relative; z-index:2; border-color:#cfcfc8; box-shadow:0 6px 18px rgba(0,0,0,.16); }
+    .rem-item.rem-dragging .rem-grip { background:#ecece6; }
+    body.rem-drag-on, body.rem-drag-on * { cursor:grabbing !important; -webkit-user-select:none !important; user-select:none !important; }
+    .rem-date { flex:none; font-size:11px; font-weight:600; line-height:1.3; padding:1px 6px; border:1px solid transparent; border-radius:10px; white-space:nowrap; }
     .rem-del { flex:none; width:30px; height:30px; border:none; border-radius:5px; background:transparent; color:#bbb; font-size:20px; line-height:1; font-family:inherit; cursor:pointer; }
     .rem-del:hover { background:#fdecec; color:#b33; }
     .rem-empty { font-size:12px; color:#999; text-align:center; padding:12px 6px 16px; }
@@ -2869,42 +2877,68 @@ document.addEventListener('focusout', ()=>{
 //  TO-DO / TO-INVOICE BOX  (v42, Jobs tab; localStorage: coba-reminders-v1)
 // ══════════════════════════════════════════════
 // Two quick lists of names in one box; the header flips between them. Each item is its own
-// Firestore doc in 'reminders' { list, text, t }, synced through the same sign-in as Jobs.
+// Firestore doc in 'reminders' { list, text, t, o }, synced through the same sign-in as Jobs.
 // Changes made while the cloud is not connected wait in remOut and are sent the next time the
 // cloud list loads, so a name typed offline is not lost and one deleted offline does not come back.
+// v48: names can be dragged up and down (the dotted grip on the left; or focus it and use the up /
+// down arrow keys). The order is the optional number o, bigger = higher; a name without o sorts by
+// t, so new names still land on top. A move changes only the moved name's o, set between its new
+// neighbours, so it is one small write and two devices moving different names never undo each
+// other. A move made while the cloud is not connected waits in remOut.mov (id -> o).
+// v48: each name shows the day it was added, its colour fading from green (just added) through
+// yellow and orange to red at REM_FADE_DAYS days old; the colours are refreshed every 10 minutes.
 const REM_KEY = 'coba-reminders-v1';
 const REM_LISTS = {
   todo:    { ph: 'Add to To-Do...',      empty: 'Nothing on the to-do list.' },
   invoice: { ph: 'Add to To-Invoice...', empty: 'Nobody waiting to be invoiced.' }
 };
-let remItems = [];                  // { id, list: 'todo' | 'invoice', text, t } newest first
-let remOut = { add: {}, del: {} };  // made while the cloud was not connected: id -> item / true
-let remView = 'todo';               // which list the box shows (per device)
-let remCloud = null;                // Map id -> doc data while the cloud list is live
+const REM_FADE_DAYS = 6;
+let remItems = [];                           // { id, list: 'todo' | 'invoice', text, t, o? } top of the list first
+let remOut = { add: {}, del: {}, mov: {} };  // made while the cloud was not connected: id -> item / true / o
+let remView = 'todo';                        // which list the box shows (per device)
+let remCloud = null;                         // Map id -> doc data while the cloud list is live
 let remUndoItem = null;
+let remDrag = null;                          // v48: the drag in progress (the list is not redrawn under it)
 
 function remValid(x){ return !!x && typeof x.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(x.id) && (x.list in REM_LISTS) && typeof x.text === 'string' && x.text !== ''; }
+function remHasO(x){ return !!x && typeof x.o === 'number' && isFinite(x.o); }
+function remKey(x){ return remHasO(x) ? x.o : (+x.t || 0); }
 function remLoad(){
   try{
     const d = JSON.parse(localStorage.getItem(REM_KEY) || 'null');
     if(d){
       if(Array.isArray(d.items)) remItems = d.items.filter(remValid);
-      if(d.out) remOut = { add: d.out.add || {}, del: d.out.del || {} };
+      if(d.out) remOut = { add: d.out.add || {}, del: d.out.del || {}, mov: d.out.mov || {} };
       if(d.view in REM_LISTS) remView = d.view;
     }
   }catch(e){ console.error('reminders load failed', e); }
   remSort();
 }
 function remStore(){ try{ localStorage.setItem(REM_KEY, JSON.stringify({ items: remItems, out: remOut, view: remView })); }catch(e){} }
-function remSort(){ remItems.sort((a, b)=> (b.t || 0) - (a.t || 0)); }
+function remSort(){ remItems.sort((a, b)=> (remKey(b) - remKey(a)) || ((+b.t || 0) - (+a.t || 0)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)); }
 function remLive(){ return !!(fb && cloudUser && remCloud); }
 function remWrite(item, del){
   // Firestore queues the write if the connection drops and sends it when it is back
   const fs = fb.fs, ref = fs.doc(fb.db, 'reminders', item.id), b = fs.writeBatch(fb.db);
-  if(del) b.delete(ref); else b.set(ref, { list: item.list, text: item.text, t: item.t });
+  if(del) b.delete(ref);
+  else{ const d = { list: item.list, text: item.text, t: item.t }; if(remHasO(item)) d.o = item.o; b.set(ref, d); }
   b.commit().catch(err=>{
     console.error('reminder save', err);
     cloudStatus('error', 'Cloud save failed: ' + (err.code || err.message) + ' - that change is only on this device');
+  });
+}
+// v48: a new place in the list is an update of o alone, one write per name; an update of a name
+// deleted meanwhile on another device fails with not-found, so the name stays deleted
+function remWriteOrder(items){
+  const fs = fb.fs;
+  items.forEach(item=>{
+    const b = fs.writeBatch(fb.db);
+    b.update(fs.doc(fb.db, 'reminders', item.id), { o: item.o });
+    b.commit().catch(err=>{
+      if(err && err.code === 'not-found') return;
+      console.error('reminder order', err);
+      cloudStatus('error', 'Cloud save failed: ' + (err.code || err.message) + ' - that change is only on this device');
+    });
   });
 }
 function remAdd(){
@@ -2919,13 +2953,17 @@ function remPut(item){
   remItems = [item].concat(remItems.filter(x=>x.id !== item.id));
   remSort();
   if(remLive()) remWrite(item, false);
-  else if(remOut.del[item.id]) delete remOut.del[item.id];   // undo of a delete made offline
+  else if(remOut.del[item.id]){   // undo of a delete made offline
+    delete remOut.del[item.id];
+    if(remHasO(item)) remOut.mov[item.id] = item.o;
+  }
   else remOut.add[item.id] = item;
   remStore(); remRender();
 }
 function remDelete(id){
   const item = remItems.find(x=>x.id === id); if(!item) return;
   remItems = remItems.filter(x=>x.id !== id);
+  delete remOut.mov[id];
   if(remLive()) remWrite(item, true);
   else if(remOut.add[id]) delete remOut.add[id];   // never reached the cloud
   else remOut.del[id] = true;
@@ -2944,12 +2982,150 @@ function remUndo(){
   remPut(item);
 }
 function remShow(list){ if(!(list in REM_LISTS)) return; remView = list; remStore(); remRender(); }
+
+// ---- v48: order ----
+// put a name at place 'to' (0 = top) of its own list; returns false when nothing moved
+function remMove(id, to){
+  const item = remItems.find(x=>x.id === id); if(!item) return false;
+  const inList = remItems.filter(x=>x.list === item.list);
+  const others = inList.filter(x=>x !== item);
+  to = Math.max(0, Math.min(Math.round(+to || 0), others.length));
+  if(inList.indexOf(item) === to) return false;
+  const above = others[to - 1], below = others[to], now = Date.now();
+  const o = !above ? Math.max(remKey(below) + 1, now)   // top: never later than needed, so the next new name still lands above it
+          : !below ? remKey(above) - 1000
+          : (remKey(above) + remKey(below)) / 2;
+  let changed = [item];
+  if(above && below && !(remKey(above) - o > 0.001 && o - remKey(below) > 0.001)){
+    // no room left between the two neighbours: number the whole list again, a second apart
+    others.splice(to, 0, item);
+    const top = Math.max(now, remKey(others[0]));
+    changed = others.filter((x, i)=>{ const k = top - i * 1000; if(remHasO(x) && x.o === k) return false; x.o = k; return true; });
+  } else {
+    item.o = o;
+  }
+  remSort();
+  if(remLive()) remWriteOrder(changed);
+  else changed.forEach(x=>{ if(remOut.add[x.id]) remOut.add[x.id].o = x.o; else remOut.mov[x.id] = x.o; });
+  remStore(); remRender();
+  return true;
+}
+// a dropped name goes right under the name it was dropped under (or right over the one it was
+// dropped over); looked up again in case the list changed on another device during the drag
+function remMoveNear(id, aboveId, belowId){
+  const item = remItems.find(x=>x.id === id); if(!item) return false;
+  const others = remItems.filter(x=>x.list === item.list && x !== item);
+  const a = aboveId ? others.findIndex(x=>x.id === aboveId) : -1;
+  const b = belowId ? others.findIndex(x=>x.id === belowId) : -1;
+  const to = a >= 0 ? a + 1 : b >= 0 ? b : !aboveId ? 0 : !belowId ? others.length : -1;
+  return to >= 0 && remMove(id, to);
+}
+function remFocusGrip(id){ const g = document.querySelector('#rem-list .rem-item[data-id="' + id + '"] .rem-grip'); if(g) g.focus(); }
+function remGripKey(e, id){
+  if(e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  e.preventDefault();
+  const item = remItems.find(x=>x.id === id); if(!item) return;
+  const at = remItems.filter(x=>x.list === item.list).indexOf(item);
+  if(remMove(id, at + (e.key === 'ArrowUp' ? -1 : 1))) remFocusGrip(id);
+}
+// pointer drag on the grip (mouse, touch and pen): the name follows the pointer and the others
+// make room as it passes their middle; the list scrolls when the pointer is near its top or bottom
+function remDragStart(e, id){
+  if(remDrag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const grip = e.currentTarget, item = grip && grip.closest('.rem-item'), list = document.getElementById('rem-list');
+  if(!item || !list) return;
+  e.preventDefault();
+  try{ grip.setPointerCapture(e.pointerId); }catch(err){}
+  const r = list.getBoundingClientRect();
+  remDrag = { id, item, list, grip, pid: e.pointerId, cy: e.clientY, p0: e.clientY - r.top + list.scrollTop, top0: item.offsetTop, vy: 0, raf: 0 };
+  item.classList.add('rem-dragging');
+  document.body.classList.add('rem-drag-on');
+  grip.addEventListener('pointermove', remDragMove);
+  grip.addEventListener('pointerup', remDragEnd);
+  grip.addEventListener('pointercancel', remDragEnd);
+  grip.addEventListener('lostpointercapture', remDragEnd);
+  document.addEventListener('keydown', remDragKey, true);
+}
+function remDragMove(e){
+  const D = remDrag; if(!D || e.pointerId !== D.pid) return;
+  e.preventDefault();
+  D.cy = e.clientY;
+  const r = D.list.getBoundingClientRect(), edge = 28;
+  D.vy = e.clientY < r.top + edge ? -8 : e.clientY > r.bottom - edge ? 8 : 0;
+  if(D.vy && !D.raf) D.raf = requestAnimationFrame(remDragScroll);
+  remDragPlace();
+}
+function remDragScroll(){
+  const D = remDrag; if(!D) return;
+  D.raf = 0;
+  if(!D.vy) return;
+  const was = D.list.scrollTop;
+  D.list.scrollTop = was + D.vy;
+  if(D.list.scrollTop !== was){ remDragPlace(); D.raf = requestAnimationFrame(remDragScroll); }
+}
+function remDragPlace(){
+  const D = remDrag, list = D.list, it = D.item, h = it.offsetHeight;
+  const all = list.querySelectorAll('.rem-item'), first = all[0], last = all[all.length - 1];
+  const r = list.getBoundingClientRect();
+  const raw = D.top0 + (D.cy - r.top + list.scrollTop) - D.p0;   // where the pointer would put its top
+  // its middle, kept just past the middles of the first and last names, so it can always be
+  // dropped first or last whatever the heights of the names
+  const mid = Math.max(first.offsetTop + first.offsetHeight / 2 - 1, Math.min(last.offsetTop + last.offsetHeight / 2 + 1, raw + h / 2));
+  // the neighbours are moved, never the dragged name itself: taking it out of the page, even for a
+  // moment, would end the pointer capture and drop it there
+  let p = it.previousElementSibling, n = it.nextElementSibling;
+  while(p && p.classList.contains('rem-item') && mid < p.offsetTop + p.offsetHeight / 2){ list.insertBefore(p, it.nextSibling); p = it.previousElementSibling; }
+  while(n && n.classList.contains('rem-item') && mid > n.offsetTop + n.offsetHeight / 2){ list.insertBefore(n, it); n = it.nextElementSibling; }
+  // drawn under the pointer, but not past the top of the first name or the bottom of the last
+  const now = list.querySelectorAll('.rem-item'), top = now[0].offsetTop, end = now[now.length - 1];
+  const want = Math.max(top, Math.min(end.offsetTop + end.offsetHeight - h, raw));
+  it.style.transform = 'translateY(' + (want - it.offsetTop) + 'px)';
+}
+function remDragKey(e){ if(e.key === 'Escape' && remDrag){ e.preventDefault(); remDragEnd({ type: 'pointercancel', pointerId: remDrag.pid }); } }
+function remDragEnd(e){
+  const D = remDrag; if(!D || (e && e.pointerId !== undefined && e.pointerId !== D.pid)) return;
+  remDrag = null;
+  if(D.raf) cancelAnimationFrame(D.raf);
+  D.grip.removeEventListener('pointermove', remDragMove);
+  D.grip.removeEventListener('pointerup', remDragEnd);
+  D.grip.removeEventListener('pointercancel', remDragEnd);
+  D.grip.removeEventListener('lostpointercapture', remDragEnd);
+  document.removeEventListener('keydown', remDragKey, true);
+  try{ D.grip.releasePointerCapture(D.pid); }catch(err){}
+  D.item.classList.remove('rem-dragging'); D.item.style.transform = '';
+  document.body.classList.remove('rem-drag-on');
+  const near = dir=>{ let s = D.item[dir]; while(s && !s.classList.contains('rem-item')) s = s[dir]; return s ? s.getAttribute('data-id') : null; };
+  const moved = !(e && e.type === 'pointercancel') && remMoveNear(D.id, near('previousElementSibling'), near('nextElementSibling'));
+  if(!moved) remRender();   // back to the saved order (and anything that changed during the drag)
+}
+
+// ---- v48: date added, coloured by age ----
 function remDate(t){
   const d = new Date(t || 0); if(!t || isNaN(d)) return '';
   try{ return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }); }catch(e){ return jobsLocalDate(d); }
 }
+function remAgeDays(t, now){ return t ? Math.max(0, ((now || Date.now()) - t) / 86400000) : 0; }
+// 120 = green (just added), 60 = yellow (3 days), 30 = orange (4.5 days), 0 = red (REM_FADE_DAYS and older)
+function remAgeHue(t, now){ return Math.round(120 * (1 - Math.min(1, remAgeDays(t, now) / REM_FADE_DAYS))); }
+function remAgeStyle(t, now){ const h = remAgeHue(t, now); return 'background:hsl(' + h + ',85%,90%);color:hsl(' + h + ',90%,24%);border-color:hsl(' + h + ',60%,70%)'; }
+function remAgeTitle(t, now){
+  const d = remAgeDays(t, now), days = Math.floor(d), hrs = Math.floor(d * 24);
+  let when = '';
+  try{ when = new Date(t).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }catch(e){ when = remDate(t); }
+  return 'Added ' + when + ' (' + (days >= 1 ? days + (days === 1 ? ' day' : ' days') : hrs >= 1 ? hrs + (hrs === 1 ? ' hour' : ' hours') : 'less than an hour') + ' ago)';
+}
+function remAgeRefresh(){
+  const now = Date.now();
+  document.querySelectorAll('#rem-list .rem-date[data-t]').forEach(el=>{
+    const t = +el.getAttribute('data-t');
+    el.setAttribute('style', remAgeStyle(t, now)); el.title = remAgeTitle(t, now);
+  });
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) remAgeRefresh(); });
+
 function remRender(){
   const box = document.getElementById('rem-box'); if(!box) return;
+  if(remDrag) return;   // redrawn when the drag ends
   const n = { todo: 0, invoice: 0 };
   remItems.forEach(x=>{ n[x.list]++; });
   Object.keys(REM_LISTS).forEach(k=>{
@@ -2958,11 +3134,18 @@ function remRender(){
   });
   box.setAttribute('data-view', remView);
   document.getElementById('rem-input').placeholder = REM_LISTS[remView].ph;
-  const items = remItems.filter(x=>x.list === remView);
+  const items = remItems.filter(x=>x.list === remView), now = Date.now();
+  // a grip that has keyboard focus keeps it through the redraw (arrow-key moves, cloud updates)
+  const ae = document.activeElement, keep = ae && ae.classList && ae.classList.contains('rem-grip') && ae.parentNode ? ae.parentNode.getAttribute('data-id') : null;
   document.getElementById('rem-list').innerHTML = items.length
-    ? items.map(x=>'<div class="rem-item"><div class="rem-text">' + jobsEsc(x.text) + '<span class="rem-date">' + jobsEsc(remDate(x.t)) + '</span></div>' +
+    ? items.map(x=>'<div class="rem-item" data-id="' + x.id + '">' +
+        '<button type="button" class="rem-grip" title="Drag to move (or use the up / down arrow keys)" aria-label="Move ' + jobsEsc(x.text) + '"' +
+          ' onpointerdown="remDragStart(event, \'' + x.id + '\')" onkeydown="remGripKey(event, \'' + x.id + '\')"></button>' +
+        '<div class="rem-text">' + jobsEsc(x.text) + '</div>' +
+        (x.t ? '<span class="rem-date" data-t="' + (+x.t) + '" style="' + remAgeStyle(x.t, now) + '" title="' + jobsEsc(remAgeTitle(x.t, now)) + '">' + jobsEsc(remDate(x.t)) + '</span>' : '') +
         '<button class="rem-del" title="Delete" onclick="remDelete(\'' + x.id + '\')">&times;</button></div>').join('')
     : '<div class="rem-empty">' + REM_LISTS[remView].empty + '</div>';
+  if(keep) remFocusGrip(keep);
 }
 // live listener on the 'reminders' collection, started by cloudStart()
 function remListen(onErr){
@@ -2977,13 +3160,23 @@ function remListen(onErr){
 }
 function remCloudApply(first){
   const list = [];
-  remCloud.forEach((d, id)=>{ const x = { id, list: d && d.list, text: d && d.text, t: (d && +d.t) || 0 }; if(remValid(x)) list.push(x); });
+  remCloud.forEach((d, id)=>{
+    const x = { id, list: d && d.list, text: d && d.text, t: (d && +d.t) || 0 };
+    if(d && typeof d.o === 'number' && isFinite(d.o)) x.o = d.o;
+    if(remValid(x)) list.push(x);
+  });
   if(first){
-    // first load after connecting: send what was added or deleted while the cloud was not connected
-    const add = remOut.add, del = remOut.del;
-    remOut = { add: {}, del: {} };
+    // first load after connecting: send what was added, deleted or moved while the cloud was not connected
+    const add = remOut.add, del = remOut.del, mov = remOut.mov || {};
+    remOut = { add: {}, del: {}, mov: {} };
     Object.keys(add).forEach(id=>{ if(!remCloud.has(id) && remValid(add[id])){ remWrite(add[id], false); list.push(add[id]); } });
     Object.keys(del).forEach(id=>{ if(remCloud.has(id)) remWrite({ id }, true); });
+    const moved = [];
+    Object.keys(mov).forEach(id=>{
+      const x = !del[id] && list.find(y=>y.id === id);
+      if(x && remCloud.has(id) && typeof mov[id] === 'number' && isFinite(mov[id])){ x.o = mov[id]; moved.push(x); }
+    });
+    if(moved.length) remWriteOrder(moved);
     remItems = list.filter(x=>!del[x.id]);
   } else {
     remItems = list;
@@ -5938,7 +6131,7 @@ function resetUV(){
 // ══════════════════════════════════════════════
 invLoad();
 jobsLoad();
-remLoad(); remRender();
+remLoad(); remRender(); setInterval(remAgeRefresh, 600000);   // v48: date colours follow the time of day
 wMenuBuild(); wCalc();
 invRenderAll();
 rebuildDropdowns();
