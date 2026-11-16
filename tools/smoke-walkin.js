@@ -38,10 +38,14 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
 (async () => {
   const A = openWin();
   await sleep(80);
-  A.w.switchTabByName('walkin');
-  ok(A.w.eval('currentTab') === 'walkin', 'Walk-ins tab opens');
   const tabs = Array.from(A.w.document.querySelectorAll('.tab-btn')).map(b => b.textContent.trim());
-  ok(/Paper/.test(tabs[0]) && /Walk-ins/.test(tabs[1]), 'Walk-ins sits right after Paper: ' + tabs.slice(0, 3).join(' | '));
+  ok(tabs.length === 8 && /Walk-ins/.test(tabs[0]) && /Paper/.test(tabs[1]) && /Inventory/.test(tabs[6]) && /Jobs/.test(tabs[7]), 'v48: Walk-ins first, Jobs last: ' + tabs.join(' | '));
+  ok(A.w.eval('currentTab') === 'paper' && /Paper/.test(A.w.document.querySelector('.tab-btn.active').textContent) && A.w.document.querySelectorAll('.tab-btn.active').length === 1 && A.$('panel-paper').classList.contains('active'), 'the app still opens on Paper');
+  A.w.switchTabByName('walkin');
+  ok(A.w.eval('currentTab') === 'walkin' && /Walk-ins/.test(A.w.document.querySelector('.tab-btn.active').textContent), 'Walk-ins tab opens');
+  A.w.switchTabByName('jobs');
+  ok(A.w.eval('currentTab') === 'jobs' && A.$('panel-jobs').classList.contains('active') && /Jobs/.test(A.w.document.querySelector('.tab-btn.active').textContent), 'Jobs tab (last) opens');
+  A.w.switchTabByName('walkin');
 
   // ---------- menu ----------
   const pb = Array.from(A.w.document.querySelectorAll('#w-copy-body .w-pbtn')).map(b => b.textContent);
