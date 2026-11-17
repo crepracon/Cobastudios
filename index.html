@@ -307,17 +307,30 @@
     .w-tot span:last-child { font-family:monospace; }
     .w-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
     .w-link { background:none; border:none; padding:4px 0; margin-left:auto; color:#2563eb; font-size:12px; font-family:inherit; text-decoration:underline; cursor:pointer; }
-    #w-receipt { display:none; width:3.3in; margin:0 auto; padding:.15in 0; font-size:12px; line-height:1.4; color:#000; }
-    #w-receipt .r-biz { text-align:center; margin-bottom:8px; }
-    #w-receipt .r-biz b { font-size:15px; }
-    #w-receipt .r-meta { text-align:center; font-size:11px; margin-bottom:8px; }
-    #w-receipt table { margin:0; border-top:1px dashed #000; border-bottom:1px dashed #000; }
-    #w-receipt td { border:none; padding:4px 0; font-size:12px; vertical-align:top; }
-    #w-receipt td.r-amt { text-align:right; white-space:nowrap; padding-left:8px; }
-    #w-receipt .r-sub { display:block; font-size:11px; color:#333; }
-    #w-receipt .r-tot { display:flex; justify-content:space-between; padding:2px 0; }
-    #w-receipt .r-grand { font-size:14px; font-weight:700; border-top:1px solid #000; margin-top:3px; padding-top:4px; }
-    #w-receipt .r-thanks { text-align:center; margin-top:10px; }
+    /* v49: the printed receipt follows the Coba Studios invoice: business lines, title and logo across
+       the top, green table headers, totals on the right, tax summary (colours measured from the invoice) */
+    #w-receipt { display:none; width:100%; max-width:7.5in; margin:0 auto; padding:0; font-family:Helvetica, Arial, sans-serif; font-size:9.5pt; line-height:1.38; color:#000; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    #w-receipt .r-top { display:grid; grid-template-columns:1fr auto 1fr; column-gap:.25in; align-items:start; }
+    #w-receipt .r-from div { white-space:pre-wrap; overflow-wrap:anywhere; }
+    #w-receipt .r-title { font-size:15pt; line-height:1.1; }
+    #w-receipt .r-logo { justify-self:end; width:1.3in; height:1.3in; }
+    #w-receipt .r-logo svg { display:block; width:100%; height:100%; }
+    #w-receipt table { width:100%; margin:0; border-collapse:collapse; table-layout:fixed; }
+    #w-receipt th, #w-receipt td { border:1px solid #bfbfbf; padding:2px 5px; text-align:left; vertical-align:top; font-size:9.5pt; line-height:1.3; overflow-wrap:anywhere; }
+    #w-receipt th, #w-receipt .r-h { background:#e8f4d9; color:#8bc640; font-size:7pt; font-weight:700; text-transform:uppercase; padding:3px 5px 2px; }
+    #w-receipt th.r-n, #w-receipt td.r-n { text-align:right; }
+    #w-receipt tr { break-inside:avoid; }
+    #w-receipt .r-to { width:2.45in; margin:.12in 0 0 .8in; border:1px solid #bfbfbf; }
+    #w-receipt .r-to .r-h { border-bottom:1px solid #bfbfbf; }
+    #w-receipt .r-to .r-b { min-height:.7in; padding:3px 5px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    #w-receipt .r-info { margin-top:.06in; }
+    #w-receipt .r-info.r-gap { margin-top:.3in; }
+    #w-receipt .r-items { margin-top:.45in; }
+    #w-receipt .r-sums { width:48%; margin:5px 0 0 auto; table-layout:auto; }
+    #w-receipt .r-sums td { border:none; padding:1px 0; font-size:9pt; text-transform:uppercase; vertical-align:baseline; }
+    #w-receipt .r-sums td.r-big { font-size:16pt; font-weight:700; line-height:1.2; text-transform:none; white-space:nowrap; }
+    #w-receipt .r-taxh { margin:.22in 0 4px; font-size:10pt; text-transform:uppercase; }
+    #w-receipt .r-thanks { text-align:center; margin-top:.35in; font-size:10pt; }
     @media print {
       body.w-printing { padding:0; background:#fff; }
       body.w-printing .wrapper { display:none !important; }
@@ -1853,8 +1866,8 @@
   <div id="w-details-wrap" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
     <div style="background:#fff;border-radius:10px;padding:20px 22px;max-width:400px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.25)">
       <div style="font-weight:700;margin-bottom:10px">Receipt details</div>
-      <label class="field-label" for="w-det-biz">Top of the receipt (first line in bold)</label>
-      <textarea id="w-det-biz" rows="4" style="margin-bottom:10px"></textarea>
+      <label class="field-label" for="w-det-biz">Top left of the receipt (one line each: name, address, phone, email...)</label>
+      <textarea id="w-det-biz" rows="6" style="margin-bottom:10px"></textarea>
       <label class="field-label" for="w-det-hst">HST registration number</label>
       <input type="text" id="w-det-hst" placeholder="e.g. 123456789 RT0001" style="margin-bottom:6px">
       <div style="font-size:11px;color:#888;line-height:1.5;margin-bottom:14px">Business customers need it on receipts of $30 and up to claim the HST back. Saved on this device.</div>
@@ -2047,6 +2060,10 @@
 </div><!-- /wrapper -->
 <!-- Walk-ins receipt (v44): filled by wPrint(), printed on its own (body.w-printing) -->
 <div id="w-receipt"></div>
+<!-- v49: Coba Studios logo for the receipt, rebuilt from a screenshot of the invoice (circle, ring and
+     "Coba" redrawn as vectors; "Studios & Print House" kept as a small picture). Swap in the original
+     logo file here when there is one. -->
+<template id="w-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="4.1 4.1 102.8 102.8" role="img" aria-label="Coba Studios &amp; Print House"><circle cx="55.5" cy="55.5" r="51.4" fill="#91cc4c"/><circle cx="55.5" cy="55.5" r="48.45" fill="none" stroke="#fff" stroke-width="0.95"/><path fill="#fff" fill-rule="evenodd" d="M25.72 69.24C23.49 69.02 22.53 68.66 20.44 67.24C19.96 66.92 19.44 66.52 19.3 66.36C18.65 65.63 17.26 63.47 16.83 62.54C15.86 60.44 15.31 55.63 15.73 53C15.81 52.55 15.95 51.43 16.06 50.5C16.19 49.34 16.39 48.37 16.7 47.38C18.32 42.23 18.28 42.31 20.35 39.21C22.86 35.48 25.28 33.16 28.07 31.86C29.47 31.2 30.47 31 32.4 31C34.25 31 34.98 31.13 36.19 31.68C36.67 31.9 37.24 32.15 37.45 32.24C37.97 32.44 38.46 32.98 39.23 34.19C40.49 36.19 40.88 37.32 40.87 39.05C40.87 41.3 40.32 42.45 38.59 43.76C37.49 44.59 36.95 44.78 35.62 44.79C33.45 44.8 32.59 43.7 33.53 42.12C34.13 41.12 34.2 40.91 34.51 39.44C34.9 37.5 34.71 36.47 33.79 35.6C33.05 34.9 31.85 34.79 30.78 35.32C29.36 36.03 27.63 38.04 26.85 39.89C26.44 40.87 25.83 41.97 25.28 42.73C24.84 43.33 24.29 44.7 23.88 46.19C23.73 46.74 23.47 47.61 23.32 48.12C23.01 49.11 22.9 49.79 22.55 52.72C22.27 55.07 22.36 57.15 22.81 59.24C23.43 62.11 23.98 63.05 25.71 64.19C27.68 65.49 28.59 65.68 30.88 65.26C32.98 64.88 33.96 64.35 36.72 62.1C38.27 60.83 39.04 59.77 39.26 58.55C39.34 58.14 39.53 57.39 39.69 56.88C39.85 56.36 40.05 55.58 40.12 55.15C40.22 54.6 40.61 53.65 41.37 52.08C42.62 49.52 42.86 49.23 44.75 47.98C46.04 47.13 46.6 46.96 48.06 46.97C49.77 46.98 50.03 47.13 51.5 48.88C52.67 50.29 52.74 50.42 53.14 51.65C53.53 52.84 53.56 53.06 53.57 54.62C53.58 56.54 53.63 56.78 54.07 56.98C54.59 57.22 55.06 57.15 55.89 56.72C56.78 56.26 57.19 55.76 57.32 54.97C57.36 54.68 57.56 53.93 57.76 53.31C57.95 52.69 58.17 51.86 58.24 51.46C58.38 50.69 59.33 47.29 59.74 46.1C59.87 45.71 60.07 44.93 60.19 44.35C60.41 43.28 60.88 41.98 61.46 40.84C61.64 40.48 61.97 39.65 62.19 39C62.73 37.4 63.53 35.2 63.85 34.44C63.99 34.09 64.18 33.54 64.26 33.21C64.45 32.44 65.05 31.55 65.54 31.29C66.07 31.02 67.85 31.12 68.64 31.46C69.75 31.96 70.5 32.87 70.5 33.71C70.49 33.91 70.21 34.71 69.86 35.5C69.51 36.29 68.92 37.71 68.56 38.66C68.2 39.61 67.67 40.76 67.39 41.22C66.66 42.43 66.18 43.56 65.89 44.72C65.75 45.28 65.5 46 65.34 46.34C65.17 46.67 64.94 47.33 64.82 47.81C64.7 48.29 64.5 48.91 64.37 49.19C64.25 49.46 64.09 50.09 64.02 50.59C63.93 51.24 63.8 51.63 63.52 52.03C63.31 52.33 63.06 52.86 62.96 53.2C62.85 53.53 62.54 54.6 62.25 55.56C61.97 56.52 61.55 57.62 61.33 58C60.77 58.95 60.55 59.55 60.18 61.1C59.49 64.04 59.7 65.05 61.06 65.3C62.72 65.62 64.31 63.82 65.52 60.24C66.33 57.83 66.36 57.39 65.72 56.25C65 54.96 64.67 52.91 64.85 50.96C65 49.3 65.02 49.27 66.05 48.6C66.72 48.17 66.86 48.12 67.65 48.12C68.7 48.12 69.27 48.35 69.98 49.04C70.66 49.7 70.77 49.91 71.19 51.44C71.46 52.39 71.55 53.02 71.58 54.11C71.63 56.1 71.85 56.36 73.33 56.21C75.04 56.04 76.05 54.86 77.52 51.33C78.41 49.19 78.94 48.58 80.61 47.79C82.54 46.89 84.46 46.9 85.85 47.82C86.81 48.46 87.2 48.49 88.04 48.01C88.88 47.53 89.1 47.53 90.67 48.01C92.42 48.55 92.8 48.93 92.73 50.04C92.68 50.87 92.22 51.95 91.29 53.44C91.01 53.88 90.58 54.91 90.27 55.88C89.97 56.81 89.56 57.97 89.36 58.46C89.16 58.96 88.92 59.84 88.82 60.44C88.71 61.03 88.54 61.83 88.43 62.21C87.83 64.25 88.84 65.98 90.34 65.49C91.3 65.18 92.28 64.6 92.93 63.94C93.36 63.51 93.78 63.21 94.11 63.12C94.75 62.92 94.89 62.76 95.43 61.65C95.87 60.75 96.2 60.44 96.55 60.58C97.31 60.87 96.77 62.67 95.2 65.1C94.61 66.01 94.32 66.28 93.75 66.44C93.58 66.49 93.21 66.75 92.93 67.02C91.75 68.15 88.81 69.04 87.57 68.63C86.75 68.36 85.67 67.64 85.03 66.93C84.18 66 83.96 66.02 82.98 67.05C82.46 67.61 81.94 68 81.31 68.32C80.42 68.77 80.37 68.78 79.23 68.73C78.19 68.68 77.98 68.63 77.36 68.28C75.99 67.5 75.46 66.73 75.12 65.11C74.86 63.84 74.8 61.65 74.99 60.02C75.21 58.17 74.82 57.84 73.1 58.36C72.67 58.5 72.06 58.67 71.76 58.75C70.98 58.96 70.58 59.45 70.18 60.66C69.69 62.16 68.7 63.9 67.69 65.02C67.21 65.56 66.53 66.34 66.19 66.77C65.74 67.32 65.29 67.7 64.57 68.11C63.62 68.67 63.53 68.69 62.43 68.73C61.36 68.77 61.22 68.75 60.36 68.37C59.34 67.92 59.23 67.93 57.9 68.51C57.3 68.78 57.19 68.79 56.55 68.65C55.27 68.39 54.62 67.65 54.62 66.47C54.62 65.55 55.19 62.41 55.5 61.63C56.05 60.24 55.77 59.68 54.56 59.78C53.17 59.89 52.84 60.24 52.08 62.34C51.74 63.31 50.57 65.58 49.96 66.48C49.47 67.22 47.26 68.67 46.33 68.88C45.24 69.13 42.82 68.99 42.11 68.65C41.09 68.15 40.34 67.23 39.94 65.95C39.55 64.74 39.03 64 38.57 64C38.42 64 37.99 64.22 37.62 64.5C37.26 64.78 36.91 65 36.86 65C36.81 65 36.24 65.53 35.6 66.17C33.94 67.84 32.6 68.5 29.87 68.98C27.98 69.31 27.04 69.37 25.72 69.24ZM45.17 66.76C46.27 66.04 47.85 62.93 48.19 60.81C48.42 59.39 48.39 59.19 47.74 57.83C47.37 57.06 47.23 56.56 47.14 55.8C47.01 54.62 46.85 54.25 46.46 54.25C45.97 54.25 45.58 54.84 44.26 57.54C42.98 60.15 42.98 60.15 42.66 61.98C42.31 64.01 42.36 64.99 42.87 65.99C43.37 66.97 44.36 67.3 45.17 66.76ZM80.75 65.79C82.25 64.8 83 63.32 84.24 59C85.51 54.6 85.77 52.47 85.17 51.66C84.52 50.79 83.66 51.07 82.7 52.44C81.95 53.53 81.76 53.93 80.84 56.5C78.85 62.06 78.85 62.06 78.78 63.49C78.72 64.67 78.75 64.88 78.98 65.34C79.12 65.62 79.32 65.88 79.4 65.92C79.75 66.05 80.46 65.99 80.75 65.79Z"/><image x="17" y="71" width="78" height="16" href="data:image/png;base64,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"/></svg></template>
 
 <!-- Sticker market prices (v28). Refreshed by tools/market-refresh; only the JSON inside changes. -->
 <script type="application/json" id="market-data">
@@ -3190,7 +3207,8 @@ function remCloudApply(first){
 // Copies, scans and one-off prints for people at the counter. Tapping an item adds it to the sale
 // (tapping again adds one more); a quantity change re-prices copies by quantity break unless the
 // price was typed in (hidden <id>-m = 1). Print receipt prints only #w-receipt (body.w-printing,
-// the receipt sits outside .wrapper); Copy receipt copies it as plain text. Rows use the 'wl' id
+// the receipt sits outside .wrapper; v49: a letter page laid out like the Coba Studios invoice, with
+// the logo from <template id="w-logo">); Copy receipt copies it as plain text. Rows use the 'wl' id
 // prefix and are registered in SNAP_STATE, so a sale kept with Save estimate reopens at the prices
 // it was rung up at. Prices checked Nov 13 2026 (table "Prices & where they come from" on the tab):
 //   copies = median of Staples Canada, Staples US (US$ x W_FX) and The UPS Store Canada at the first
@@ -3202,8 +3220,12 @@ function remCloudApply(first){
 const W_HST = 0.13, W_FX = 1.4122, W_X = 3;
 const W_KEY = 'coba-walkin-v1';
 const W_NL = String.fromCharCode(10);
-const W_BIZ_DEFAULT = ['Coba Studios', 'Brockville, ON', 'cobastudios.com'].join(W_NL);
-const W_HST_DEFAULT = '822863999 RT0001';   // v45: Coba Studios' GST/HST number, printed on every receipt unless Receipt details says otherwise
+// v49: top-left lines and HST number as on the Coba Studios invoice (Nov 2026)
+const W_BIZ_DEFAULT = ['Coba Studios & Print House', '406 Read St', 'Merrickville ON  K0G 1N0', '+16132692022', 'info@cobastudios.com', 'www.cobastudios.com'].join(W_NL);
+const W_HST_DEFAULT = '822863999RT0001';   // v45: Coba Studios' GST/HST number, printed on every receipt unless Receipt details says otherwise
+// details saved on a device that are just the old built-in ones (v44 top lines, v45 HST number) count
+// as unchanged, so that device prints the invoice's lines too; anything Chris typed himself is kept
+const W_BIZ_V44 = ['Coba Studios', 'Brockville, ON', 'cobastudios.com'].join(W_NL), W_HST_V45 = '822863999 RT0001';
 const W_SIZES = [ ['let', 'Letter', '8.5x11'], ['leg', 'Legal', '8.5x14'], ['tab', 'Tabloid', '11x17'] ];
 const W_BASE_BREAKS = {   // [from quantity, market-based $ a sheet printed 1-sided]
   'bw-let':  [[1, 0.40], [51, 0.30], [201, 0.20], [501, 0.15], [1001, 0.10]],
@@ -3361,7 +3383,9 @@ function resetWalkin(){
 // --- receipt ---
 function wSettings(){
   let s = null; try{ s = JSON.parse(localStorage.getItem(W_KEY) || 'null'); }catch(e){}
-  return { biz: (s && typeof s.biz === 'string' && s.biz.trim()) ? s.biz : W_BIZ_DEFAULT, hst: (s && typeof s.hst === 'string' && s.hst.trim()) ? s.hst.trim() : W_HST_DEFAULT };
+  const biz = (s && typeof s.biz === 'string') ? s.biz.split(W_NL).map(x=>x.trim()).filter(Boolean).join(W_NL) : '';
+  const hst = (s && typeof s.hst === 'string') ? s.hst.trim() : '';
+  return { biz: (biz && biz !== W_BIZ_V44) ? s.biz : W_BIZ_DEFAULT, hst: (hst && hst !== W_HST_V45) ? hst : W_HST_DEFAULT };
 }
 function wStamp(){
   const d = new Date();
@@ -3373,14 +3397,41 @@ function wReady(){
   if(!T.lines.length){ notify('Add something to the sale first.'); return null; }
   return T;
 }
-function wReceiptHTML(T, s, when, cust){
-  const biz = s.biz.split(W_NL).map(x=>x.trim()).filter(Boolean);
-  return '<div class="r-biz"><b>' + jobsEsc(biz[0] || '') + '</b>' + biz.slice(1).map(x=>'<br>' + jobsEsc(x)).join('') + '</div>' +
-    '<div class="r-meta">' + (s.hst ? 'HST # ' + jobsEsc(s.hst) + '<br>' : '') + 'Receipt &middot; ' + jobsEsc(when) + (cust ? '<br>Customer: ' + jobsEsc(cust) : '') + '</div>' +
-    '<table>' + T.lines.map(x=>'<tr><td>' + jobsEsc(x.d) + '<span class="r-sub">' + x.q + ' &times; ' + wMoney(x.p) + '</span></td><td class="r-amt">' + wMoney(x.t) + '</td></tr>').join('') + '</table>' +
-    '<div class="r-tot"><span>Subtotal</span><span>' + wMoney(T.sub) + '</span></div>' +
-    '<div class="r-tot"><span>HST (13%)</span><span>' + wMoney(T.hst) + '</span></div>' +
-    '<div class="r-tot r-grand"><span>Total</span><span>' + wMoney(T.grand) + '</span></div>' +
+// v49: amounts on the printed receipt are written like the invoice: 1,234.50 (no $), totals as CAD 1,234.50
+function wNum(n){
+  const s = (Math.round((n || 0) * 100) / 100).toFixed(2), i = s.indexOf('.');
+  return s.slice(0, i).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + s.slice(i);
+}
+// date as on the invoice (17/11/2026) and the time of the sale
+function wWhen(d){
+  const p = n=>(n < 10 ? '0' : '') + n;
+  let time = '';
+  try{ time = d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' }); }catch(e){ time = p(d.getHours()) + ':' + p(d.getMinutes()); }
+  return { date: p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear(), time };
+}
+// v49: laid out like the Coba Studios invoice (business lines + Receipt + logo, Sold to when the
+// customer bar has a name, date / time / total, the items, totals on the right, tax summary)
+function wReceiptHTML(T, s, d, cust){
+  const top = s.biz.split(W_NL).map(x=>x.replace(/\s+$/, '')).filter(x=>x.trim());
+  if(s.hst) top.push('HST (ON) Registration No.: ' + s.hst);
+  const w = wWhen(d), logo = document.getElementById('w-logo'), rate = 'HST (ON) @ ' + Math.round(W_HST * 100) + '%';
+  const th = (t, n)=>'<th' + (n ? ' class="r-n"' : '') + '>' + t + '</th>';
+  const td = (t, n)=>'<td' + (n ? ' class="r-n"' : '') + '>' + t + '</td>';
+  const cols = list=>'<colgroup>' + list.map(x=>'<col style="width:' + x + '%">').join('') + '</colgroup>';
+  return '<div class="r-top"><div class="r-from">' + top.map(x=>'<div>' + jobsEsc(x) + '</div>').join('') + '</div>' +
+      '<div class="r-title">Receipt</div><div class="r-logo">' + (logo ? logo.innerHTML : '') + '</div></div>' +
+    (cust ? '<div class="r-to"><div class="r-h">Sold to</div><div class="r-b">' + jobsEsc(cust) + '</div></div>' : '') +
+    '<table class="r-info' + (cust ? '' : ' r-gap') + '"><thead><tr>' + th('Date') + th('Time') + th('Total') + '</tr></thead>' +
+      '<tbody><tr>' + td(w.date) + td(jobsEsc(w.time)) + td('CAD ' + wNum(T.grand)) + '</tr></tbody></table>' +
+    '<table class="r-items">' + cols([52, 8, 9, 13, 18]) + '<thead><tr>' + th('Description') + th('Tax', 1) + th('Qty', 1) + th('Rate', 1) + th('Amount', 1) + '</tr></thead><tbody>' +
+      T.lines.map(x=>'<tr>' + td(jobsEsc(x.d)) + td('H', 1) + td(String(x.q), 1) + td(wNum(x.p), 1) + td(wNum(x.t), 1) + '</tr>').join('') + '</tbody></table>' +
+    '<table class="r-sums"><tbody>' +
+      '<tr><td>Subtotal</td><td class="r-n">' + wNum(T.sub) + '</td></tr>' +
+      '<tr><td>' + rate + '</td><td class="r-n">' + wNum(T.hst) + '</td></tr>' +
+      '<tr><td>Total</td><td class="r-n r-big">CAD ' + wNum(T.grand) + '</td></tr></tbody></table>' +
+    '<div class="r-taxh">Tax summary</div>' +
+    '<table class="r-tax">' + cols([31, 27, 42]) + '<thead><tr>' + th('Rate', 1) + th('Tax', 1) + th('Net', 1) + '</tr></thead>' +
+      '<tbody><tr>' + td(rate, 1) + td(wNum(T.hst), 1) + td(wNum(T.sub), 1) + '</tr></tbody></table>' +
     '<div class="r-thanks">Thank you!</div>';
 }
 function wReceiptText(T, s, when, cust){
@@ -3397,7 +3448,7 @@ function wReceiptText(T, s, when, cust){
 }
 function wPrint(){
   const T = wReady(); if(!T) return;
-  document.getElementById('w-receipt').innerHTML = wReceiptHTML(T, wSettings(), wStamp(), document.getElementById('cb-name').value.trim());
+  document.getElementById('w-receipt').innerHTML = wReceiptHTML(T, wSettings(), new Date(), document.getElementById('cb-name').value.trim());
   wPrintAt = Date.now();
   document.body.classList.add('w-printing');
   window.print();

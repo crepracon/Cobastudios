@@ -4,7 +4,8 @@
 // Needs jsdom (npm install jsdom in any scratch folder, then point NODE_PATH at it).
 // Covers: menu built from the price tables, tap to add / tap again for one more, quantity breaks,
 // 2-sided = double, a typed price survives quantity changes, custom item, HST totals, remove,
-// receipt print (receipt-only layout on, then off; never reused by another tab's print), receipt
+// receipt print (v49: laid out like the Coba Studios invoice, logo, Sold to, totals, tax summary;
+// receipt-only layout on, then off; never reused by another tab's print), receipt
 // details saved on the device, copy as text (clipboard and fallback), New sale, and a sale saved with
 // Save estimate reopening at its rung-up prices. v48: every price is 3 x the market-based one. Plain ASCII only.
 const fs = require('fs'), path = require('path');
@@ -126,11 +127,31 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   A.w.wPrint();
   ok(A.prints.length === 1 && A.prints[0] === true, 'Print receipt prints with the receipt-only layout on');
   const rc = A.$('w-receipt');
-  ok(/Coba Studios/.test(rc.querySelector('.r-biz b').textContent) && /Brockville/.test(rc.textContent), 'receipt top: Coba Studios, Brockville');
-  ok(/Customer: Riverfront Dental/.test(rc.textContent) && /Receipt/.test(rc.textContent), 'customer name from the customer bar');
-  ok(rc.querySelectorAll('table tr').length === 5 && /60 . \$1\.80/.test(rc.textContent) && /\$108\.00/.test(rc.textContent), 'one receipt row per line with qty x each');
+  // v49: laid out like the Coba Studios invoice
+  const cells = sel => Array.from(rc.querySelectorAll(sel)).map(e => e.textContent);
+  const from = cells('.r-from div');
+  ok(from.join('|') === 'Coba Studios & Print House|406 Read St|Merrickville ON  K0G 1N0|+16132692022|info@cobastudios.com|www.cobastudios.com|HST (ON) Registration No.: 822863999RT0001',
+    'v49: top left = the invoice lines and HST number: ' + from.join(' / '));
+  ok(rc.querySelector('.r-title').textContent === 'Receipt', 'v49: titled Receipt');
+  const logo = rc.querySelector('.r-logo svg');
+  ok(logo && logo.querySelector('circle[fill="#91cc4c"]') && logo.querySelector('path[fill="#fff"]').getAttribute('d').length > 1000 && /^data:image\/png;base64,/.test(logo.querySelector('image').getAttribute('href')),
+    'v49: Coba logo (green circle, traced lettering, small text picture)');
+  ok(A.w.document.getElementById('w-logo').tagName === 'TEMPLATE' && !A.w.document.querySelector('.wrapper svg[aria-label^="Coba Studios"]'), 'v49: logo kept in a template, not shown on the page');
+  ok(rc.querySelector('.r-to .r-h').textContent === 'Sold to' && rc.querySelector('.r-to .r-b').textContent === 'Riverfront Dental', 'v49: Sold to box with the name from the customer bar');
+  const info = cells('.r-info td'), now = new Date(), p2 = n => (n < 10 ? '0' : '') + n;
+  ok(cells('.r-info th').join('|') === 'Date|Time|Total' && info[0] === p2(now.getDate()) + '/' + p2(now.getMonth() + 1) + '/' + now.getFullYear() && /\d:\d\d/.test(info[1]) && info[2] === 'CAD 155.22',
+    'v49: date (dd/mm/yyyy like the invoice), time, total: ' + info.join(' / '));
+  ok(!rc.querySelector('.r-info').classList.contains('r-gap'), 'v49: no extra gap under a Sold to box');
+  ok(cells('.r-items th').join('|') === 'Description|Tax|Qty|Rate|Amount' && rc.querySelectorAll('.r-items tbody tr').length === 5, 'v49: one row per line under the invoice headings');
+  const rows = Array.from(rc.querySelectorAll('.r-items tbody tr')).map(tr => Array.from(tr.children).map(td => td.textContent).join('|'));
+  ok(rows[0] === 'B&W 8.5x11, 1-sided|H|10|1.20|12.00' && rows[1] === 'B&W 8.5x11, 2-sided|H|60|1.80|108.00' && rows[3] === 'Photo print 5x7|H|3|3.87|11.61', 'v49: rows = description, H, qty, rate, amount: ' + rows.slice(0, 2).join(' / '));
   ok(/Laminate <b>menu<\/b>/.test(rc.textContent) && !rc.querySelector('td b'), 'typed text printed as text, never as markup');
-  ok(/Subtotal\$137\.36/.test(rc.textContent.replace(/\s+/g, '')) && /Total\$155\.22/.test(rc.textContent.replace(/\s+/g, '')), 'receipt totals');
+  const sums = Array.from(rc.querySelectorAll('.r-sums tr')).map(tr => tr.textContent);
+  ok(sums.join('|') === 'Subtotal137.36|HST (ON) @ 13%17.86|TotalCAD 155.22' && rc.querySelector('.r-sums .r-big').textContent === 'CAD 155.22', 'v49: receipt totals: ' + sums.join(' / '));
+  ok(rc.querySelector('.r-taxh').textContent === 'Tax summary' && cells('.r-tax td').join('|') === 'HST (ON) @ 13%|17.86|137.36', 'v49: tax summary: ' + cells('.r-tax td').join(' / '));
+  ok(/Thank you!/.test(rc.querySelector('.r-thanks').textContent), 'still says thank you');
+  ok(A.w.wNum(1234.5) === '1,234.50' && A.w.wNum(0) === '0.00' && A.w.wNum(1234567.891) === '1,234,567.89' && A.w.wNum(999.999) === '1,000.00', 'v49: amounts written 1,234.50');
+  ok(/print-color-adjust:exact/.test(HTML.match(/#w-receipt \{[^}]*\}/)[0]), 'v49: the green headers print even with background graphics off');
   A.w.dispatchEvent(new A.w.Event('afterprint'));
   ok(!A.w.document.body.classList.contains('w-printing'), 'receipt layout off after printing');
   A.w.document.body.classList.add('w-printing'); A.w.eval('wPrintAt = Date.now() - 60000');
@@ -139,15 +160,28 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   const css = HTML.match(/body\.w-printing \.wrapper \{ display:none !important; \}/) && HTML.indexOf('<div id="w-receipt"></div>') > HTML.indexOf('</div><!-- /wrapper -->');
   ok(!!css, 'print CSS hides the page and the receipt sits outside it');
 
-  ok(/HST # 822863999 RT0001/.test(rc.querySelector('.r-meta').textContent), 'v45: a fresh device prints the Coba Studios HST number');
+  // no name in the customer bar: no Sold to box
+  A.set('cb-name', ''); A.w.wPrint();
+  ok(!A.$('w-receipt').querySelector('.r-to') && A.$('w-receipt').querySelector('.r-info').classList.contains('r-gap'), 'v49: no Sold to box without a customer name');
+  A.w.dispatchEvent(new A.w.Event('afterprint'));
+  A.set('cb-name', 'Riverfront Dental');
+  // v49: a device that saved the old built-in details gets the invoice's; typed details are kept
+  A.w.localStorage.setItem('coba-walkin-v1', JSON.stringify({ biz: 'Coba Studios' + String.fromCharCode(13, 10) + 'Brockville, ON ' + String.fromCharCode(10) + 'cobastudios.com' + String.fromCharCode(10), hst: '822863999 RT0001' }));
+  let st = A.w.wSettings();
+  ok(st.biz === A.w.eval('W_BIZ_DEFAULT') && st.hst === '822863999RT0001', 'v49: old built-in details saved on a device count as unchanged');
+  A.w.localStorage.setItem('coba-walkin-v1', JSON.stringify({ biz: 'Coba Studios' + String.fromCharCode(10) + 'Pop-up booth', hst: '' }));
+  st = A.w.wSettings();
+  ok(st.biz === 'Coba Studios' + String.fromCharCode(10) + 'Pop-up booth' && st.hst === '822863999RT0001', 'v49: typed top lines kept; a blank HST number still prints the built-in one');
+  A.w.localStorage.removeItem('coba-walkin-v1');
   // ---------- receipt details ----------
   A.w.wDetailsOpen();
-  ok(A.$('w-det-hst').value === '822863999 RT0001', 'Receipt details shows the built-in HST number');
+  ok(A.$('w-det-hst').value === '822863999RT0001', 'Receipt details shows the built-in HST number');
+  ok(A.$('w-det-biz').value.split(String.fromCharCode(10)).length === 6 && A.$('w-det-biz').getAttribute('rows') === '6', 'v49: Receipt details shows the six invoice lines');
   ok(A.$('w-details-wrap').style.display === 'flex' && /Coba Studios/.test(A.$('w-det-biz').value), 'Receipt details opens with the default top lines');
   A.set('w-det-hst', ' 123456789 RT0001 '); A.w.wDetailsClose(true);
   ok(JSON.parse(A.w.localStorage.getItem('coba-walkin-v1')).hst === '123456789 RT0001' && A.$('w-details-wrap').style.display === 'none', 'HST number saved on the device');
   A.w.wPrint();
-  ok(/HST # 123456789 RT0001/.test(A.$('w-receipt').textContent), 'HST number on the receipt');
+  ok(A.$('w-receipt').querySelector('.r-from div:last-child').textContent === 'HST (ON) Registration No.: 123456789 RT0001', 'HST number on the receipt');
 
   // ---------- receipt: copy ----------
   let copied = null;
@@ -170,7 +204,7 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   A.w.resetWalkin(); A.w.cobaConfirmAnswer(true);
   ok(lines(A).length === 0 && A.$('w-grand').textContent === '$0.00' && A.$('w-empty').style.display === '', 'New sale clears it');
   A.w.wPrint();
-  ok(A.prints.length === 2, 'an empty sale does not print');
+  ok(A.prints.length === 3, 'an empty sale does not print');   // 3 = the receipts printed above (v49 added the no-customer one)
   A.w.loadEstimate(cust.id, est.id, false); A.w.cobaConfirmAnswer(true);
   L = lines(A);
   ok(A.w.eval('currentTab') === 'walkin' && L.length === 5 && A.$('w-grand').textContent === quote, 'Load reopens the sale at its prices (' + A.$('w-grand').textContent + ')');
