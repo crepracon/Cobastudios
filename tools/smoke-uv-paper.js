@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Smoke test for UV Printing > Coasters (v34, saved prices kept through refreshes since v36) and the Paper tab
-// calendar / brochure references (v35).
+// calendar / brochure references (v35), and the Paper tab Envelopes row with Inventory > Envelopes (v50).
 //   NODE_PATH=/path/to/node_modules node tools/smoke-uv-paper.js [index.html]
 // Needs jsdom. Every expected price is worked out here straight from the JSON block id="market-print" (no numbers
 // typed in), so the test keeps passing after a price refresh. Checks the all-in coaster rules (no job setup fee for
@@ -315,7 +315,76 @@ function openWin(ls, html) {
   const p24 = jt.find(o => o.value === 'plan-bw-24x36'), p36 = jt.find(o => o.value === 'plan-bw-36x48');
   ok(p24 && p24.dataset.low === '4.39' && p24.dataset.high === '6.79' && p36 && p36.dataset.low === '8.69' && p36.dataset.high === '13.49', 'plan rows at Staples 2-4 day to 1-hour');
 
-  [A, B, R, K, F, P, Q, G, H].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
+  // ---------- v50: Paper > Envelopes (single items at cost x markup), Inventory > Envelopes ----------
+  const EM = String.fromCharCode(8212), near2 = (a, b) => Math.abs(a - b) < 0.011;
+  const E = openWin(); await sleep(40);
+  const envInv = E.w.eval('JSON.parse(JSON.stringify(inventory.envelopes))');
+  ok(envInv.map(v => v.name + ':' + v.fits + ':' + v.size + ':' + v.per1000 + ':' + v.code).join('|') === 'A7:5x7:5-1/4 x 7-1/4:70.83:GENEA7WSF|A2:4.25x5.5:4-3/8 x 5-3/4:61.81:GENEA2WSF|A6:4x6:4-3/4 x 6-1/2:64.13:GENEA6WSF',
+    'v50: envelope defaults (Spicers, per 1000): ' + envInv.map(v => v.name).join(','));
+  E.w.switchTabByName('paper');
+  ok(E.$('p-env-row') && E.$('p-env-row').previousElementSibling.id === 'p-coil-row' && !E.$('env-enabled').checked && E.$('env-inputs').style.display === 'none' && E.$('p-env-c').textContent === EM && E.$('p-env-r').textContent === EM,
+    'v50: Envelopes row right under Coil binding, off by default');
+  const envOpts = Array.from(E.$('env-type').options).map(o => o.value + '=' + o.textContent);
+  ok(envOpts.length === 4 && envOpts[1] === '0.07083=5x7 cards - A7 (5-1/4 x 7-1/4)' && envOpts[2] === '0.06181=4.25x5.5 cards - A2 (4-3/8 x 5-3/4)' && envOpts[3] === '0.06413=4x6 cards - A6 (4-3/4 x 6-1/2)',
+    'v50: dropdown = card size, envelope, envelope size: ' + envOpts.slice(1).join(' / '));
+  E.set('p-qty', 25); E.set('p-finished-qty', 50); E.set('p-hrs', '1'); E.w.pCalc();   // 1 hr labour keeps the quote above the minimum charge
+  const envBefore = { r: money(E.$('p-adj-r').textContent), c: money(E.$('p-total-c').textContent), y: money(E.$('p-yourcost').textContent), tier: E.$('p-tier-adj').textContent };
+  E.chk('env-enabled', true); E.w.envToggle();
+  ok(E.$('env-inputs').style.display === '' && E.$('env-qty').value === '50' && E.$('env-markup').value === '3' && E.$('env-hint').textContent === 'Pick an envelope', 'v50: switched on: qty starts at the Finished pieces, markup x3');
+  ok(money(E.$('p-adj-r').textContent) === envBefore.r && E.$('p-env-c').textContent === '$0.00', 'v50: nothing added until an envelope is picked');
+  E.set('env-type', '0.07083'); E.w.pCalc();
+  // 50 x $0.07083 = $3.54 cost; x 3 = $10.62 price
+  ok(E.$('p-env-c').textContent === '$3.54' && E.$('p-env-r').textContent === '$10.62', 'v50: 50 A7: cost ' + E.$('p-env-c').textContent + ', price ' + E.$('p-env-r').textContent);
+  ok(near2(money(E.$('p-adj-r').textContent), envBefore.r + 10.6245) && near2(money(E.$('p-total-c').textContent), envBefore.c + 3.5415) && near2(money(E.$('p-yourcost').textContent), envBefore.y + 3.5415),
+    'v50: price added to the quote, cost to the totals and your cost');
+  ok(/\+ envelopes \$3\.54/.test(E.$('p-yourcost-sub').textContent) && /^\$0\.0708 each cost, \$0\.21 each price/.test(E.$('env-hint').textContent), 'v50: your cost lists envelopes; hint shows each: ' + E.$('env-hint').textContent);
+  ok(E.$('p-tier-adj').textContent === envBefore.tier, 'v50: the qty tier is not applied to envelopes');
+  E.set('p-finished-qty', 100); E.w.pCalc();
+  ok(E.$('env-qty').value === '100' && E.$('p-env-c').textContent === '$7.08', 'v50: qty follows Finished pieces');
+  E.set('env-qty', '60'); E.w.envQtyTyped(); E.set('p-finished-qty', 120); E.w.pCalc();
+  // 60 x 0.07083 = 4.2498 -> $4.25; x 3 = $12.75
+  ok(E.$('env-qty').value === '60' && E.$('p-env-c').textContent === '$4.25' && E.$('p-env-r').textContent === '$12.75' && !/until you type/.test(E.$('env-hint').textContent), 'v50: a typed qty is kept');
+  E.set('env-markup', '2'); E.w.pCalc();
+  ok(E.$('p-env-r').textContent === '$8.50', 'v50: markup x2 = ' + E.$('p-env-r').textContent);
+  E.chk('env-enabled', false); E.w.envToggle();
+  ok(E.$('p-env-r').textContent === EM && E.$('env-inputs').style.display === 'none' && !/envelopes/.test(E.$('p-yourcost-sub').textContent), 'v50: switched off = not counted');
+  E.chk('env-enabled', true); E.w.envToggle();
+  // save; reopen on a device whose envelope price changed: the quoted price is kept
+  E.set('cb-name', 'Env Cust'); E.set('cb-title', 'invites'); E.w.saveEstimate(); await sleep(20);
+  const envQuote = E.$('p-quote-total').textContent, envR = E.$('p-env-r').textContent;
+  E.w.document.getElementById('p-env-row').remove(); E.w.pCalc();   // what a Paper job saved before v50 looks like
+  const envOldQuote = E.$('p-quote-total').textContent;
+  ok(near2(money(envOldQuote), money(envQuote) - 8.4996) && E.errs.length === 0, 'v50: the page copes without the row (old jobs): ' + envOldQuote + ' vs ' + envQuote + ' ' + E.errs.join(' | '));
+  E.set('cb-title', 'pre-v50 job'); E.w.eval('jobsActive = null'); E.w.saveEstimate(); await sleep(20);
+  const invE = JSON.parse(E.w.eval('JSON.stringify(inventory)')); invE.envelopes[0].per1000 = 99;
+  const J = openWin({ 'coba-jobs-v1': E.w.localStorage.getItem('coba-jobs-v1'), 'coba-inventory-v2': JSON.stringify(invE) }); await sleep(40);
+  ok(J.$('env-type').options[1].value === '0.099', 'v50: a changed price in Inventory reaches the dropdown');
+  const jc = J.w.eval('jobsData.customers[0]'), jId = t => jc.estimates.find(e => e.title === t).id;
+  J.w.loadEstimate(jc.id, jId('invites'), false); J.w.cobaConfirmAnswer(true);
+  ok(J.$('p-quote-total').textContent === envQuote && J.$('p-env-r').textContent === envR && J.$('env-enabled').checked && J.$('env-qty').value === '60' && J.$('env-markup').value === '2' && J.$('env-type').value === '0.07083',
+    'v50: a saved job reopens at the envelope price it was quoted at');
+  J.w.loadEstimate(jc.id, jId('pre-v50 job'), false); J.w.cobaConfirmAnswer(true);
+  ok(J.$('p-quote-total').textContent === envOldQuote && !!J.$('p-env-row') && !J.$('env-enabled').checked && J.$('p-env-row').previousElementSibling.id === 'p-coil-row' && J.$('env-type').options.length === 4,
+    'v50: a job saved before v50 reopens at its price with the Envelopes row back, off');
+  J.chk('env-enabled', true); J.w.envToggle(); J.set('env-qty', '7'); J.w.envQtyTyped(); J.w.resetPaper(); J.w.cobaConfirmAnswer(true);
+  ok(!J.$('env-enabled').checked && J.$('env-inputs').style.display === 'none' && J.$('env-qty').hasAttribute('data-auto') && J.$('env-qty').value === '1' && J.$('env-markup').value === '3' && J.$('env-type').value === '',
+    'v50: New estimate resets the Envelopes row');
+  // Inventory: lists them, edits reach the dropdown
+  J.w.switchTabByName('inventory');
+  const envTrs = J.$('inv-env-body').querySelectorAll('tr');
+  ok(envTrs.length === 3 && envTrs[0].querySelectorAll('input')[3].value === '99' && envTrs[1].querySelectorAll('input')[0].value === 'A2', 'v50: Inventory > Envelopes lists them');
+  const a2 = envTrs[1].querySelectorAll('input')[3]; a2.value = '65'; a2.dispatchEvent(new J.w.Event('input'));
+  J.w.invSave(); J.w.rebuildDropdowns();
+  ok(J.$('env-type').options[2].value === '0.065' && JSON.parse(J.w.localStorage.getItem('coba-inventory-v2')).envelopes[1].per1000 === 65, 'v50: a new price typed in Inventory is saved and used');
+  // a saved inventory from before v50 gets the envelopes once; a list emptied in Inventory stays empty
+  const invOld = JSON.parse(E.w.eval('JSON.stringify(inventory)')); delete invOld.envelopes;
+  const K2 = openWin({ 'coba-inventory-v2': JSON.stringify(invOld) }); await sleep(40);
+  ok(K2.w.eval('inventory.envelopes.length') === 3 && JSON.parse(K2.w.localStorage.getItem('coba-inventory-v2')).envelopes.length === 3 && K2.$('env-type').options.length === 4, 'v50: a saved inventory gets the envelopes');
+  invOld.envelopes = [];
+  const K3 = openWin({ 'coba-inventory-v2': JSON.stringify(invOld) }); await sleep(40);
+  ok(K3.w.eval('inventory.envelopes.length') === 0 && K3.$('env-type').options.length === 1, 'v50: envelopes removed in Inventory stay removed');
+
+  [A, B, R, K, F, P, Q, G, H, E, J, K2, K3].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.log('FAIL: test crashed: ' + (e && e.stack || e)); process.exit(1); });

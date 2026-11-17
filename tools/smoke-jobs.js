@@ -10,7 +10,9 @@
 // the To-Do / To-Invoice box (v42: add / flip / delete / undo across devices, changes made offline
 // or signed out sent on reconnect; v48: reorder synced as one small write per move, moves made
 // offline sent on reconnect, a name deleted elsewhere never comes back, the date added coloured by
-// age), and the structured paper inventory migration. Plain ASCII only.
+// age; v50: move a To-Do name to To-Invoice, live and offline, with Undo), v50 Paid jobs (Paid
+// section under the list, synced, per-device open state, search, Not paid), and the structured
+// paper inventory migration. Plain ASCII only.
 const fs = require('fs'), path = require('path');
 const { JSDOM } = require('jsdom');
 const SRC = process.argv[2] || path.resolve(__dirname, '..', 'index.html');
@@ -262,8 +264,8 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const start = ['Charlie', 'Bravo', 'Alpha', 'After sign-out', 'Offline Co', 'Bob Plumbing'];
   ok(todo(A).join() === start.join() && todo(B).join() === start.join(), 'v48: start order, newest on top: ' + todo(B).join(', '));
   const it0 = A.$('rem-list').querySelector('.rem-item');
-  ok(it0 && it0.children[0].className === 'rem-grip' && it0.children[1].className === 'rem-text' && it0.children[2].className === 'rem-date' && it0.children[3].className === 'rem-del',
-    'v48: each name = grip, text, date on the right, delete');
+  ok(it0 && it0.children[0].className === 'rem-grip' && it0.children[1].className === 'rem-text' && it0.children[2].className === 'rem-date' && it0.children[3].className === 'rem-mv' && it0.children[4].className === 'rem-del',
+    'v48: each name = grip, text, date on the right, (v50: move to To-Invoice), delete');
   ok(it0.getAttribute('data-id') === rid(A, 'Charlie') && it0.querySelector('.rem-grip').getAttribute('onpointerdown').indexOf(rid(A, 'Charlie')) > 0, 'v48: grip wired to its name');
   let w0 = server.writes;
   ok(A.w.remMove(rid(A, 'Alpha'), 0) === true, 'v48: move Alpha to the top');
@@ -362,6 +364,117 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const dB = Array.from(B.$('rem-list').querySelectorAll('.rem-item')).find(el => /Week-old/.test(el.textContent)).querySelector('.rem-date');
   ok(/hsl\(20,/.test(dB.getAttribute('style')), 'v48: To-Invoice names are coloured too (5 days = ' + dB.getAttribute('style').slice(0, 18) + ')');
   B.w.remShow('todo'); A.w.remDelete(old.id); await sleep(60);
+
+  // ---------- v50: move a To-Do name to To-Invoice ----------
+  A.w.remShow('todo'); B.w.remShow('todo');
+  A.set('rem-input', 'Move Me'); A.w.remAdd(); await sleep(60);
+  const mvId = rid(A, 'Move Me'), mvT = rem(A).find(x => x.id === mvId).t;
+  const nTodo = rem(A).filter(x => x.list === 'todo').length, nInv = rem(A).filter(x => x.list === 'invoice').length;
+  ok(A.$('rem-list').querySelectorAll('.rem-item').length === nTodo && A.$('rem-list').querySelectorAll('.rem-mv').length === nTodo, 'v50: every To-Do name has a move button');
+  const mvBtn = A.$('rem-list').querySelector('.rem-item[data-id="' + mvId + '"] .rem-mv');
+  ok(mvBtn && mvBtn.title === 'Move to To-Invoice' && mvBtn.nextElementSibling.className === 'rem-del', 'v50: the move button sits just before the delete button');
+  await sleep(5);
+  mvBtn.click(); await sleep(60);
+  let mv = rem(A).find(x => x.id === mvId), mvDoc = server.cols.reminders.get(mvId);
+  ok(mv.list === 'invoice' && mv.t > mvT && !('o' in mv) && mvDoc.list === 'invoice' && mvDoc.t === mv.t && !('o' in mvDoc) && mvDoc.text === 'Move Me', 'v50: moved to To-Invoice, date restarted, saved to the cloud');
+  ok(A.$('rem-n-todo').textContent === String(nTodo - 1) && A.$('rem-n-invoice').textContent === String(nInv + 1) && A.$('rem-box').getAttribute('data-view') === 'todo', 'v50: counts follow, the box stays on To-Do');
+  ok(B.$('rem-n-invoice').textContent === String(nInv + 1) && rem(B).find(x => x.id === mvId).list === 'invoice', 'v50: B sees it moved');
+  ok(A.$('rem-undo').style.display === 'flex' && A.$('rem-undo-msg').textContent === 'Moved Move Me to To-Invoice', 'v50: Undo offered after a move');
+  B.w.remShow('invoice');
+  ok(B.$('rem-list').querySelector('.rem-item').getAttribute('data-id') === mvId && B.$('rem-list').querySelectorAll('.rem-mv').length === 0, 'v50: lands on top of To-Invoice; no move buttons there');
+  A.w.remToInvoice(mvId); ok(rem(A).find(x => x.id === mvId).t === mv.t, 'v50: a To-Invoice name cannot be moved again');
+  A.w.remUndo(); await sleep(60);
+  mv = rem(A).find(x => x.id === mvId); mvDoc = server.cols.reminders.get(mvId);
+  ok(mv.list === 'todo' && mv.t === mvT && mvDoc.list === 'todo' && mvDoc.t === mvT && rem(B).find(x => x.id === mvId).list === 'todo' && A.$('rem-undo').style.display === 'none', 'v50: Undo puts it back in To-Do with its old date, everywhere');
+  // a moved name deleted on another device before Undo stays deleted
+  A.w.remToInvoice(mvId); await sleep(60);
+  B.w.remDelete(mvId); await sleep(60);
+  A.w.remUndo(); await sleep(60);
+  ok(!server.cols.reminders.has(mvId) && !rem(A).some(x => x.id === mvId), 'v50: Undo of a move never brings back a name deleted elsewhere');
+  B.w.remShow('todo');
+  // offline: the move waits on the device and is sent when the cloud list loads
+  A.set('rem-input', 'Offline Move'); A.w.remAdd(); A.set('rem-input', 'Gone Meanwhile'); A.w.remAdd(); await sleep(60);
+  const omId = rid(A, 'Offline Move'), gmId = rid(A, 'Gone Meanwhile');
+  await sleep(40);   // S picks them up
+  S.w.cloudStop(); S.w.eval('cloudUser = null'); S.w.remShow('todo');
+  S.w.remToInvoice(omId); S.w.remToInvoice(gmId);
+  S.set('rem-input', 'Typed Offline'); S.w.remAdd();
+  const toId = rid(S, 'Typed Offline'); S.w.remToInvoice(toId);
+  let sOut = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1')).out;
+  ok(sOut.upd[omId] && sOut.upd[omId].list === 'invoice' && sOut.upd[gmId] && !sOut.add[omId], 'v50: an offline move waits in upd');
+  ok(sOut.add[toId] && sOut.add[toId].list === 'invoice' && !sOut.upd[toId], 'v50: a name typed offline and moved is simply added as To-Invoice');
+  ok(server.cols.reminders.get(omId).list === 'todo', 'v50: nothing sent while offline');
+  A.w.remDelete(gmId); await sleep(60);   // deleted on A while S is offline
+  S.w.eval("cloudUser = { email:'chris@example.com' }; cloudStart();"); await sleep(100);
+  ok(server.cols.reminders.get(omId).list === 'invoice' && rem(A).find(x => x.id === omId).list === 'invoice', 'v50: offline move sent on reconnect, A follows');
+  ok(!server.cols.reminders.has(gmId) && !rem(S).some(x => x.id === gmId), 'v50: a name moved offline but deleted elsewhere stays deleted');
+  ok(server.cols.reminders.get(toId) && server.cols.reminders.get(toId).list === 'invoice' && rem(B).find(x => x.id === toId).list === 'invoice', 'v50: the offline-typed name arrives in To-Invoice');
+  sOut = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1')).out;
+  ok(Object.keys(sOut.upd).length === 0 && Object.keys(sOut.add).length === 0 && Object.keys(sOut.del).length === 0 && Object.keys(sOut.mov).length === 0, 'v50: nothing left waiting');
+  // offline: delete then Undo waits as the whole name (upd), not a re-add
+  S.w.cloudStop(); S.w.eval('cloudUser = null'); S.w.remShow('invoice');
+  S.w.remDelete(omId); S.w.remUndo();
+  sOut = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1')).out;
+  ok(!sOut.del[omId] && sOut.upd[omId] && sOut.upd[omId].list === 'invoice' && !sOut.add[omId], 'v50: offline delete + Undo waits as an update');
+  S.w.eval("cloudUser = { email:'chris@example.com' }; cloudStart();"); await sleep(100);
+  ok(server.cols.reminders.get(omId).list === 'invoice' && rem(S).some(x => x.id === omId), 'v50: and is still there after reconnecting');
+  S.w.remShow('todo');
+  [omId, toId].forEach(id => A.w.remDelete(id)); await sleep(60);
+
+  // ---------- v50: Paid jobs ----------
+  const inMain = (win, eid) => Array.from(win.$('jobs-list').querySelectorAll('.jobs-est[data-eid="' + eid + '"]')).some(el => !el.closest('#jobs-paid'));
+  const inPaid = (win, eid) => !!(win.$('jobs-paid') && win.$('jobs-paid').querySelector('.jobs-est.is-paid[data-eid="' + eid + '"]'));
+  const mainNames = win => Array.from(win.$('jobs-list').querySelectorAll('.jobs-cust')).filter(el => !el.closest('#jobs-paid')).map(el => el.querySelector('.jobs-cust-name').textContent);
+  A.w.switchTabByName('paper');
+  A.set('cb-name', 'Paid Cust'); A.set('cb-title', 'first job'); A.w.eval('jobsActive = null'); A.w.saveEstimate(); await sleep(30);
+  A.set('cb-title', 'second job'); A.w.eval('jobsActive = null'); A.w.saveEstimate(); await sleep(80);
+  A.w.switchTabByName('jobs');
+  const multi = jd(A).customers.find(c => c.name === 'Paid Cust');
+  ok(!!multi && multi.estimates.length === 2 && multi.estimates.every(e => e.snap) && jd(B).customers.some(c => c.name === 'Paid Cust'), 'v50: a customer with two saved jobs to work with');
+  const pc = multi.id, pe1 = multi.estimates.find(e => e.snap).id, pe2 = multi.estimates.find(e => e.id !== pe1).id;
+  const pStatus = multi.estimates.find(e => e.id === pe1).status, nAll = jd(A).customers.reduce((t, c) => t + c.estimates.length, 0);
+  A.w.renderJobs(); B.w.renderJobs();
+  ok(!A.$('jobs-paid') && A.$('jobs-list').querySelectorAll('.jobs-mini.paid').length === nAll, 'v50: no Paid section yet; every job has a Paid button');
+  A.$('jobs-list').querySelector('.jobs-est[data-eid="' + pe1 + '"] .jobs-mini.paid').click(); await sleep(80);
+  const pDoc = JSON.parse(server.cols.estimates.get(pe1).json);
+  ok(typeof pDoc.paid === 'string' && !isNaN(new Date(pDoc.paid)) && pDoc.status === pStatus && server.cols.estimates.get(pe1).status === pStatus, 'v50: Paid saved to the cloud with the time; status kept');
+  ok(/Moved ".*" to Paid/.test(A.$('jobs-toast').textContent), 'v50: toast says where it went');
+  B.w.renderJobs();
+  ok(!inMain(B, pe1) && inPaid(B, pe1) && inMain(B, pe2), 'v50: on B the paid job left the list for Paid, the other job stayed');
+  let ph = B.$('jobs-paid');
+  ok(!ph.classList.contains('open') && ph.querySelector('.jobs-paid-n').textContent === '1' && /tap to show/.test(ph.querySelector('.jobs-paid-hint').textContent) && ph.querySelector('.jobs-paid-head').getAttribute('aria-expanded') === 'false', 'v50: Paid (1), closed by default');
+  const prow = ph.querySelector('.jobs-est[data-eid="' + pe1 + '"]');
+  ok(!prow.querySelector('select') && !prow.querySelector('.jobs-mini.paid') && Array.from(prow.querySelectorAll('.jobs-mini')).some(b => b.textContent === 'Not paid') && /Paid [A-Z][a-z]{2}\.? \d{1,2}, \d{4}/.test(prow.textContent),
+    'v50: a paid row shows when it was paid and Not paid, no status or Paid button: ' + prow.querySelector('.jobs-est-meta').textContent);
+  ok(/1 paid/.test(Array.from(B.$('jobs-list').querySelectorAll('.jobs-cust')).find(el => !el.closest('#jobs-paid') && el.querySelector('.jobs-cust-name').textContent === multi.name).querySelector('.jobs-cust-head').textContent), 'v50: the main card counts the paid one');
+  B.w.jobsPaidToggle();
+  ok(B.$('jobs-paid').classList.contains('open') && B.w.localStorage.getItem('coba-jobs-paid-open-v1') === '1' && /tap to hide/.test(B.$('jobs-paid').textContent), 'v50: tapping the header opens Paid, remembered on this device');
+  A.w.renderJobs();
+  ok(A.$('jobs-paid') && !A.$('jobs-paid').classList.contains('open'), 'v50: A keeps its own Paid closed');
+  // the paid copy of a customer card opens on its own
+  B.$('jobs-paid').querySelector('.jobs-cust-head').click(); B.w.renderJobs();
+  ok(B.$('jobs-paid').querySelector('.jobs-cust').classList.contains('open') && B.w.eval("jobsOpen.has('p:" + pc + "')") && !B.w.eval("jobsOpen.has('" + pc + "')"), 'v50: opening the card in Paid does not open it in the list');
+  // every job of a customer paid: the customer is only in Paid, newest paid first
+  A.w.setEstPaid(pc, pe2, true); await sleep(80); B.w.renderJobs();
+  ok(!mainNames(B).includes(multi.name) && inPaid(B, pe1) && inPaid(B, pe2) && B.$('jobs-paid').querySelector('.jobs-paid-n').textContent === '2', 'v50: a customer whose jobs are all paid is only in Paid');
+  const pOrder = Array.from(B.$('jobs-paid').querySelectorAll('.jobs-est')).map(el => el.getAttribute('data-eid'));
+  ok(pOrder[0] === pe2 && pOrder[1] === pe1, 'v50: newest paid first');
+  // a search finds paid jobs and opens Paid while it lasts
+  A.set('jobs-search', multi.name); A.w.renderJobs();
+  ok(A.$('jobs-paid').classList.contains('open') && inPaid(A, pe1) && /matching jobs/.test(A.$('jobs-paid').textContent) && (/No open jobs match/.test(A.$('jobs-list').textContent) || mainNames(A).length > 0), 'v50: a search finds paid jobs and opens Paid');
+  A.set('jobs-search', ''); A.w.renderJobs();
+  ok(!A.$('jobs-paid').classList.contains('open'), 'v50: closed again after the search');
+  // reopening and saving a paid job keeps it paid
+  B.w.loadEstimate(pc, pe1, false); B.w.cobaConfirmAnswer(true); await sleep(20);
+  B.w.saveEstimate(); await sleep(80);
+  ok(typeof JSON.parse(server.cols.estimates.get(pe1).json).paid === 'string', 'v50: reopening and saving a paid job keeps it paid');
+  // Not paid moves it back, everywhere
+  B.w.switchTabByName('jobs'); B.w.renderJobs();
+  Array.from(B.$('jobs-paid').querySelector('.jobs-est[data-eid="' + pe1 + '"]').querySelectorAll('.jobs-mini')).find(b => b.textContent === 'Not paid').click(); await sleep(80);
+  A.w.renderJobs();
+  ok(!('paid' in JSON.parse(server.cols.estimates.get(pe1).json)) && inMain(A, pe1) && !inPaid(A, pe1) && inPaid(A, pe2) && mainNames(A).includes(multi.name), 'v50: Not paid moves it back to the list everywhere');
+  A.w.setEstPaid(pc, pe2, false); await sleep(80); A.w.renderJobs(); B.w.renderJobs();
+  ok(!A.$('jobs-paid') && !B.$('jobs-paid') && inMain(B, pe2), 'v50: no Paid section when nothing is paid');
 
   // ---------- v43/v45: construction plans at Staples 1-hour rates (B&W at their standard-size level, v45); ----------
   // ---------- a plan job saved at the old rates keeps its quote ----------

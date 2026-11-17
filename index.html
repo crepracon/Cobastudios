@@ -133,7 +133,7 @@
     .scroll-x { overflow-x: auto; }
 
     /* coil binding */
-    #p-coil-row td { vertical-align: top; padding-top: 9px; }
+    #p-coil-row td, #p-env-row td { vertical-align: top; padding-top: 9px; }
 
     /* calendar + brochure references (v35) */
     .ref-section { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:.8rem 1.25rem; margin-bottom:.75rem; }
@@ -226,13 +226,28 @@
     .jobs-mini { padding:5px 10px; font-size:12px; font-family:inherit; border:1px solid #ddd; border-radius:5px; background:#fff; cursor:pointer; }
     .jobs-mini:hover { background:#f5f5f2; }
     .jobs-mini.danger { color:#b33; border-color:#e0bcbc; }
+    /* v50: Paid button and the Paid section under the jobs list */
+    .jobs-mini.paid { color:#166534; border-color:#a9d9bb; background:#f0fdf4; }
+    .jobs-mini.paid:hover { background:#dcfce7; }
+    .jobs-paid { margin-top:22px; }
+    .jobs-paid-head { display:flex; align-items:center; gap:10px; width:100%; padding:11px 14px; border:1px solid #e0e0dc; border-radius:8px; background:#f2f2ee; font-size:14px; font-weight:600; font-family:inherit; color:#555; cursor:pointer; text-align:left; }
+    .jobs-paid-head:hover { background:#ebebe6; }
+    .jobs-paid-chev { flex:none; width:0; height:0; border-left:7px solid #888; border-top:5px solid transparent; border-bottom:5px solid transparent; transition:transform .15s; }
+    .jobs-paid.open .jobs-paid-chev { transform:rotate(90deg); }
+    .jobs-paid-n { font-size:12px; color:#fff; background:#9a9a9a; border-radius:999px; padding:1px 8px; }
+    .jobs-paid-hint { margin-left:auto; font-size:12px; font-weight:400; color:#999; }
+    .jobs-paid-body { display:none; margin-top:12px; }
+    .jobs-paid.open .jobs-paid-body { display:block; }
+    .jobs-paid-body .jobs-cust { opacity:.62; filter:grayscale(1); }
+    .jobs-paid-body .jobs-cust:hover, .jobs-paid-body .jobs-cust:focus-within { opacity:.9; }
+    .jobs-paid-body .jobs-cust-head, .jobs-paid-body .jobs-est { background:#f7f7f5; }
     .jobs-empty { color:#999; font-size:14px; padding:2rem 0; text-align:center; }
     #jobs-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#222; color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; display:none; z-index:999; }
     @media (max-width:600px){ .jobs-est-total { margin-left:0; width:100%; } }
     /* ===== TO-DO / TO-INVOICE BOX (v42, Jobs tab) ===== */
     .jobs-layout { display:flex; gap:1.25rem; align-items:flex-start; }
     .jobs-main { flex:1; min-width:0; }
-    .rem-box { flex:0 0 260px; width:260px; position:sticky; top:12px; border:1px solid #e5e5e5; border-top:3px solid #2563eb; border-radius:8px; background:#fafaf8; overflow:hidden; }
+    .rem-box { flex:0 0 280px; width:280px; position:sticky; top:12px; border:1px solid #e5e5e5; border-top:3px solid #2563eb; border-radius:8px; background:#fafaf8; overflow:hidden; }
     .rem-box[data-view=invoice] { border-top-color:#16a34a; }
     .rem-tabs { display:flex; background:#fff; border-bottom:1px solid #e5e5e5; }
     .rem-tab { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 4px; font-size:13px; font-weight:600; font-family:inherit; color:#888; background:transparent; border:none; cursor:pointer; }
@@ -260,6 +275,9 @@
     .rem-date { flex:none; font-size:11px; font-weight:600; line-height:1.3; padding:1px 6px; border:1px solid transparent; border-radius:10px; white-space:nowrap; }
     .rem-del { flex:none; width:30px; height:30px; border:none; border-radius:5px; background:transparent; color:#bbb; font-size:20px; line-height:1; font-family:inherit; cursor:pointer; }
     .rem-del:hover { background:#fdecec; color:#b33; }
+    /* v50: move a To-Do name to To-Invoice */
+    .rem-mv { flex:none; width:26px; height:28px; padding:0; border:none; border-radius:5px; background:transparent; font-size:14px; line-height:1; font-family:inherit; cursor:pointer; opacity:.75; }
+    .rem-mv:hover, .rem-mv:focus-visible { opacity:1; background:#f0fdf4; }
     .rem-empty { font-size:12px; color:#999; text-align:center; padding:12px 6px 16px; }
     .rem-undo { display:none; align-items:center; gap:8px; font-size:12px; color:#555; background:#fff8e6; border-top:1px solid #e6d9a8; padding:7px 10px; }
     .rem-undo span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -624,6 +642,35 @@
             <td class="res" id="p-coil-c">—</td>
             <td class="res" id="p-coil-r">—</td>
           </tr>
+          <!-- v50: envelopes, single items at cost x markup (types and prices from Inventory > Envelopes) -->
+          <tr id="p-env-row">
+            <td class="inp">
+              ✉️ Envelopes
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+                <label style="font-size:11px;color:#666;cursor:pointer;display:flex;align-items:center;gap:4px">
+                  <input type="checkbox" id="env-enabled" onchange="envToggle()" style="width:14px;height:14px">
+                  Include envelopes
+                </label>
+              </div>
+              <div style="font-size:10px;color:#888;margin-top:2px">single items at cost &times; markup, outside the qty tier</div>
+            </td>
+            <td class="inp">
+              <div id="env-inputs" style="display:none">
+                <select id="env-type" onchange="pCalc()" style="width:100%;font-size:12px;padding:4px 6px;margin-bottom:6px">
+                  <option value="">&mdash; envelope &mdash;</option>
+                </select>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <span style="font-size:12px;color:#666">qty</span>
+                  <input type="number" id="env-qty" value="1" min="0" step="1" data-auto="1" oninput="envQtyTyped()" style="width:70px">
+                  <span style="font-size:12px;color:#666;white-space:nowrap">&times; markup</span>
+                  <input type="number" id="env-markup" value="3" min="0" step="0.25" oninput="pCalc()" style="width:60px">
+                </div>
+                <div style="font-size:11px;color:#888;margin-top:4px" id="env-hint"></div>
+              </div>
+            </td>
+            <td class="res" id="p-env-c">—</td>
+            <td class="res" id="p-env-r">—</td>
+          </tr>
           <tr id="p-lam-row" style="display:none">
             <td style="font-size:13px">🧴 Lamination <span style="font-size:10px;color:#c2410c;font-weight:600;background:#fff7ed;padding:2px 6px;border-radius:10px;margin-left:4px">flat total</span></td>
             <td style="font-size:12px;color:#c2410c" id="p-lam-row-lbl">—</td>
@@ -638,7 +685,7 @@
                   <input type="checkbox" id="p-binding-job" onchange="pCalc()" style="width:13px;height:13px;accent-color:#1e40af">
                   <span>Binding / finishing job</span>
                 </label>
-                <div style="font-size:10px;color:#aaa;margin-top:2px">tier applies to print cost only — labour &amp; coils unaffected</div>
+                <div style="font-size:10px;color:#aaa;margin-top:2px">tier applies to print cost only — labour, coils &amp; envelopes unaffected</div>
               </div>
             </td>
             <td style="font-size:11px;color:#666" id="p-tier-lbl">—</td>
@@ -1989,6 +2036,26 @@
         <button class="btn-add no-print" onclick="invAddCoil()">+ Add coil size</button>
       </div>
 
+      <!-- ENVELOPES (v50) -->
+      <div class="inv-section">
+        <div class="inv-section-title">✉️ Envelopes <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds the Envelopes selector in the Paper Estimator · price per 1000</span></div>
+        <div class="scroll-x">
+          <table style="min-width:620px;margin-bottom:6px">
+            <thead><tr>
+              <th class="ivh" style="width:9%">Envelope</th>
+              <th class="ivh" style="width:11%">For cards</th>
+              <th class="ivh" style="width:15%">Envelope size</th>
+              <th class="ivh" style="width:13%">Cost / 1000 ($)</th>
+              <th class="ivh" style="width:15%">Product code</th>
+              <th class="ivh" style="width:30%">Notes</th>
+              <th class="ivh" style="width:7%"></th>
+            </tr></thead>
+            <tbody id="inv-env-body"></tbody>
+          </table>
+        </div>
+        <button class="btn-add no-print" onclick="invAddEnvelope()">+ Add envelope</button>
+      </div>
+
       <!-- PAPER STOCKS -->
       <div class="inv-section">
         <div class="inv-section-title">📄 Paper Stocks <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">feeds the Paper Estimator dropdown</span></div>
@@ -2304,7 +2371,7 @@ function snapRestore(tab, snap){
     const el = els[i]; if(!el) return;
     if('c' in f){ el.checked = !!f.c; } else { el.value = f.v; }
   });
-  if(tab==='paper'){ pPanelRepair(); pRefEnsure(); }
+  if(tab==='paper'){ pPanelRepair(); pRefEnsure(); pEnvEnsure(); }
   (SNAP_CALCS[tab]||[]).forEach(fn=>{ try{ window[fn] ? window[fn]() : eval(fn+'()'); }catch(e){ console.error(fn, e); } });
 }
 // v31: Paper jobs saved before v31 were captured from a broken layout (a stray </div> left the market check, tiers
@@ -2443,7 +2510,7 @@ function deleteCustomer(cid){
   const c = jobsData.customers.find(x=>x.id===cid); if(!c) return;
   cobaConfirm('Delete ' + c.name + ' and ALL ' + c.estimates.length + ' saved estimate(s)? This cannot be undone.', ()=>{
     jobsData.customers = jobsData.customers.filter(x=>x.id!==cid);
-    jobsOpen.delete(cid);
+    jobsOpen.delete(cid); jobsOpen.delete('p:' + cid);
     jobsSave(); renderJobs();
   });
 }
@@ -2463,50 +2530,99 @@ function toggleCust(el, cid){
 
 // --- render ---
 function jobsEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// v50: Paid. A job marked Paid (e.paid = when; its status is kept) leaves the main list for the Paid
+// section under it: greyed out, closed by default (per device, JOBS_PAID_KEY), opened by tapping its
+// header or by a search that finds a paid job. Not paid moves a job back. A customer whose jobs are
+// all paid is only in Paid; one with both shows in both places, with the matching jobs in each (the
+// Paid copy of a customer card opens and closes on its own, key 'p:' + id).
+const JOBS_PAID_KEY = 'coba-jobs-paid-open-v1';
+let jobsPaidOpen = false;
+try{ jobsPaidOpen = localStorage.getItem(JOBS_PAID_KEY) === '1'; }catch(e){}
+function jobsPaidToggle(){
+  jobsPaidOpen = !jobsPaidOpen;
+  try{ localStorage.setItem(JOBS_PAID_KEY, jobsPaidOpen ? '1' : '0'); }catch(e){}
+  renderJobs();
+}
+function setEstPaid(cid, eid, paid){
+  const { e } = jobsFind(cid, eid); if(!e) return;
+  if(paid) e.paid = new Date().toISOString(); else delete e.paid;
+  jobsSave(); renderJobs();
+  jobsToast(paid ? 'Moved "' + e.title + '" to Paid' : 'Moved "' + e.title + '" back to the jobs list');
+}
+function jobsFmtPaid(e){
+  const d = new Date(e.paid || '');
+  if(isNaN(d)) return '';
+  try{ return d.toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' }); }catch(x){ return jobsLocalDate(d); }
+}
+function jobsEstRow(c, e, inPaid){
+  const si = jobsStatusInfo(e.status), ids = '\'' + c.id + '\',\'' + e.id + '\'';
+  const opts = JOBS_STATUSES.map(x=>'<option value="' + x.v + '"' + (si.v===x.v?' selected':'') + '>' + x.label + '</option>').join('');
+  const loadBtns = e.snap
+    ? '<button class="jobs-mini" onclick="loadEstimate(' + ids + ',false)">Load</button>' +
+      '<button class="jobs-mini" onclick="loadEstimate(' + ids + ',true)">Duplicate</button>'
+    : '';
+  const noteLine = (!e.snap && e.noteText) ? '<div class="jobs-est-meta" style="width:100%">' + jobsEsc(e.noteText) + '</div>' : '';
+  return '<div class="jobs-est' + (inPaid ? ' is-paid' : '') + '" data-eid="' + e.id + '">' +
+    '<span class="jobs-est-title-wrap"><span class="jobs-dot ' + si.dot + '" title="' + jobsEsc(si.label) + '"></span><span class="jobs-est-title">' + jobsEsc(e.title) + '</span></span>' +
+    '<span class="jobs-est-meta">Taken ' + jobsEsc(jobsFmtTaken(e)) + ' &middot; ' + (JOBS_TABS[e.tab]||'Logged') + (inPaid ? ' &middot; Paid ' + jobsEsc(jobsFmtPaid(e)) : '') + '</span>' +
+    (inPaid ? '' : '<select class="jobs-status ' + si.cls + '" onchange="setEstStatus(' + ids + ',this.value)">' + opts + '</select>') +
+    '<span class="jobs-est-total">' + jobsEsc((e.totals&&e.totals.grand)||'') + '</span>' +
+    loadBtns +
+    (inPaid
+      ? '<button class="jobs-mini" onclick="setEstPaid(' + ids + ',false)" title="Move back to the jobs list">Not paid</button>'
+      : '<button class="jobs-mini paid" onclick="setEstPaid(' + ids + ',true)" title="Move to Paid">&#10003; Paid</button>') +
+    '<button class="jobs-mini danger" onclick="deleteEstimate(' + ids + ')">Delete</button>' +
+    noteLine +
+    '</div>';
+}
+function jobsCustCard(c, ests, inPaid, q, nPaid){
+  const key = (inPaid ? 'p:' : '') + c.id;
+  let estHtml = ests.map(e=>jobsEstRow(c, e, inPaid)).join('');
+  if(!estHtml) estHtml = '<div class="jobs-est-meta" style="padding:6px 0">No saved estimates yet.</div>';
+  const meta = [c.phone, c.email].filter(Boolean).join(' &middot; ');
+  const count = inPaid ? ests.length + ' paid' : (c.estimates.length - nPaid) + ' estimate(s)' + (nPaid ? ' &middot; ' + nPaid + ' paid' : '');
+  return '<div class="jobs-cust' + ((q || jobsOpen.has(key)) ? ' open' : '') + '">' +
+    '<div class="jobs-cust-head" onclick="toggleCust(this,\'' + key + '\')">' +
+      '<div><div class="jobs-cust-name">' + jobsEsc(c.name) + '</div><div class="jobs-cust-meta">' + meta + '</div></div>' +
+      '<div class="jobs-cust-meta">' + count + '</div>' +
+    '</div>' +
+    '<div class="jobs-cust-body">' +
+      '<textarea class="jobs-cust-notes" rows="2" placeholder="Customer notes - preferences, pricing history, reminders..." onchange="setCustNotes(\'' + c.id + '\',this.value)">' + jobsEsc(c.notes) + '</textarea>' +
+      estHtml +
+      '<button class="jobs-mini danger" onclick="deleteCustomer(\'' + c.id + '\')">Delete customer</button>' +
+    '</div></div>';
+}
 function renderJobs(){
   const list = document.getElementById('jobs-list'); if(!list) return;
   const q = (document.getElementById('jobs-search').value || '').toLowerCase().trim();
-  let shown = 0, html = '';
+  const estMatch = e=> e.title.toLowerCase().includes(q) || (e.noteText||'').toLowerCase().includes(q);
+  let html = '';
+  const paidGroups = [];
   jobsData.customers.forEach(c=>{
-    let ests = c.estimates;
+    const all = c.estimates || [];
     const custMatch = !q || c.name.toLowerCase().includes(q) || (c.notes||'').toLowerCase().includes(q) || (c.phone||'').includes(q) || (c.email||'').toLowerCase().includes(q);
-    if(q && !custMatch){
-      ests = ests.filter(e=> e.title.toLowerCase().includes(q) || (e.noteText||'').toLowerCase().includes(q));
-      if(!ests.length) return;
-    }
-    shown++;
-    let estHtml = ests.map(e=>{
-      const si = jobsStatusInfo(e.status);
-      const opts = JOBS_STATUSES.map(x=>'<option value="' + x.v + '"' + (si.v===x.v?' selected':'') + '>' + x.label + '</option>').join('');
-      const loadBtns = e.snap
-        ? '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',false)">Load</button>' +
-          '<button class="jobs-mini" onclick="loadEstimate(\'' + c.id + '\',\'' + e.id + '\',true)">Duplicate</button>'
-        : '';
-      const noteLine = (!e.snap && e.noteText) ? '<div class="jobs-est-meta" style="width:100%">' + jobsEsc(e.noteText) + '</div>' : '';
-      return '<div class="jobs-est">' +
-        '<span class="jobs-est-title-wrap"><span class="jobs-dot ' + si.dot + '" title="' + jobsEsc(si.label) + '"></span><span class="jobs-est-title">' + jobsEsc(e.title) + '</span></span>' +
-        '<span class="jobs-est-meta">Taken ' + jobsEsc(jobsFmtTaken(e)) + ' &middot; ' + (JOBS_TABS[e.tab]||'Logged') + '</span>' +
-        '<select class="jobs-status ' + si.cls + '" onchange="setEstStatus(\'' + c.id + '\',\'' + e.id + '\',this.value)">' + opts + '</select>' +
-        '<span class="jobs-est-total">' + jobsEsc((e.totals&&e.totals.grand)||'') + '</span>' +
-        loadBtns +
-        '<button class="jobs-mini danger" onclick="deleteEstimate(\'' + c.id + '\',\'' + e.id + '\')">Delete</button>' +
-        noteLine +
-        '</div>';
-    }).join('');
-    if(!estHtml) estHtml = '<div class="jobs-est-meta" style="padding:6px 0">No saved estimates yet.</div>';
-    const meta = [c.phone, c.email].filter(Boolean).join(' &middot; ');
-    html += '<div class="jobs-cust' + ((q || jobsOpen.has(c.id)) ? ' open' : '') + '">' +
-      '<div class="jobs-cust-head" onclick="toggleCust(this,\'' + c.id + '\')">' +
-        '<div><div class="jobs-cust-name">' + jobsEsc(c.name) + '</div><div class="jobs-cust-meta">' + meta + '</div></div>' +
-        '<div class="jobs-cust-meta">' + c.estimates.length + ' estimate(s)</div>' +
-      '</div>' +
-      '<div class="jobs-cust-body">' +
-        '<textarea class="jobs-cust-notes" rows="2" placeholder="Customer notes - preferences, pricing history, reminders..." onchange="setCustNotes(\'' + c.id + '\',this.value)">' + jobsEsc(c.notes) + '</textarea>' +
-        estHtml +
-        '<button class="jobs-mini danger" onclick="deleteCustomer(\'' + c.id + '\')">Delete customer</button>' +
-      '</div></div>';
+    const pick = ests=> custMatch ? ests : ests.filter(estMatch);
+    const open = pick(all.filter(e=>!e.paid));
+    const paid = pick(all.filter(e=>e.paid)).sort((a, b)=> String(b.paid).localeCompare(String(a.paid)));
+    const nPaid = all.filter(e=>e.paid).length;
+    // main list: customers with open jobs (or no jobs at all); a customer whose jobs are all paid is only in Paid
+    if(custMatch ? (open.length || !all.length) : open.length) html += jobsCustCard(c, open, false, q, nPaid);
+    if(paid.length) paidGroups.push({ c, ests: paid, last: String(paid[0].paid) });
   });
-  list.innerHTML = shown ? html : '<div class="jobs-empty">' + (q ? 'No matches for "' + jobsEsc(q) + '"' : 'No saved jobs yet. Build an estimate on any tab, enter a customer name up top, and hit Save estimate.') + '</div>';
+  let paidHtml = '';
+  if(paidGroups.length){
+    paidGroups.sort((a, b)=> b.last.localeCompare(a.last));   // most recently paid first
+    const n = paidGroups.reduce((t, g)=>t + g.ests.length, 0), open = jobsPaidOpen || !!q;
+    paidHtml = '<div class="jobs-paid' + (open ? ' open' : '') + '" id="jobs-paid">' +
+      '<button type="button" class="jobs-paid-head" onclick="jobsPaidToggle()" aria-expanded="' + open + '">' +
+        '<span class="jobs-paid-chev"></span>Paid <span class="jobs-paid-n">' + n + '</span>' +
+        '<span class="jobs-paid-hint">' + (q ? 'matching jobs' : open ? 'tap to hide' : 'tap to show') + '</span></button>' +
+      '<div class="jobs-paid-body">' + paidGroups.map(g=>jobsCustCard(g.c, g.ests, true, q, 0)).join('') + '</div></div>';
+  }
+  if(!html) html = '<div class="jobs-empty">' + (q
+    ? (paidHtml ? 'No open jobs match "' + jobsEsc(q) + '" - see Paid below' : 'No matches for "' + jobsEsc(q) + '"')
+    : (paidHtml ? 'No open jobs - everything is in Paid below.' : 'No saved jobs yet. Build an estimate on any tab, enter a customer name up top, and hit Save estimate.')) + '</div>';
+  list.innerHTML = html + paidHtml;
 }
 
 // --- backup / restore ---
@@ -2904,6 +3020,11 @@ document.addEventListener('focusout', ()=>{
 // other. A move made while the cloud is not connected waits in remOut.mov (id -> o).
 // v48: each name shows the day it was added, its colour fading from green (just added) through
 // yellow and orange to red at REM_FADE_DAYS days old; the colours are refreshed every 10 minutes.
+// v50: a To-Do name moves to the top of To-Invoice with its receipt button (remToInvoice), with an
+// Undo like a delete. Its date restarts, so the colour shows how long it has waited to be invoiced.
+// The whole doc is set again (remReplace); made while the cloud is not connected, the new version
+// waits in remOut.upd (id -> item) and is sent on reconnect only if the cloud still has that name,
+// so a name deleted on another device meanwhile stays deleted.
 const REM_KEY = 'coba-reminders-v1';
 const REM_LISTS = {
   todo:    { ph: 'Add to To-Do...',      empty: 'Nothing on the to-do list.' },
@@ -2911,10 +3032,11 @@ const REM_LISTS = {
 };
 const REM_FADE_DAYS = 6;
 let remItems = [];                           // { id, list: 'todo' | 'invoice', text, t, o? } top of the list first
-let remOut = { add: {}, del: {}, mov: {} };  // made while the cloud was not connected: id -> item / true / o
+let remOut = { add: {}, del: {}, mov: {}, upd: {} };  // made while the cloud was not connected: id -> item / true / o / item
 let remView = 'todo';                        // which list the box shows (per device)
 let remCloud = null;                         // Map id -> doc data while the cloud list is live
 let remUndoItem = null;
+let remUndoKind = 'del';                     // v50: what Undo reverses: 'del' (put the name back) or 'move' (back to To-Do)
 let remDrag = null;                          // v48: the drag in progress (the list is not redrawn under it)
 
 function remValid(x){ return !!x && typeof x.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(x.id) && (x.list in REM_LISTS) && typeof x.text === 'string' && x.text !== ''; }
@@ -2925,7 +3047,7 @@ function remLoad(){
     const d = JSON.parse(localStorage.getItem(REM_KEY) || 'null');
     if(d){
       if(Array.isArray(d.items)) remItems = d.items.filter(remValid);
-      if(d.out) remOut = { add: d.out.add || {}, del: d.out.del || {}, mov: d.out.mov || {} };
+      if(d.out) remOut = { add: d.out.add || {}, del: d.out.del || {}, mov: d.out.mov || {}, upd: d.out.upd || {} };
       if(d.view in REM_LISTS) remView = d.view;
     }
   }catch(e){ console.error('reminders load failed', e); }
@@ -2970,33 +3092,57 @@ function remPut(item){
   remItems = [item].concat(remItems.filter(x=>x.id !== item.id));
   remSort();
   if(remLive()) remWrite(item, false);
-  else if(remOut.del[item.id]){   // undo of a delete made offline
+  else if(remOut.del[item.id]){   // undo of a delete made offline: the cloud still has the name; send it as it is now
     delete remOut.del[item.id];
-    if(remHasO(item)) remOut.mov[item.id] = item.o;
+    remOut.upd[item.id] = item;
   }
   else remOut.add[item.id] = item;
   remStore(); remRender();
 }
+// v50: a name already in the cloud, changed as a whole (moved to To-Invoice, or that move undone)
+function remReplace(item){
+  remItems = remItems.filter(x=>x.id !== item.id).concat([item]);
+  remSort();
+  delete remOut.mov[item.id];
+  if(remLive()) remWrite(item, false);
+  else if(remOut.add[item.id]) remOut.add[item.id] = item;   // never reached the cloud: add it as it is now
+  else remOut.upd[item.id] = item;
+  remStore(); remRender();
+}
+function remToInvoice(id){
+  const x = remItems.find(y=>y.id === id); if(!x || x.list !== 'todo') return;
+  const before = Object.assign({}, x);
+  remReplace({ id: x.id, list: 'invoice', text: x.text, t: Date.now() });   // top of To-Invoice, date restarts
+  remUndoShow(before, 'move', 'Moved ' + x.text + ' to To-Invoice');
+}
 function remDelete(id){
   const item = remItems.find(x=>x.id === id); if(!item) return;
   remItems = remItems.filter(x=>x.id !== id);
-  delete remOut.mov[id];
+  delete remOut.mov[id]; delete remOut.upd[id];
   if(remLive()) remWrite(item, true);
   else if(remOut.add[id]) delete remOut.add[id];   // never reached the cloud
   else remOut.del[id] = true;
   remStore(); remRender();
-  remUndoItem = item;
-  document.getElementById('rem-undo-msg').textContent = 'Deleted ' + item.text;
+  remUndoShow(item, 'del', 'Deleted ' + item.text);
+}
+// the Undo strip under the list, for 8 seconds after a delete or a move
+function remUndoShow(item, kind, msg){
+  remUndoItem = item; remUndoKind = kind;
+  document.getElementById('rem-undo-msg').textContent = msg;
   document.getElementById('rem-undo').style.display = 'flex';
-  clearTimeout(remDelete._h);
-  remDelete._h = setTimeout(remUndoHide, 8000);
+  clearTimeout(remUndoShow._h);
+  remUndoShow._h = setTimeout(remUndoHide, 8000);
 }
 function remUndoHide(){ remUndoItem = null; const u = document.getElementById('rem-undo'); if(u) u.style.display = 'none'; }
 function remUndo(){
-  const item = remUndoItem; if(!item) return;
+  const item = remUndoItem, kind = remUndoKind; if(!item) return;
   remUndoHide();
   remView = item.list;
-  remPut(item);
+  if(kind === 'move'){
+    if(!remItems.some(x=>x.id === item.id)) return;   // deleted meanwhile (here or on another device)
+    remReplace(item);
+  }
+  else remPut(item);
 }
 function remShow(list){ if(!(list in REM_LISTS)) return; remView = list; remStore(); remRender(); }
 
@@ -3023,7 +3169,7 @@ function remMove(id, to){
   }
   remSort();
   if(remLive()) remWriteOrder(changed);
-  else changed.forEach(x=>{ if(remOut.add[x.id]) remOut.add[x.id].o = x.o; else remOut.mov[x.id] = x.o; });
+  else changed.forEach(x=>{ if(remOut.add[x.id]) remOut.add[x.id].o = x.o; else if(remOut.upd[x.id]) remOut.upd[x.id].o = x.o; else remOut.mov[x.id] = x.o; });
   remStore(); remRender();
   return true;
 }
@@ -3160,6 +3306,7 @@ function remRender(){
           ' onpointerdown="remDragStart(event, \'' + x.id + '\')" onkeydown="remGripKey(event, \'' + x.id + '\')"></button>' +
         '<div class="rem-text">' + jobsEsc(x.text) + '</div>' +
         (x.t ? '<span class="rem-date" data-t="' + (+x.t) + '" style="' + remAgeStyle(x.t, now) + '" title="' + jobsEsc(remAgeTitle(x.t, now)) + '">' + jobsEsc(remDate(x.t)) + '</span>' : '') +
+        (x.list === 'todo' ? '<button type="button" class="rem-mv" title="Move to To-Invoice" aria-label="Move ' + jobsEsc(x.text) + ' to To-Invoice" onclick="remToInvoice(\'' + x.id + '\')">&#129534;</button>' : '') +
         '<button class="rem-del" title="Delete" onclick="remDelete(\'' + x.id + '\')">&times;</button></div>').join('')
     : '<div class="rem-empty">' + REM_LISTS[remView].empty + '</div>';
   if(keep) remFocusGrip(keep);
@@ -3184,10 +3331,16 @@ function remCloudApply(first){
   });
   if(first){
     // first load after connecting: send what was added, deleted or moved while the cloud was not connected
-    const add = remOut.add, del = remOut.del, mov = remOut.mov || {};
-    remOut = { add: {}, del: {}, mov: {} };
+    const add = remOut.add, del = remOut.del, mov = remOut.mov || {}, upd = remOut.upd || {};
+    remOut = { add: {}, del: {}, mov: {}, upd: {} };
     Object.keys(add).forEach(id=>{ if(!remCloud.has(id) && remValid(add[id])){ remWrite(add[id], false); list.push(add[id]); } });
     Object.keys(del).forEach(id=>{ if(remCloud.has(id)) remWrite({ id }, true); });
+    // v50: names changed as a whole while offline (moved to To-Invoice), only if the cloud still has them
+    Object.keys(upd).forEach(id=>{
+      const x = upd[id], i = list.findIndex(y=>y.id === id);
+      if(del[id] || !remCloud.has(id) || i < 0 || !remValid(x)) return;
+      remWrite(x, false); list[i] = x;
+    });
     const moved = [];
     Object.keys(mov).forEach(id=>{
       const x = !del[id] && list.find(y=>y.id === id);
@@ -3504,6 +3657,19 @@ const DEFAULT_COILS = [
   {size:"18mm", color:"Black", cost:0.35, code:"PKBK18MMX124"},
   {size:"30mm", color:"Black", cost:0.58, code:"PKBK30MMX124"},
 ];
+// v50: envelopes for the Paper Estimator's Envelopes row. Spicers Generic Invitation 24# white, square
+// flap; price per 1000 = their under-100,000 price (Chris's screenshots, Nov 2026)
+const DEFAULT_ENVELOPES = [
+  { name:'A7', fits:'5x7',      size:'5-1/4 x 7-1/4', per1000:70.83, code:'GENEA7WSF', notes:'Spicers - Generic Invitation 24# OS SS white, 2-1/2" square flap ($63.75 / 1000 over 100,000)' },
+  { name:'A2', fits:'4.25x5.5', size:'4-3/8 x 5-3/4', per1000:61.81, code:'GENEA2WSF', notes:'Spicers - Generic Invitation 24# OS SS white, 1-7/8" square flap ($55.63 / 1000 over 100,000)' },
+  { name:'A6', fits:'4x6',      size:'4-3/4 x 6-1/2', per1000:64.13, code:'GENEA6WSF', notes:'Spicers - Generic Invitation 24# OS SS white, 2-1/4" square flap ($57.72 / 1000 over 100,000)' }
+];
+// a saved inventory from before v50 gets them once; a list Chris has emptied stays empty
+function invEnsureEnvelopes(){
+  if(Array.isArray(inventory.envelopes)) return false;
+  inventory.envelopes = JSON.parse(JSON.stringify(DEFAULT_ENVELOPES));
+  return true;
+}
 
 const DEFAULT_INKS = [
   // Roland SG3-540 — Vision TrueVis TR2 compatible
@@ -3709,6 +3875,7 @@ function invLoad(){
       if(!inventory.inks       || inventory.inks.length===0)       inventory.inks       = JSON.parse(JSON.stringify(DEFAULT_INKS));
       if(!inventory.epsonPapers|| inventory.epsonPapers.length===0) inventory.epsonPapers= JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS));
       if(!inventory.coils      || inventory.coils.length===0)      inventory.coils      = JSON.parse(JSON.stringify(DEFAULT_COILS));
+      if(invEnsureEnvelopes()) invSave();
       if(!inventory.vinyl      || inventory.vinyl.length===0)       inventory.vinyl      = JSON.parse(JSON.stringify(DEFAULT_VINYL));
       if(!inventory.substrates || inventory.substrates.length===0)  inventory.substrates = JSON.parse(JSON.stringify(DEFAULT_SUBSTRATES));
       if(!inventory.other) inventory.other = [];
@@ -3792,6 +3959,7 @@ function invSetDefaults(){
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),
+    envelopes:    JSON.parse(JSON.stringify(DEFAULT_ENVELOPES)),
     vinyl:        JSON.parse(JSON.stringify(DEFAULT_VINYL)),
     substrates:   JSON.parse(JSON.stringify(DEFAULT_SUBSTRATES)),
     papers:       JSON.parse(JSON.stringify(DEFAULT_PAPERS)),
@@ -3813,7 +3981,7 @@ function invDebounceSave(){
 
 /* ── RENDER INVENTORY TABLES ── */
 function invRenderAll(){
-  invRenderInks(); invRenderEpsonPapers(); invRenderCoils(); invRenderVinyl(); invRenderSubstrates(); invRenderPapers(); invRenderToner(); invRenderOther();
+  invRenderInks(); invRenderEpsonPapers(); invRenderCoils(); invRenderEnvelopes(); invRenderVinyl(); invRenderSubstrates(); invRenderPapers(); invRenderToner(); invRenderOther();
 }
 
 function invRenderEpsonPapers(){
@@ -3917,6 +4085,23 @@ function invRenderCoils(){
     tb.appendChild(tr);
   });
 }
+// v50: Inventory > Envelopes (cost per 1000, as Spicers lists it)
+function invRenderEnvelopes(){
+  const tb = document.getElementById('inv-env-body'); if(!tb) return;
+  invEnsureEnvelopes();
+  tb.innerHTML = '';
+  inventory.envelopes.forEach((v, i)=>{
+    const f = (k, ph)=>'<td class="iv-edit"><input type="text" value="' + esc(v[k] || '') + '" oninput="inventory.envelopes[' + i + '].' + k + '=this.value;invDebounceSave()" placeholder="' + ph + '"></td>';
+    const tr = document.createElement('tr');
+    tr.innerHTML = f('name', 'A7') + f('fits', '5x7') + f('size', '5-1/4 x 7-1/4') +
+      '<td class="iv-edit"><input type="number" value="' + (+v.per1000 || 0) + '" min="0" step="0.01" oninput="inventory.envelopes[' + i + '].per1000=parseFloat(this.value)||0;invDebounceSave()" style="width:100%"></td>' +
+      f('code', '') + f('notes', 'notes') +
+      '<td style="text-align:center;background:#faf5ff"><button class="btn-remove no-print" onclick="invRemoveEnvelope(' + i + ')" title="Remove">&#10005;</button></td>';
+    tb.appendChild(tr);
+  });
+}
+function invAddEnvelope(){ invEnsureEnvelopes(); inventory.envelopes.push({ name:'', fits:'', size:'', per1000:0, code:'', notes:'' }); invRenderEnvelopes(); invDebounceSave(); }
+function invRemoveEnvelope(i){ cobaConfirm('Remove this envelope?', ()=>{ inventory.envelopes.splice(i, 1); invRenderEnvelopes(); invDebounceSave(); }); }
 function invAddCoil(){ inventory.coils.push({size:'',color:'Black',cost:0,code:'',notes:''}); invRenderCoils(); invDebounceSave(); }
 function invRemoveCoil(i){ cobaConfirm('Remove this coil?', ()=>{ inventory.coils.splice(i,1); invRenderCoils(); invDebounceSave(); }); }
 
@@ -4018,7 +4203,7 @@ function invImport(input){
   r.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if(data.papers && data.toner){ inventory = data; paperMigrate(); invRenderAll(); invSave(); rebuildDropdowns(); notify('Inventory imported successfully!'); }
+      if(data.papers && data.toner){ inventory = data; paperMigrate(); invEnsureEnvelopes(); invRenderAll(); invSave(); rebuildDropdowns(); notify('Inventory imported successfully!'); }
       else { notify('Invalid inventory file.'); }
     } catch(ex){ notify('Could not read file: '+ex.message); }
   };
@@ -4055,6 +4240,7 @@ function rebuildDropdowns(){
     });
   }
   rebuildCoilDropdown();
+  rebuildEnvDropdown();
   rebuildRolandDropdowns();
   pCalc();
 }
@@ -4073,6 +4259,42 @@ function rebuildCoilDropdown(){
     if(String(c.cost)===cur) opt.selected = true;
     sel.appendChild(opt);
   });
+}
+
+// ── ENVELOPES (v50) ──
+// Picked from Inventory > Envelopes; the option value is the cost of one envelope (like the coil sizes), so a
+// saved job keeps the price it was quoted at. Quantity follows Finished pieces (data-auto) until one is typed.
+// Price = cost x markup (default x3, like paper), added to the quote as single items outside the qty tier.
+function envEach(v){ return Math.round((+v.per1000 || 0) * 100) / 100000; }   // per 1000 -> one envelope
+function envLabel(v){ return (v.fits ? v.fits + ' cards - ' : '') + (v.name || 'Envelope') + (v.size ? ' (' + v.size + ')' : ''); }
+function rebuildEnvDropdown(){
+  const sel = document.getElementById('env-type'); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">&mdash; envelope &mdash;</option>';
+  invEnsureEnvelopes();
+  inventory.envelopes.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = String(envEach(v)); opt.textContent = envLabel(v);
+    if(opt.value === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+function envToggle(){
+  const on = document.getElementById('env-enabled'), box = document.getElementById('env-inputs');
+  if(box) box.style.display = (on && on.checked) ? '' : 'none';
+  pCalc();
+}
+function envQtyTyped(){ const q = document.getElementById('env-qty'); if(q) q.removeAttribute('data-auto'); pCalc(); }
+function envGetTotal(){
+  const on = document.getElementById('env-enabled');
+  if(!on || !on.checked) return { cost:0, retail:0 };
+  const sel = document.getElementById('env-type'), q = document.getElementById('env-qty'), mk = document.getElementById('env-markup'), fin = document.getElementById('p-finished-qty');
+  const auto = !!(q && q.hasAttribute('data-auto'));
+  if(auto && fin) q.value = String(Math.max(Math.round(parseFloat(fin.value) || 1), 1));
+  const each = parseFloat(sel && sel.value) || 0, qty = Math.max(parseFloat(q && q.value) || 0, 0), m = Math.max(parseFloat(mk && mk.value) || 0, 0);
+  const hint = document.getElementById('env-hint');
+  if(hint) hint.textContent = each > 0 ? '$' + each.toFixed(4) + ' each cost, ' + pfmt(each * m) + ' each price' + (auto ? ' (qty = Finished pieces until you type one)' : '') : 'Pick an envelope';
+  return { cost: each * qty, retail: each * m * qty };
 }
 
 // ── COIL BINDING ──
@@ -4932,6 +5154,13 @@ function pCalc(){
   const coilEnabled = document.getElementById('coil-enabled').checked;
   pel('p-coil-c').textContent = coilEnabled ? pfmt(coil.cost) : '—';
   pel('p-coil-r').textContent = coilEnabled ? pfmt(coil.retail) : '—';
+  // v50: envelopes, single items at cost x markup, outside the qty tier (like coils)
+  const env = envGetTotal();
+  if(pel('p-env-c')){
+    const envOn = pel('env-enabled').checked, dash = String.fromCharCode(8212);
+    pel('p-env-c').textContent = envOn ? pfmt(env.cost) : dash;
+    pel('p-env-r').textContent = envOn ? pfmt(env.retail) : dash;
+  }
   // lamination
   const lam = lamGetRetailTotal();
   // use finished qty for tier, press qty for costs
@@ -4942,7 +5171,7 @@ function pCalc(){
   // Copy job: tier % on full print retail (labour usually zero anyway)
   const tierBase = isBindingJob ? totalR : totalR;
   const tierAdj = tierBase*(at.adj/100);
-  const adjR=totalR+tierAdj+labour+lam.retail+coil.retail;
+  const adjR=totalR+tierAdj+labour+lam.retail+coil.retail+env.retail;
   const sign=at.adj>0?'+':'', col=at.adj>0?'#dc2626':at.adj<0?'#166534':'#666';
   const tierNote = at.adj!==0
     ? at.label+' ('+sign+at.adj+'%'+(isBindingJob?' on print only':' on print')+')'
@@ -4983,11 +5212,11 @@ function pCalc(){
   }
   const taxAmt=finalR*taxRate, grand=finalR+taxAmt;
   pel('p-tax').textContent=pfmt(taxAmt);
-  pel('p-total-c').textContent=pfmt(totalC+lam.cost+coil.cost); pel('p-total-r').textContent=pfmt(grand);
-  const yourCost = totalC + labour + lam.cost + coil.cost;
+  pel('p-total-c').textContent=pfmt(totalC+lam.cost+coil.cost+env.cost); pel('p-total-r').textContent=pfmt(grand);
+  const yourCost = totalC + labour + lam.cost + coil.cost + env.cost;
   const profit=finalR-yourCost, margin=finalR>0?(profit/finalR*100):0;
   pel('p-yourcost').textContent=pfmt(yourCost);
-  pel('p-yourcost-sub').textContent='paper '+pfmt(totalC)+(coil.cost>0?' + coils '+pfmt(coil.cost):'')+(lam.cost>0?' + lam '+pfmt(lam.cost):'')+(labour>0?' + labour '+pfmt(labour):'');
+  pel('p-yourcost-sub').textContent='paper '+pfmt(totalC)+(coil.cost>0?' + coils '+pfmt(coil.cost):'')+(env.cost>0?' + envelopes '+pfmt(env.cost):'')+(lam.cost>0?' + lam '+pfmt(lam.cost):'')+(labour>0?' + labour '+pfmt(labour):'');
   const perUnit = finishedQty>0 ? finalR/finishedQty : 0;
   pel('p-quote-total').textContent=pfmt(finalR); pel('p-quote-per').textContent=pfmt(perUnit)+' / finished piece';
   pel('p-profit').textContent=pfmt(profit); pel('p-margin').textContent=margin.toFixed(1)+'% margin';
@@ -5116,6 +5345,17 @@ function pRefToggle(kind){
 // v35: old Paper jobs were saved without these boxes; put them back after a restore (they never touch the quote).
 // v46: jobs saved before v46 have the calendar / brochure boxes but not the postcards / flyers / cards one.
 const P_PG_PRISTINE = (()=>{ const c=document.getElementById('p-pg-box'); return c ? c.outerHTML : ''; })();
+// v50: Paper jobs saved before v50 have no Envelopes row; it is put back after a restore, switched off,
+// so their price is unchanged
+const P_ENV_PRISTINE = (()=>{ const r=document.getElementById('p-env-row'); return r ? r.outerHTML : ''; })();
+function pEnvEnsure(){
+  if(document.getElementById('p-env-row') || !P_ENV_PRISTINE) return;
+  const coil = document.getElementById('p-coil-row'), lam = document.getElementById('p-lam-row');
+  if(coil) coil.insertAdjacentHTML('afterend', P_ENV_PRISTINE);
+  else if(lam) lam.insertAdjacentHTML('beforebegin', P_ENV_PRISTINE);
+  else return;
+  rebuildEnvDropdown();
+}
 function pRefEnsure(){
   const lam=document.getElementById('lam-enabled'), box=lam && lam.closest('.lam-section');
   if(!document.getElementById('p-cal-box') && P_REF_PRISTINE && box) box.insertAdjacentHTML('beforebegin', P_REF_PRISTINE);
@@ -5295,6 +5535,12 @@ function resetPaper(){
     document.getElementById('coil-enabled').checked=false;
     document.getElementById('coil-inputs').style.display='none';
     pel('coil-qty').value='1';
+    const envOn=document.getElementById('env-enabled');
+    if(envOn){
+      envOn.checked=false; document.getElementById('env-inputs').style.display='none';
+      const eq=pel('env-qty'); eq.value='1'; eq.setAttribute('data-auto','1');
+      pel('env-markup').value=String(PM); pel('env-type').value='';
+    }
     document.getElementById('lam-enabled').checked=false;
     document.getElementById('lam-body').style.display='none';
     document.getElementById('p-lam-row').style.display='none';
