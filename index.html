@@ -1422,7 +1422,7 @@
             </div>
             <div class="rate-item" id="uc-pct-wrap" style="font-size:12px">at <input type="number" id="uc-pct" value="100" min="0" step="5" oninput="uCalc()" style="width:60px"> % of their price</div>
             <div class="rate-item" id="uc-each-wrap" style="font-size:12px;display:none">$<input type="number" id="uc-each" value="8.00" min="0" step="0.25" oninput="uCalc()" style="width:65px"> each</div>
-            <span style="font-size:11px;color:#888">Coaster prices are all-in: no job setup fee is added for them. Your cost uses the UV cost model in settings plus the tile.</span>
+            <span style="font-size:11px;color:#888">Coaster prices are all-in: no job setup fee is added for them. Your cost uses the UV cost model in settings plus the tile (new rows start at the tile price in Inventory &gt; Other Inventory &amp; Supplies).</span>
           </div>
           <div class="scroll-x">
             <table style="min-width:1080px;margin-bottom:6px">
@@ -1432,7 +1432,7 @@
                 <th class="uch" style="width:6%">W (in)</th>
                 <th class="uch" style="width:6%">H (in)</th>
                 <th class="uch" style="width:6%">Qty</th>
-                <th class="uch" style="width:7%" title="Your tile cost each. VistaPrint's include a cork back, so include yours to compare like for like.">Tile $ ea</th>
+                <th class="uch" style="width:7%" title="Your tile cost each. VistaPrint's include a cork back, so include yours to compare like for like. New rows start at the Ceramic coaster tile price in Inventory &gt; Other Inventory &amp; Supplies.">Tile $ ea</th>
                 <th class="uch" style="width:5%">White?</th>
                 <th class="uch" style="width:5%" title="Primer wipe on each tile (usual for glazed ceramic)">Primer?</th>
                 <th class="uch" style="width:7%" title="Optional: ink cost xTool Studio shows for this whole row">Ink $ (xTool)</th>
@@ -2097,8 +2097,8 @@
 
       <!-- OTHER INVENTORY (free-form) -->
       <div class="inv-section">
-        <div class="inv-section-title">🗂 Other Inventory &amp; Supplies <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">reference only — for your records</span></div>
-        <div style="font-size:11px;color:#9333ea;margin-bottom:8px">Record any other supplies, materials, or costs here for reference. These don't feed a dropdown but are saved with your inventory.</div>
+        <div class="inv-section-title">🗂 Other Inventory &amp; Supplies <span style="font-size:11px;font-weight:400;color:#9333ea;margin-left:6px">for your records &middot; the coaster tile feeds UV Printing &gt; Coasters</span></div>
+        <div style="font-size:11px;color:#9333ea;margin-bottom:8px">Record any other supplies, materials, or costs here for reference. They're saved with your inventory and don't feed a dropdown, except the <strong>Ceramic coaster tile</strong>: new rows in UV Printing &gt; Coasters start at its price.</div>
         <div class="scroll-x">
           <table style="min-width:520px;margin-bottom:6px">
             <thead><tr>
@@ -3864,7 +3864,23 @@ const DEFAULT_OTHER = [
   {name:"4-3/8x5-3/4 White Envelope A2WW",      cost:0.06,  unit:"per unit",            supplier:"Spicers",       notes:"Product code: A2WW  - SKU: GENEA2WSF  - gospicers.ca"},
   {name:"Staples / binding",                     cost:0.25,  unit:"per booklet",         supplier:"",              notes:""},
   {name:"Laminating pouch",                      cost:0.50,  unit:"per sheet",           supplier:"",              notes:""},
+  {name:"Ceramic coaster tile 4x4 (cork back)",  cost:1.33,  unit:"per tile",            supplier:"Amazon (GNIEMCKIN)", notes:"60 for $79.79 (Nov 2026): 4 in square, white, unglazed, cork pads included. New UV coaster rows start at this price", code:"coaster-tile"},
 ];
+// v52: the coaster blank. New rows in UV Printing > Coasters start with its price in Tile $ ea (ucTileCost). Found by
+// code, or by a name with both "coaster" and "tile" (an item typed in by hand). Saved inventories get it once (tag in
+// inventory.added, also on import); one Chris removes stays removed, and new coaster rows then start blank.
+function invIsCoasterTile(o){ return !!o && (o.code === 'coaster-tile' || (/coaster/i.test(o.name || '') && /tile/i.test(o.name || ''))); }
+function invEnsureCoasterTile(){
+  try{
+    if(!Array.isArray(inventory.added)) inventory.added = [];
+    if(inventory.added.indexOf('coaster-tile-v52') >= 0) return false;
+    if(!Array.isArray(inventory.other)) inventory.other = [];
+    const def = DEFAULT_OTHER.find(o => o.code === 'coaster-tile');
+    if(def && !inventory.other.some(invIsCoasterTile)) inventory.other.push(JSON.parse(JSON.stringify(def)));
+    inventory.added.push('coaster-tile-v52');
+    return true;
+  }catch(e){ console.error('coaster tile', e); return false; }
+}
 
 let inventory = { coils: [], papers: [], toner: [], other: [] };
 let invSaveTimer = null;
@@ -3885,6 +3901,7 @@ function invLoad(){
       if(!hasLam){ inventory.other.unshift({name:"Lamination roll 5mil (pair)",cost:80.00,unit:"25 x 200ft roll pair",supplier:"Pony Graphics",notes:"Both rolls needed. Covers ~417 sq ft. $40 ship usually bundled. $0.19/sq ft materials, $0.29/sq ft with ship"}); invSave(); }
       const hasEnv = inventory.other.some(o=>o.name.toLowerCase().includes('a2ww')||o.name.toLowerCase().includes('4-3/8'));
       if(!hasEnv){ inventory.other.splice(1,0,{name:"4-3/8x5-3/4 White Envelope A2WW",cost:0.06,unit:"per unit",supplier:"Spicers",notes:"Product code: A2WW - SKU: GENEA2WSF - gospicers.ca"}); invSave(); }
+      if(invEnsureCoasterTile()) invSave();
       invAddOnce('nekoosa-v32', 'vinyl', ['138809','101719']);
       if(!inventory.papers || inventory.papers.length===0){ inventory.papers = JSON.parse(JSON.stringify(DEFAULT_PAPERS)); invSave(); }
       if(paperMigrate()) invSave();
@@ -3960,7 +3977,7 @@ function invUpdatePaperOnce(tag, pick, apply, match){
 }
 function invSetDefaults(){
   inventory = {
-    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40', 'finesse-upm-v41', 'finesse-80-12x18-v41', 'cougar-130c-12x18-v51', 'cougar-130c-13x19-v51'],
+    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40', 'finesse-upm-v41', 'finesse-80-12x18-v41', 'cougar-130c-12x18-v51', 'cougar-130c-13x19-v51', 'coaster-tile-v52'],
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),
@@ -4208,7 +4225,7 @@ function invImport(input){
   r.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if(data.papers && data.toner){ inventory = data; paperMigrate(); invEnsureEnvelopes(); invRenderAll(); invSave(); rebuildDropdowns(); notify('Inventory imported successfully!'); }
+      if(data.papers && data.toner){ inventory = data; paperMigrate(); invEnsureEnvelopes(); invEnsureCoasterTile(); invRenderAll(); invSave(); rebuildDropdowns(); notify('Inventory imported successfully!'); }
       else { notify('Invalid inventory file.'); }
     } catch(ex){ notify('Could not read file: '+ex.message); }
   };
@@ -6166,8 +6183,17 @@ function uAddRow(){
     <td style="text-align:center;background:#fef2f2"><button class="btn-remove no-print" onclick="uRemoveRow('${id}')" title="Remove">✕</button></td>`;
   tb.appendChild(tr); uCalc();
 }
+// v52: new coaster rows start with the coaster tile's price from Inventory > Other supplies (blank if there is none);
+// a row keeps whatever it was quoted with, so editing the inventory price never changes a saved quote
+function ucTileCost(){
+  const list = (inventory && Array.isArray(inventory.other)) ? inventory.other : [];
+  const t = list.find(o => o && o.code === 'coaster-tile') || list.find(invIsCoasterTile);
+  const c = t ? parseFloat(t.cost) : 0;
+  return c > 0 ? Math.round(c * 10000) / 10000 : 0;
+}
 function ucAddRow(){
   const id='uc'+ucId++; ucRows.push(id);
+  const tile=ucTileCost();
   const tb=document.getElementById('uc-body');
   const tr=document.createElement('tr'); tr.id='ucrow-'+id;
   tr.innerHTML=`
@@ -6176,7 +6202,7 @@ function ucAddRow(){
     <td class="inp"><input type="number" id="${id}-w" value="4" min="0" step="0.25" oninput="uCalc()"></td>
     <td class="inp"><input type="number" id="${id}-h" value="4" min="0" step="0.25" oninput="uCalc()"></td>
     <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="uCalc()"></td>
-    <td class="inp"><input type="number" id="${id}-b" placeholder="0.00" min="0" step="0.05" oninput="uCalc()"></td>
+    <td class="inp"><input type="number" id="${id}-b" placeholder="0.00" min="0" step="0.05"${tile>0?' value="'+tile+'"':''} oninput="uCalc()"></td>
     <td class="inp" style="text-align:center"><input type="checkbox" id="${id}-wh" onchange="uCalc()" style="width:16px;height:16px;display:inline-block;accent-color:#a21caf" title="White underbase under the whole print area"></td>
     <td class="inp" style="text-align:center"><input type="checkbox" id="${id}-pr" checked onchange="uCalc()" style="width:16px;height:16px;display:inline-block;accent-color:#a21caf" title="Primer wipe on each tile"></td>
     <td class="inp"><input type="number" id="${id}-ik" placeholder="est" min="0" step="0.001" oninput="uCalc()"></td>

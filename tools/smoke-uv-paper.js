@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Smoke test for UV Printing > Coasters (v34, saved prices kept through refreshes since v36) and the Paper tab
-// calendar / brochure references (v35), and the Paper tab Envelopes row with Inventory > Envelopes (v50).
+// calendar / brochure references (v35), the Paper tab Envelopes row with Inventory > Envelopes (v50), and new coaster
+// rows starting at the Ceramic coaster tile price from Inventory > Other supplies (v52).
 //   NODE_PATH=/path/to/node_modules node tools/smoke-uv-paper.js [index.html]
 // Needs jsdom. Every expected price is worked out here straight from the JSON block id="market-print" (no numbers
 // typed in), so the test keeps passing after a price refresh. Checks the all-in coaster rules (no job setup fee for
@@ -384,7 +385,69 @@ function openWin(ls, html) {
   const K3 = openWin({ 'coba-inventory-v2': JSON.stringify(invOld) }); await sleep(40);
   ok(K3.w.eval('inventory.envelopes.length') === 0 && K3.$('env-type').options.length === 1, 'v50: envelopes removed in Inventory stay removed');
 
-  [A, B, R, K, F, P, Q, G, H, E, J, K2, K3].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
+  // ---------- v52: new coaster rows start with the Ceramic coaster tile price from Inventory > Other supplies ----------
+  const tileOf = X => X.w.eval('inventory.other').filter(o => o.code === 'coaster-tile');
+  const T = openWin(); await sleep(40);
+  ok(tileOf(T).length === 1 && tileOf(T)[0].cost === 1.33 && tileOf(T)[0].unit === 'per tile' && /60 for \$79\.79/.test(tileOf(T)[0].notes) &&
+    T.w.eval('inventory.added').indexOf('coaster-tile-v52') >= 0, 'v52 fresh inventory: Ceramic coaster tile at $1.33 a tile (60 for $79.79), tagged');
+  T.w.switchTabByName('inventory'); T.w.invRenderOther();
+  ok(Array.from(T.$('inv-other-body').querySelectorAll('input')).some(i => i.value === 'Ceramic coaster tile 4x4 (cork back)'), 'v52: listed in Inventory > Other Inventory & Supplies');
+  T.w.switchTabByName('uv'); T.chk('uc-on', true); T.w.ucToggle();
+  ok(T.$('uc0-b').value === '1.33', 'v52: a new coaster row starts with the tile at $1.33: ' + T.$('uc0-b').value);
+  // Chris's Nov 18 2026 screenshot: 36 square 4x4, Primer off, ink and time estimated
+  T.set('uc0-q', 36); T.chk('uc0-pr', false); T.w.uCalc();
+  const withTile = money(T.$('uc-cost').textContent), perWith = money(T.$('uc-costper').textContent);
+  ok(!/enter your tile cost/.test(T.$('uc-market-bar').innerHTML) && T.$('uc0-co').style.color === '', 'v52: no missing-tile warning with the tile filled in');
+  T.set('uc0-b', ''); T.w.uCalc();
+  const noTile = money(T.$('uc-cost').textContent);
+  ok(near(withTile - noTile, 36 * 1.33), 'v52: the tiles add 36 x $1.33 = $47.88: ' + withTile + ' vs ' + noTile + ' without');
+  ok(Math.abs(perWith - withTile / 36) < 0.006, 'v52: cost per coaster ' + perWith);
+  console.log('  screenshot job (36 x 4x4, no primer): cost ' + noTile + ' without tiles -> ' + withTile + ' with, ' + perWith + ' each; quote ' + T.$('u-tt-quote').textContent);
+  // a saved quote keeps the tile it was quoted with (here none, like a pre-v52 quote)
+  T.set('cb-name', 'Tile Cust'); T.set('cb-title', 'coasters no tile'); T.w.saveEstimate(); await sleep(20);
+  const tq = T.$('u-tt-quote').textContent + '|' + T.$('u-tt-cost').textContent;
+  const tc = T.w.eval('jobsData.customers').find(c => c.name === 'Tile Cust');
+  T.w.resetUV(); T.w.cobaConfirmAnswer(true);
+  T.w.loadEstimate(tc.id, tc.estimates[0].id, false); T.w.cobaConfirmAnswer(true);
+  ok(T.$('uc0-b').value === '' && T.$('u-tt-quote').textContent + '|' + T.$('u-tt-cost').textContent === tq, 'v52: a coaster quote saved without a tile reopens as quoted');
+  // a price changed in Inventory starts new rows at it; rows already on the quote keep theirs
+  T.set('uc0-b', '1.33'); T.w.uCalc();
+  T.w.eval("inventory.other.find(o => o.code === 'coaster-tile').cost = 1.5");
+  T.w.ucAddRow();
+  ok(T.$('uc1-b').value === '1.5' && T.$('uc0-b').value === '1.33', 'v52: an Inventory price change reaches new rows only');
+  // an inventory saved by v51 (no tile, no tag) gets it once, last in Other supplies
+  const v51 = JSON.parse(J.w.eval('JSON.stringify(inventory)'));
+  v51.added = (v51.added || []).filter(t => t !== 'coaster-tile-v52');
+  v51.other = v51.other.filter(o => o.code !== 'coaster-tile');
+  const nOther = v51.other.length;
+  const T2 = openWin({ 'coba-inventory-v2': JSON.stringify(v51) }); await sleep(40);
+  const o2 = T2.w.eval('inventory.other');
+  ok(o2.length === nOther + 1 && tileOf(T2).length === 1 && tileOf(T2)[0].cost === 1.33 && o2[o2.length - 1].code === 'coaster-tile', 'v52: a v51 inventory gets the tile once, last in Other supplies');
+  ok(JSON.parse(T2.w.localStorage.getItem('coba-inventory-v2')).added.indexOf('coaster-tile-v52') >= 0, 'v52: saved with its tag');
+  ok(T2.w.eval('inventory.papers.length') === v51.papers.length && T2.w.eval('inventory.envelopes.length') === v51.envelopes.length, 'v52: the rest of the saved inventory untouched');
+  T2.w.switchTabByName('uv'); T2.chk('uc-on', true); T2.w.ucToggle();
+  ok(T2.$('uc0-b').value === '1.33', 'v52: its new coaster rows start at $1.33');
+  // removed in Inventory: stays removed, new rows start blank and are flagged as before
+  const inv52 = JSON.parse(T2.w.localStorage.getItem('coba-inventory-v2'));
+  inv52.other = inv52.other.filter(o => o.code !== 'coaster-tile');
+  const T3 = openWin({ 'coba-inventory-v2': JSON.stringify(inv52) }); await sleep(40);
+  ok(tileOf(T3).length === 0, 'v52: a removed coaster tile stays removed');
+  T3.w.switchTabByName('uv'); T3.chk('uc-on', true); T3.w.ucToggle(); T3.set('uc0-q', 10); T3.w.uCalc();
+  ok(T3.$('uc0-b').value === '' && /enter your tile cost/.test(T3.$('uc-market-bar').innerHTML), 'v52: no tile in Inventory = new rows start blank, flagged');
+  // a v51 inventory with a coaster tile typed in by hand: not duplicated, its price used
+  const v51b = JSON.parse(JSON.stringify(v51));
+  v51b.other.push({ name: 'Coaster tiles 4 inch', cost: 0.83, unit: 'each', supplier: '', notes: '' });
+  const T4 = openWin({ 'coba-inventory-v2': JSON.stringify(v51b) }); await sleep(40);
+  ok(T4.w.eval('inventory.other').filter(o => T4.w.invIsCoasterTile(o)).length === 1, 'v52: a coaster tile typed in by hand is not duplicated');
+  T4.w.switchTabByName('uv'); T4.chk('uc-on', true); T4.w.ucToggle();
+  ok(T4.$('uc0-b').value === '0.83', 'v52: new rows use the hand-typed tile price');
+  // importing an inventory file exported by v51 adds it too
+  const T5 = openWin(); await sleep(40);
+  T5.w.invImport({ files: [new T5.w.File([JSON.stringify(v51)], 'inv.json', { type: 'application/json' })], value: '' });
+  await sleep(80);
+  ok(tileOf(T5).length === 1 && T5.w.eval('inventory.added').indexOf('coaster-tile-v52') >= 0 && JSON.parse(T5.w.localStorage.getItem('coba-inventory-v2')).other.some(o => o.code === 'coaster-tile'), 'v52: importing a v51 inventory file adds the tile');
+
+  [A, B, R, K, F, P, Q, G, H, E, J, K2, K3, T, T2, T3, T4, T5].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.log('FAIL: test crashed: ' + (e && e.stack || e)); process.exit(1); });
