@@ -3784,6 +3784,8 @@ const PAPER_SEED = [
   P("Supreme 100# gloss text 13x19",100,'#',"Supreme Gloss Text","13x19",0.16),
   P("UPM Finesse Gloss Text 100# 12x18",100,'#',"UPM Finesse Gloss Text","12x18",0.08342),   // v40: Spicer FING111, UPM Finesse Gloss NA Digital 100# text, 45M, white FSC, $83.42 / 1000 sheets (v41: UPM in the name)
   P("Mohawk Felt 110# 18x12",110,'#',"Mohawk Felt","12x18",0.74),
+  P("Cougar Digital Color Copy 130# cover 12x18",130,'#',"Cougar Digital Color Copy Cover","12x18",0.48253),   // v51: Spicer COUDCCDIC1081312FSC, Cougar Dig Color Copy Cov 130# 18x12, 108.13M, white FSC, $482.53 / 1000 sheets (by the case)
+  P("Cougar Digital Color Copy 130# cover 13x19",130,'#',"Cougar Digital Color Copy Cover","13x19",0.55112),   // v51: Spicer COUDCCDIC123513FSC, Cougar Dig Color Copy Cov 130# 19x13, 123.5M, white FSC, $551.12 / 1000 sheets (by the case)
   P("13x19 11pt Gloss Cover Invercote",11,'pt',"Invercote Gloss Cover","13x19",0.45),
   P("12pt CS1 12x18",12,'pt',"CS1","12x18",0.15),
   P("Tango 14pt CS1 (12x18)",14,'pt',"Tango CS1","12x18",0.18),
@@ -3905,6 +3907,9 @@ function invLoad(){
       invAddPaperOnce('finesse-12x18-v40', p=>/finesse/i.test(p.brand||'') && +p.weight===100 && /^12\s*x\s*18$/i.test(p.size||''));
       invUpdatePaperOnce('finesse-upm-v41', ps=>ps.filter(p=>p.brand==='Finesse Gloss Text'), p=>{ p.brand='UPM Finesse Gloss Text'; }, null);   // v40's name gets UPM; price untouched, a deleted one stays deleted
       invAddPaperOnce('finesse-80-12x18-v41', p=>/finesse/i.test(p.brand||'') && +p.weight===80 && /^12\s*x\s*18$/i.test(p.size||''));
+      // v51: Cougar Digital Color Copy 130# cover in two sizes; matched by weight and size so one never blocks the other (or the Cougar 100# text)
+      invAddPaperOnce('cougar-130c-12x18-v51', p=>/cougar/i.test(p.brand||'') && +p.weight===130 && /^12\s*x\s*18$/i.test(p.size||''));
+      invAddPaperOnce('cougar-130c-13x19-v51', p=>/cougar/i.test(p.brand||'') && +p.weight===130 && /^13\s*x\s*19$/i.test(p.size||''));
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
@@ -3955,7 +3960,7 @@ function invUpdatePaperOnce(tag, pick, apply, match){
 }
 function invSetDefaults(){
   inventory = {
-    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40', 'finesse-upm-v41', 'finesse-80-12x18-v41'],
+    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40', 'finesse-upm-v41', 'finesse-80-12x18-v41', 'cougar-130c-12x18-v51', 'cougar-130c-13x19-v51'],
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),

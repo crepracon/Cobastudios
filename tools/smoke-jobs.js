@@ -635,8 +635,38 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const R = openWin({ inventory: JSON.stringify(inv4) }); await sleep(40);
   ok(R.w.eval('inventory.papers').filter(isFin80).length === 0, 'a removed 80# Finesse stays removed');
 
+  // ---------- v51: Cougar Digital Color Copy 130# cover 12x18 (COUDCCDIC1081312FSC, $482.53 / 1000) and 13x19 (COUDCCDIC123513FSC, $551.12 / 1000) ----------
+  const isCou = sz => p => /cougar/i.test(p.brand || '') && +p.weight === 130 && p.size === sz;
+  const fp51 = F.w.eval('inventory.papers'), fa51 = F.w.eval('inventory.added');
+  const f12 = fp51.filter(isCou('12x18')), f13 = fp51.filter(isCou('13x19'));
+  ok(f12.length === 1 && f12[0].cost === 0.48253 && f12[0].unit === '#' && f12[0].brand === 'Cougar Digital Color Copy Cover' && f13.length === 1 && f13[0].cost === 0.55112 &&
+    fa51.indexOf('cougar-130c-12x18-v51') >= 0 && fa51.indexOf('cougar-130c-13x19-v51') >= 0, 'v51 fresh inventory: Cougar 130# cover 12x18 at $482.53 and 13x19 at $551.12 / 1000, once each');
+  // an inventory saved by v50: no Cougar 130#, no v51 tags; its Cougar 100# text stays as it is
+  const v50 = JSON.parse(F.w.eval('JSON.stringify(inventory)'));
+  v50.added = v50.added.filter(t => !/-v51$/.test(t));
+  v50.papers = v50.papers.filter(p => !isCou('12x18')(p) && !isCou('13x19')(p));
+  const nCou = v50.papers.filter(p => /cougar/i.test(p.brand || '')).length;
+  const U5 = openWin({ inventory: JSON.stringify(v50) }); await sleep(40);
+  const up5 = U5.w.eval('inventory.papers');
+  ok(up5.filter(isCou('12x18')).length === 1 && up5.filter(isCou('13x19')).length === 1 && up5.filter(p => /cougar/i.test(p.brand || '')).length === nCou + 2 &&
+    up5.some(p => p.brand === 'Cougar Text' && +p.weight === 100), 'v51: a v50 inventory gets both sizes once (neither blocks the other; the 100# text untouched)');
+  const u5opts = Array.from(U5.$('pp-s0').options);
+  const c12 = u5opts.find(o => o.textContent === '130# Cougar Digital Color Copy Cover 12x18'), c13 = u5opts.find(o => o.textContent === '130# Cougar Digital Color Copy Cover 13x19');
+  ok(!!c12 && !!c13, 'v51: both in the Paper tab dropdowns');
+  U5.$('pp-s0').value = c12.value; U5.w.pSetPaper(0); U5.$('pp-n0').value = '1000';
+  U5.$('pp-s1').value = c13.value; U5.w.pSetPaper(1); U5.$('pp-n1').value = '1000'; U5.w.pCalc();
+  ok(U5.$('pp-c0').value === '0.483' && /483\.00/.test(U5.$('pp-rc0').textContent) && /1,?449\.00/.test(U5.$('pp-rr0').textContent),
+    'v51: 12x18, 1000 sheets: $' + U5.$('pp-c0').value + ' a sheet, cost ' + U5.$('pp-rc0').textContent + ', retail ' + U5.$('pp-rr0').textContent + ' (x3)');
+  ok(U5.$('pp-c1').value === '0.551' && /551\.00/.test(U5.$('pp-rc1').textContent) && /1,?653\.00/.test(U5.$('pp-rr1').textContent),
+    'v51: 13x19, 1000 sheets: $' + U5.$('pp-c1').value + ' a sheet, cost ' + U5.$('pp-rc1').textContent + ', retail ' + U5.$('pp-rr1').textContent + ' (x3)');
+  // one removed in Inventory stays removed; the other stays
+  const inv51 = JSON.parse(U5.w.localStorage.getItem('coba-inventory-v2'));
+  inv51.papers = inv51.papers.filter(p => !isCou('12x18')(p));
+  const U6 = openWin({ inventory: JSON.stringify(inv51) }); await sleep(40);
+  ok(U6.w.eval('inventory.papers').filter(isCou('12x18')).length === 0 && U6.w.eval('inventory.papers').filter(isCou('13x19')).length === 1, 'v51: a removed Cougar 130# stays removed');
+
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V, U5, U6].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V','U5','U6'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
