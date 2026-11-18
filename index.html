@@ -1127,7 +1127,7 @@
           </div>
           <button class="btn-add no-print" onclick="rAddRow('stk')" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">+ Add sticker size</button>
           <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;background:#fff;border:1px solid #bfdbfe;border-radius:6px">
-            <div class="info-item">Material used: <strong id="r-stk-sqft">0 sq ft</strong></div>
+            <div class="info-item">Material used: <strong id="r-stk-sqft">0 sq ft</strong> <span id="r-stk-roll" style="color:#888"></span></div>
             <div class="info-item">Your material cost: <strong id="r-stk-cost">$0.00</strong></div>
             <div class="info-item">Sticker retail: <strong id="r-stk-retail">$0.00</strong></div>
             <div class="info-item">Avg per sticker: <strong id="r-stk-per">—</strong></div>
@@ -1223,6 +1223,7 @@
           <button class="btn-add no-print" onclick="rAddRow('sgn')" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">+ Add sign</button>
           <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;background:#fff;border:1px solid #bbf7d0;border-radius:6px">
             <div class="info-item">Total sign area: <strong id="r-sgn-sqft">0 sq ft</strong></div>
+            <div class="info-item" id="r-sgn-film" style="color:#888"></div>
             <div class="info-item">Your cost: <strong id="r-sgn-cost">$0.00</strong></div>
             <div class="info-item">Signage retail: <strong id="r-sgn-retail">$0.00</strong></div>
             <div class="info-item" id="r-sgn-2s" style="color:#888"></div>
@@ -1281,9 +1282,11 @@
       </div>
       <div id="r-settings-wrap" style="display:none">
         <div class="rate-bar" style="flex-wrap:wrap;gap:10px;margin-bottom:0.75rem">
-          <div class="rate-item">Roll usable width: <input type="number" id="r-roll-w" value="50" min="1" step="1" oninput="rCalc()" style="width:55px"> in</div>
+          <div class="rate-item">Roll usable width: <input type="number" id="r-roll-w" value="50" min="1" step="1" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(what fits across)</span></div>
+          <div class="rate-item">Full roll width: <input type="number" id="r-roll-full" value="54" min="1" step="1" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(vinyl + laminate are charged at the full width; a roll size in the Inventory notes, e.g. 24x50ft, wins)</span></div>
+          <div class="rate-item">Panel overlap: <input type="number" id="r-tile-ov" value="1" min="0" step="0.25" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(pieces wider than the roll are split into panels)</span></div>
           <div class="rate-div"></div>
-          <div class="rate-item">Registry / cut overhead: <input type="number" id="r-reg-overhead" value="8" min="0" step="1" oninput="rCalc()" style="width:50px"> in <span style="font-size:10px;color:#888">(extra feed per sticker row for cut marks)</span></div>
+          <div class="rate-item">Registry / cut overhead: <input type="number" id="r-reg-overhead" value="8" min="0" step="1" oninput="rCalc()" style="width:50px"> in <span style="font-size:10px;color:#888">(extra feed per row for cut marks, Stickers and Signage)</span></div>
           <div class="rate-div"></div>
           <div class="rate-item">Ink cost: $<input type="number" id="r-ink" value="0.50" min="0" step="0.05" oninput="rCalc()" style="width:60px">/sq ft</div>
           <div class="rate-div"></div>
@@ -4667,6 +4670,7 @@ function rBuildVinylOpts(selId, filterFn){
   inventory.vinyl.filter(filterFn||(_=>true)).forEach(v=>{
     const o=document.createElement('option');
     o.value=v.cost; o.textContent=v.name+(v.cost?' ($'+v.cost+'/sqft)':'');
+    const rw=rRollWidthFromNotes(v); if(rw) o.setAttribute('data-w', rw);   // v53: roll width from the Inventory notes (54x150ft = 54 in)
     if(String(v.cost)===cur) o.selected=true;
     sel.appendChild(o);
   });
@@ -4784,6 +4788,43 @@ function rStkFilm(w, h, q){
   return passes * (rollW * (feed + reg)) / 144;
 }
 function rClassicStk(cost, q){ const t = getStickerTier(q); return Math.max(cost * t.markup, q * t.minEach); }
+// ===== ROLL WASTE (v53, Stickers and Signage) =====
+// Vinyl and laminate are charged at their roll's FULL width for the length run (the strip beside the print is trimmed off
+// and thrown out, but it was bought); ink only on the printed area. The usable width (what fits across) is the vinyl's roll
+// width minus the side margins in the settings (Full roll width 54 - Roll usable width 50 = 4 in). Each roll's width comes
+// from its Inventory notes (54x150ft = 54 in, 24x50ft = 24 in), else the Full roll width setting. Layout as the sticker rows
+// always did: longer side across when it fits, Registry / cut overhead added per row. New: a piece wider than the usable
+// width both ways is split into panels (Panel overlap at each seam). Stickers and Signage share this, so one job costs the
+// same in both. Panels saved before v53 have no r-roll-full input and keep the old math (pricing integrity).
+function rNewWaste(){ return !!document.getElementById('r-roll-full'); }
+function rRollWidthFromNotes(v){
+  const m = /(\d+(?:\.\d+)?)\s*(?:in|inch|inches|")?\s*x\s*\d+(?:\.\d+)?\s*(?:ft|feet|foot|')/i.exec(String((v && v.notes) || ''));
+  const w = m ? parseFloat(m[1]) : 0;
+  return w >= 6 && w <= 72 ? w : 0;
+}
+function rRollWidthOf(selId){
+  const sel = document.getElementById(selId), o = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+  const w = o ? parseFloat(o.getAttribute('data-w')) : 0;
+  return w > 0 ? w : (rGetV('r-roll-full') || 54);
+}
+function rRollLayout(w, h, q, U, oh, ov){
+  const bigger = Math.max(w, h), smaller = Math.min(w, h);
+  let across = bigger <= U ? bigger : smaller, panels = 1;
+  const feed = bigger <= U ? smaller : bigger;
+  if(across > U){ panels = Math.ceil((across - ov) / Math.max(U - ov, 0.01)); across = (across + (panels - 1) * ov) / panels; }
+  const ipp = Math.max(1, Math.floor(U / across)), passes = Math.ceil(q * panels / ipp);
+  return { passes, panels, ipp, runIn: passes * (feed + oh) };
+}
+function rWasteCtx(vinSel, lamSel, vin, lam, ink){
+  const Wv = rRollWidthOf(vinSel), Wl = lam > 0 ? rRollWidthOf(lamSel) : Wv;
+  const full = rGetV('r-roll-full') || 54, usable = rGetV('r-roll-w') || 50;
+  return { Wv, Wl, U: Math.max(1, Wv - Math.max(0, full - usable)), oh: rGetV('r-reg-overhead') || 8, ov: rGetV('r-tile-ov'), vin, lam, ink };
+}
+function rWasteCost(w, h, q, c){
+  const L = rRollLayout(w, h, q, c.U, c.oh, c.ov);
+  const vinSf = L.runIn * c.Wv / 144, lamSf = c.lam > 0 ? L.runIn * c.Wl / 144 : 0, printSf = w * h * q / 144;
+  return { L, vinSf, lamSf, printSf, cost: vinSf * c.vin + lamSf * c.lam + printSf * c.ink };
+}
 // Market reference for one job: like-for-like seller group, the market range and the base price picked by the rule.
 function rStkMarketBase(w, h, q, lam){
   const at = rStkSel('r-stk-at', 'mid'), grp = MKT.group(lam), m = MKT.market(grp, w, h, q), prices = {};
@@ -4821,7 +4862,7 @@ function rStkRowMarket(id, w, h, q, lam, cost, classic){
   const title = qq.noMarket ? 'No market data for this size and quantity - classic price used' : 'Quote = ' + r.basis + (kept ? ' (market price kept from when this was quoted)' : '');
   return Object.assign({}, r, qq, st, { base, kept, classic, cost, title });
 }
-function rStkRenderMarket(mode, rows, lam, matCost){
+function rStkRenderMarket(mode, rows, lam, matCost, wc){
   const box = document.getElementById('r-stk-mkt'); if(!box) return;
   if(mode !== 'market'){ box.innerHTML = 'Classic markup pricing. Pick <strong>Pricing: Market</strong> in the sticker header to price from competitors, like for like.'; return; }
   if(!rows.length){ box.innerHTML = 'The market check appears here once a sticker row has a width, height and quantity.'; return; }
@@ -4845,8 +4886,8 @@ function rStkRenderMarket(mode, rows, lam, matCost){
   const r0 = rows[0], qs = MKT_BREAK_QTYS.slice(); if(qs.indexOf(r0.q) < 0) qs.push(r0.q); qs.sort((a,b) => a - b);
   let t = '<table style="margin:6px 0 0;min-width:420px"><thead><tr><th class="dh">Qty</th><th class="dh">Market middle</th><th class="dh">Quote</th><th class="dh">Each</th><th class="dh">Your cost</th><th class="dh">' + MKT_X + ' cost</th></tr></thead><tbody>';
   qs.forEach(qq => {
-    const cost = rStkFilm(r0.w, r0.h, qq) * matCost, b = rStkMarketBase(r0.w, r0.h, qq, lam);
-    const qo = rStkQuote(b.base == null ? null : Math.round(b.base * 100) / 100, qq, rClassicStk(cost, qq)), st = rStkStatus(qo.quote, cost);
+    const oldCost = rStkFilm(r0.w, r0.h, qq) * matCost, cost = wc ? rWasteCost(r0.w, r0.h, qq, wc).cost : oldCost, b = rStkMarketBase(r0.w, r0.h, qq, lam);   // v53: classic stays on the old basis
+    const qo = rStkQuote(b.base == null ? null : Math.round(b.base * 100) / 100, qq, rClassicStk(oldCost, qq)), st = rStkStatus(qo.quote, cost);
     t += '<tr' + (qq === r0.q ? ' style="background:#fef3c7"' : '') + '><td class="res" style="background:none;color:#1a1a1a">' + qq.toLocaleString('en-CA') + '</td><td class="res" style="background:none;color:#1a1a1a">' + (b.m ? rfmt(b.m.median) : 'n/a') + '</td>' +
       '<td class="res" style="background:none;color:#1a1a1a"><span class="stk-dot ' + st.status + '"></span>' + rfmt(qo.quote) + '</td><td class="res" style="background:none;color:#1a1a1a">' + rfmt(qo.quote / qq) + '</td>' +
       '<td class="res dim" style="background:none">' + rfmt(cost) + '</td><td class="res" style="background:none;color:#1a1a1a">' + (isFinite(st.x) ? st.x.toFixed(1) + MKT_X : '') + '</td></tr>';
@@ -4877,6 +4918,8 @@ function rCalc(){
     const regOverhead = rGetV('r-reg-overhead') || 8;
     const stkMode = rStkSel('r-stk-mode', 'classic');   // pre-v28 saved jobs have no Pricing select -> classic
     const stkMktRows = [];
+    const wc = rNewWaste() ? rWasteCtx('r-stk-vinyl', 'r-stk-lam-type', vinylCost, lamCost, inkSF) : null;   // v53: full roll width (old jobs: null)
+    let stkPrint = 0;
 
     rStkRows.forEach(id=>{
       const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
@@ -4889,11 +4932,13 @@ function rCalc(){
         const across=bigger<=rollW?bigger:smaller;
         const feed=bigger<=rollW?smaller:bigger;
         const ipp=Math.max(1,Math.floor(rollW/across));
-        const passes=Math.ceil(q/ipp);
-        const filmSqFt=passes*(rollW*(feed+regOverhead))/144;
-        const cost=filmSqFt*matCost;
+        let passes=Math.ceil(q/ipp);
+        let filmSqFt=passes*(rollW*(feed+regOverhead))/144;
+        const oldCost=filmSqFt*matCost;   // the film math every sticker quote used before v53
+        let cost=oldCost, wr=null;
+        if(wc){ wr=rWasteCost(w, h, q, wc); passes=wr.L.passes; filmSqFt=wr.vinSf; cost=wr.cost; stkPrint+=wr.printSf; }
         const tier=getStickerTier(q);
-        const retailCalc=cost*tier.markup;
+        const retailCalc=oldCost*tier.markup;   // v53: the classic markup stays on the basis it was tuned on, so classic prices don't move
         const retailFloor=q*tier.minEach;
         let retail=Math.max(retailCalc, retailFloor);
         const mkLabel=tier.label+' ('+tier.markup+'x'+(retailFloor>retailCalc?' · $'+tier.minEach+'/ea min':'')+')';
@@ -4905,8 +4950,8 @@ function rCalc(){
           stkMktRows.push(Object.assign({ name: nEl ? nEl.value.trim() : '', w, h, q }, mkt));
         }
         const per=q>0?retail/q:0;
-        if(psEl) psEl.textContent=passes+(passes>1?' passes':' pass');
-        if(sfEl) sfEl.textContent=rsfmt(filmSqFt);
+        if(psEl){ psEl.textContent=passes+(passes>1?' passes':' pass'); psEl.title=wr && wr.L.panels>1 ? 'Wider than the roll: each piece is printed in '+wr.L.panels+' panels' : ''; }
+        if(sfEl){ sfEl.textContent=rsfmt(filmSqFt); if(wr) sfEl.title='Vinyl: '+wc.Wv+' in roll x '+wr.L.runIn.toFixed(1)+' in run'+(lamOn?', laminate '+wc.Wl+' in wide':'')+'; ink on '+rsfmt(wr.printSf)+' printed'; }
         if(coEl) coEl.textContent=rfmt(cost);
         if(rtEl){ if(mkt){ rtEl.innerHTML='<span class="stk-dot '+mkt.status+'"></span>'+rfmt(retail); rtEl.title=mkt.title; } else { rtEl.textContent=rfmt(retail); rtEl.title=mkLabel; } }
         if(peEl){ peEl.textContent=rfmt(per); peEl.title=mkt ? mkt.title : mkLabel; }
@@ -4915,6 +4960,7 @@ function rCalc(){
       } else { all.forEach(e=>{if(e){e.textContent='—';e.style.color='';}}); }
     });
     rSet('r-stk-sqft',   stkFilm>0?rsfmt(stkFilm):'0 sq ft');
+    rSet('r-stk-roll',   wc && stkFilm>0 ? '(full '+wc.Wv+' in roll width'+(lamOn && wc.Wl!==wc.Wv ? ', laminate '+wc.Wl+' in' : '')+'; ink on the '+rsfmt(stkPrint)+' printed)' : '');
     rSet('r-stk-cost',   rfmt(stkCost));
     rSet('r-stk-retail', rfmt(stkRetail));
     rSet('r-stk-per',    stkPieces>0?rfmt(stkRetail/stkPieces)+' avg':'—');
@@ -4924,7 +4970,7 @@ function rCalc(){
       rSet('r-stk-tier', t.label+' — '+t.markup+'x markup · $'+t.minEach+'/sticker min per row');
     } else { rSet('r-stk-tier','—'); }
     if(stkMode==='market') rSet('r-stk-tier', 'Market pricing (' + (lamOn ? 'laminated' : 'unlaminated') + ') - see the market check below');
-    rStkRenderMarket(stkMode, stkMktRows, lamOn, matCost);
+    rStkRenderMarket(stkMode, stkMktRows, lamOn, matCost, wc);
   }
 
   // ── BANNERS ──
@@ -4965,6 +5011,10 @@ function rCalc(){
     const lamCost   = lamEl && lamEl.checked ? rGetV('r-sgn-lam-type') : 0;
     const face      = vinylCost + inkSF + lamCost;
     const side2x    = face+subCost>0 ? (2*face+subCost)/(face+subCost) : 2;
+    // v53: vinyl + laminate on the full roll width for the length run (shared with Stickers), ink on the printed faces,
+    // board on the sign area. Jobs saved before v53 (no r-roll-full) keep sign area x (faces + board).
+    const wc = rNewWaste() ? rWasteCtx('r-sgn-vinyl', 'r-sgn-lam-type', vinylCost, lamCost, inkSF) : null;
+    let sgnFilm=0, sgnLamFilm=0;
     rSgnRows.forEach(id=>{
       const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
       const sdEl=document.getElementById(id+'-sd'), sides=sdEl && sdEl.value==='2' ? 2 : 1;
@@ -4972,7 +5022,13 @@ function rCalc(){
       const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
       if(w>0&&h>0&&q>0){
         const sqft=(w*h/144)*q;
-        const cost=sqft*(face*sides+subCost), retail=sqft*sgnRate*(sides===2?side2x:1), per=retail/q;
+        let cost=sqft*(face*sides+subCost);
+        const retail=sqft*sgnRate*(sides===2?side2x:1), per=retail/q;
+        if(wc){
+          const wr=rWasteCost(w, h, q*sides, wc);   // each face is its own print
+          cost=wr.cost+sqft*subCost; sgnFilm+=wr.vinSf; sgnLamFilm+=wr.lamSf;
+          if(sfEl) sfEl.title='Vinyl used: '+rsfmt(wr.vinSf)+' ('+wr.L.passes+(wr.L.passes>1?' rows':' row')+' on a '+wc.Wv+' in roll'+(wr.L.panels>1?', '+wr.L.panels+' panels per face':'')+')';
+        }
         if(sfEl) sfEl.textContent=rsfmt(w*h/144);
         if(coEl) coEl.textContent=rfmt(cost);
         if(rtEl) rtEl.textContent=rfmt(retail);
@@ -4982,6 +5038,7 @@ function rCalc(){
     });
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
     set('r-sgn-sqft', sgnArea>0?rsfmt(sgnArea):'0 sq ft');
+    set('r-sgn-film', wc && sgnFilm>0 ? 'Vinyl used: '+rsfmt(sgnFilm)+' (full '+wc.Wv+' in roll width'+(lamCost>0 && wc.Wl!==wc.Wv ? '; laminate '+rsfmt(sgnLamFilm)+', '+wc.Wl+' in' : '')+')' : '');
     set('r-sgn-cost', rfmt(sgnCost));
     set('r-sgn-retail', rfmt(sgnRetail));
     set('r-sgn-2s', '2 sided = '+side2x.toFixed(2)+'x the 1 sided price (2 faces + 1 board)');
@@ -5046,7 +5103,7 @@ function rCalc(){
 
 function resetRoland(){
   cobaConfirm('New Roland estimate? This will clear all Roland fields.', ()=>{
-    if((!document.getElementById('r-stk-mode') || !document.querySelector('#r-sgn-lam-type[data-drives]') || !document.querySelector('#r-stk-lam-type[data-drives]') || !document.querySelector('#r-sgn-sub[data-drives]')) && R_PANEL_PRISTINE){ // a job saved before v28/v29/v30/v39 replaced the panel markup
+    if((!document.getElementById('r-stk-mode') || !document.querySelector('#r-sgn-lam-type[data-drives]') || !document.querySelector('#r-stk-lam-type[data-drives]') || !document.querySelector('#r-sgn-sub[data-drives]') || !document.getElementById('r-roll-full')) && R_PANEL_PRISTINE){ // a job saved before v28/v29/v30/v39/v53 replaced the panel markup
       const pv=document.getElementById('panel-vinyl'); if(pv){ pv.innerHTML=R_PANEL_PRISTINE; rebuildRolandDropdowns(); }
     }
     const sm=document.getElementById('r-stk-mode'); if(sm) sm.value='market';
