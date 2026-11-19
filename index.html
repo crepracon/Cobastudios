@@ -3766,6 +3766,7 @@ const PAPER_SEED = [
   P("Sustana 24#",24,'#',"Sustana","12x18",0.05,['size']),
   P("Husky Digital Opaque 24# 11x17",24,'#',"Husky Digital Opaque Smooth","11x17",0.05409),   // v37: Spicer HUS2362, 60# text = 24# bond, $54.09 / 1000 sheets
   P("Sustana 28#",28,'#',"Sustana","12x18",0.07,['size']),
+  P("Hammermill Premium Color Copy 28# 12x18",28,'#',"Hammermill Premium Color Copy","12x18",0.10153),   // v55: Spicer COLCDDIPHO3234FSC, Ham Premium Color Copy 28# 12x18, 32.34M, photo white, 100 bright, FSC, $101.53 / 1000 sheets
   P("Hammermill 32#",32,'#',"Hammermill","12x18",0.11,['size']),
   P("Pacesetter 60# adhesive 13x19",60,'#',"Pacesetter Adhesive","13x19",0.83),
   P("Springhill cream 11x17 bristol 67#",67,'#',"Springhill Cream Bristol","11x17",0.06),
@@ -3931,6 +3932,8 @@ function invLoad(){
       // v51: Cougar Digital Color Copy 130# cover in two sizes; matched by weight and size so one never blocks the other (or the Cougar 100# text)
       invAddPaperOnce('cougar-130c-12x18-v51', p=>/cougar/i.test(p.brand||'') && +p.weight===130 && /^12\s*x\s*18$/i.test(p.size||''));
       invAddPaperOnce('cougar-130c-13x19-v51', p=>/cougar/i.test(p.brand||'') && +p.weight===130 && /^13\s*x\s*19$/i.test(p.size||''));
+      // v55: Hammermill Premium Color Copy 28# 12x18; matched by weight and size so the Hammermill 32# and the covers don't block it
+      invAddPaperOnce('hammermill-pcc28-12x18-v55', p=>/hammermill/i.test(p.brand||'') && +p.weight===28 && /^12\s*x\s*18$/i.test(p.size||''));
     }
     else { invSetDefaults(); }
   } catch(e){ invSetDefaults(); }
@@ -3981,7 +3984,7 @@ function invUpdatePaperOnce(tag, pick, apply, match){
 }
 function invSetDefaults(){
   inventory = {
-    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40', 'finesse-upm-v41', 'finesse-80-12x18-v41', 'cougar-130c-12x18-v51', 'cougar-130c-13x19-v51', 'coaster-tile-v52'],
+    added:        ['nekoosa-v32', 'husky-11x17-v37', 'doublea-11x17-v38', 'rolland-26x40-v38', 'rolland-13x19-v38', 'finesse-12x18-v40', 'finesse-upm-v41', 'finesse-80-12x18-v41', 'cougar-130c-12x18-v51', 'cougar-130c-13x19-v51', 'coaster-tile-v52', 'hammermill-pcc28-12x18-v55'],
     inks:         JSON.parse(JSON.stringify(DEFAULT_INKS)),
     epsonPapers:  JSON.parse(JSON.stringify(DEFAULT_EPSON_PAPERS)),
     coils:        JSON.parse(JSON.stringify(DEFAULT_COILS)),

@@ -665,8 +665,33 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   const U6 = openWin({ inventory: JSON.stringify(inv51) }); await sleep(40);
   ok(U6.w.eval('inventory.papers').filter(isCou('12x18')).length === 0 && U6.w.eval('inventory.papers').filter(isCou('13x19')).length === 1, 'v51: a removed Cougar 130# stays removed');
 
+  // ---------- v55: Hammermill Premium Color Copy 28# 12x18 (COLCDDIPHO3234FSC, $101.53 / 1000) ----------
+  const isHam = p => /hammermill/i.test(p.brand || '') && +p.weight === 28 && p.size === '12x18';
+  const fp55 = F.w.eval('inventory.papers'), fa55 = F.w.eval('inventory.added'), fh = fp55.filter(isHam);
+  ok(fh.length === 1 && fh[0].cost === 0.10153 && fh[0].unit === '#' && fh[0].brand === 'Hammermill Premium Color Copy' && (fh[0].unsure || []).length === 0 &&
+    fa55.indexOf('hammermill-pcc28-12x18-v55') >= 0, 'v55 fresh inventory: Hammermill Premium Color Copy 28# 12x18 at $101.53 / 1000, once');
+  // an inventory saved by v54: no Hammermill 28#, no v55 tag; its Hammermill 32# and covers stay as they are
+  const v54 = JSON.parse(F.w.eval('JSON.stringify(inventory)'));
+  v54.added = v54.added.filter(t => !/-v55$/.test(t));
+  v54.papers = v54.papers.filter(p => !isHam(p));
+  const nHam = v54.papers.filter(p => /hammermill/i.test(p.brand || '')).length;
+  const H1 = openWin({ inventory: JSON.stringify(v54) }); await sleep(40);
+  const hp1 = H1.w.eval('inventory.papers');
+  ok(hp1.filter(isHam).length === 1 && hp1.filter(p => /hammermill/i.test(p.brand || '')).length === nHam + 1 &&
+    hp1.some(p => p.brand === 'Hammermill' && +p.weight === 32), 'v55: a v54 inventory gets it once (the Hammermill 32# untouched)');
+  const hOpt = Array.from(H1.$('pp-s0').options).find(o => o.textContent === '28# Hammermill Premium Color Copy 12x18');
+  ok(!!hOpt, 'v55: in the Paper tab dropdowns');
+  H1.$('pp-s0').value = hOpt.value; H1.w.pSetPaper(0); H1.$('pp-n0').value = '1000'; H1.w.pCalc();
+  ok(H1.$('pp-c0').value === '0.102' && /102\.00/.test(H1.$('pp-rc0').textContent) && /306\.00/.test(H1.$('pp-rr0').textContent),
+    'v55: 1000 sheets: $' + H1.$('pp-c0').value + ' a sheet, cost ' + H1.$('pp-rc0').textContent + ', retail ' + H1.$('pp-rr0').textContent + ' (x3)');
+  // removed in Inventory stays removed
+  const inv55 = JSON.parse(H1.w.localStorage.getItem('coba-inventory-v2'));
+  inv55.papers = inv55.papers.filter(p => !isHam(p));
+  const H2 = openWin({ inventory: JSON.stringify(inv55) }); await sleep(40);
+  ok(H2.w.eval('inventory.papers').filter(isHam).length === 0, 'v55: a removed Hammermill 28# stays removed');
+
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V, U5, U6].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V','U5','U6'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V, U5, U6, H1, H2].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V','U5','U6','H1','H2'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
