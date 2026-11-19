@@ -13,6 +13,15 @@
     .app-header h1 { font-size: 16px; font-weight: 700; color: #fff; }
     .app-header .sub { font-size: 11px; color: #777; margin-top: 1px; }
 
+    /* v57: tools bar above the header: links to the separate tool pages (each opens in a new tab), centred under a small group title; more links or groups sit side by side */
+    .tools-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px 48px; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 0.7rem 1.25rem 0.85rem; margin-bottom: 12px; }
+    .tools-group { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+    .tools-title { font-size: 10px; font-weight: 700; color: #aaa; letter-spacing: .08em; text-transform: uppercase; }
+    .tools-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .tool-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #1a1a1a; text-decoration: none; background: #f5f5f2; border: 1px solid #e0e0e0; border-radius: 8px; padding: 7px 14px; white-space: nowrap; transition: border-color .15s, background .15s; }
+    .tool-link:hover { border-color: #999; background: #fff; }
+    .tool-link:focus-visible { outline: 2px solid #1a1a1a; outline-offset: 2px; }
+
     .customer-bar { background: #fff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; border-bottom: 2px solid #e0e0e0; padding: 0.8rem 1.25rem; }
     .customer-bar .cb-lbl { font-size: 10px; font-weight: 700; color: #aaa; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 5px; }
     .customer-bar .cb-grid { display: grid; grid-template-columns: 2fr 1.2fr 1.5fr; gap: 10px; }
@@ -376,13 +385,21 @@
 <body>
 <div class="wrapper">
 
+  <!-- TOOLS BAR (v57): links to the separate tool pages, each opens in a new tab. Another tool = one more .tool-link in the row; another kind of tool = another .tools-group with its own title. -->
+  <nav class="tools-bar no-print" aria-label="Tools">
+    <div class="tools-group">
+      <div class="tools-title">Photo tools</div>
+      <div class="tools-row">
+        <a class="tool-link" href="photo-pdf/" target="_blank" rel="noopener" title="Crop JPEGs to a print size and save CMYK PDFs (opens in a new tab)">&#128247; JPEG to PDF Cropper</a>
+      </div>
+    </div>
+  </nav>
+
   <!-- APP HEADER -->
   <div class="app-header">
     <div>
       <h1>Coba Studios — Estimator Suite</h1>
-      <div class="sub">Paper printing &amp; DTF heat transfer · All prices in CAD · Works offline</div>
     </div>
-    <a href="photo-pdf/" target="_blank" rel="noopener" class="no-print" title="Crop photos to a print size and save CMYK PDFs (opens in a new tab)" style="font-size:12px;color:#ccc;text-decoration:none;border:1px solid #444;border-radius:6px;padding:6px 10px;white-space:nowrap">&#128247; Photo PDFs</a>
   </div>
 
   <!-- PERSISTENT CUSTOMER BAR -->

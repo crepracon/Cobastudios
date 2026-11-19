@@ -15,8 +15,8 @@
 //  - localStorage: every call the page makes is logged, and it only ever touches coba-photo-pdf-v1;
 //    seeded estimator keys stay byte-identical;
 //  - no sideways scroll at phone width; the crop editor opens and closes;
-//  - index.html has one Photo PDFs link in the header (new tab, hidden when printing) and
-//    clicking it opens the page in a new tab.
+//  - index.html has one link to it in the Photo tools bar above the header (v57: centred, new tab,
+//    hidden when printing; the old sub line is gone) and clicking it opens the page in a new tab.
 // Plain ASCII only.
 const fs = require('fs'), path = require('path'), http = require('http'), vm = require('vm');
 const { chromium } = require('playwright');
@@ -97,7 +97,11 @@ function serve() {
   const est = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const links = est.match(/<a [^>]*href="photo-pdf\/"[^>]*>[^<]*<\/a>/g) || [];
   ok(links.length === 1, 'index.html has one link to photo-pdf/ (found ' + links.length + ')');
-  ok(links.length === 1 && /target="_blank"/.test(links[0]) && /rel="noopener"/.test(links[0]) && /class="no-print"/.test(links[0]), 'the link opens a new tab and is hidden when printing');
+  ok(links.length === 1 && /target="_blank"/.test(links[0]) && /rel="noopener"/.test(links[0]) && /JPEG to PDF Cropper/.test(links[0]), 'the link opens a new tab and is named JPEG to PDF Cropper');
+  const bar = (est.match(/<nav class="tools-bar no-print"[\s\S]*?<\/nav>/) || [''])[0];
+  ok(bar.indexOf('href="photo-pdf/"') > 0 && /<div class="tools-title">Photo tools<\/div>/.test(bar), 'the link sits in the no-print Photo tools bar');
+  ok(est.indexOf('<nav class="tools-bar') < est.indexOf('<div class="app-header">'), 'the tools bar comes before the title header');
+  ok(!/<div class="sub">/.test(est.slice(est.indexOf('<div class="app-header">'), est.indexOf('<!-- PERSISTENT CUSTOMER BAR -->'))), 'no sub line under the title');
 
   // ---------- browser checks ----------
   const srv = process.argv[2] ? null : await serve();
@@ -205,9 +209,17 @@ function serve() {
   const c2 = await b.newContext({ viewport: { width: 1366, height: 860 } });
   const e = await c2.newPage();
   await e.goto(BASE);
-  const link = e.locator('.app-header a[href="photo-pdf/"]');
-  ok(await link.count() === 1 && (await link.textContent()).indexOf('Photo PDFs') >= 0, 'Photo PDFs link in the estimator header');
+  const link = e.locator('.tools-bar a[href="photo-pdf/"]');
+  ok(await link.count() === 1 && (await link.textContent()).indexOf('JPEG to PDF Cropper') >= 0, 'JPEG to PDF Cropper link in the tools bar');
   ok(await link.isVisible(), 'link visible on screen');
+  const geo = await e.evaluate(() => {
+    const r = s => document.querySelector(s).getBoundingClientRect();
+    const bar = r('.tools-bar'), title = r('.tools-title'), a = r('.tools-bar a'), head = r('.app-header');
+    return { above: bar.bottom <= head.top, titleAbove: title.bottom <= a.top,
+      centred: Math.abs((a.left + a.right) / 2 - (bar.left + bar.right) / 2) < 2 && Math.abs((title.left + title.right) / 2 - (bar.left + bar.right) / 2) < 2,
+      titleText: document.querySelector('.tools-title').textContent };
+  });
+  ok(geo.above && geo.titleAbove && geo.centred && geo.titleText === 'Photo tools', 'bar above the header, "Photo tools" over the link, both centred (' + JSON.stringify(geo) + ')');
   const [tab] = await Promise.all([c2.waitForEvent('page'), link.click()]);
   await tab.waitForLoadState('domcontentloaded');
   ok(tab.url() === url, 'link opened ' + tab.url() + ' in a new tab');
