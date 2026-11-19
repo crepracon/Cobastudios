@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Smoke test for photo-pdf/index.html (the Photo PDFs page) and its link in the estimator header.
+// Smoke test for photo-pdf/index.html (the JPEG to PDF Cropper page) and its link in the estimator.
 //   NODE_PATH=$(npm root -g) node tools/smoke-photo-pdf.js [base-url]
 // Serves the repo on a local port (a real http origin: the page needs a secure context for its test
 // folder) unless a base URL such as https://crepracon.github.io/Cobastudios/ is given.
@@ -7,7 +7,7 @@
 //  - static (CLAUDE.md hard rules): the script compiles, is plain ASCII with no backslash-u escapes,
 //    and the page loads nothing from outside (no CDN, no fonts);
 //  - the page loads with no script errors and makes no outside requests;
-//  - colour: white, black and a red go through the FOGRA39 table as expected;
+//  - colour: white, black and a red go through the GRACoL 2006 table as expected;
 //  - the 4 sample photos export at 4x6 / 600 ppi into a private test folder: each PDF is checked
 //    byte by byte (header, xref, page size, CMYK image size, output intent, image data inflates to
 //    the right size, two colour swatches land in the right CMYK channels);
@@ -48,6 +48,7 @@ async function checkPdfInPage({ name, expect }) {
   if (+mb[1] !== expect.w || +mb[2] !== expect.h) errs.push('page ' + mb[1] + ' x ' + mb[2]);
   if (W !== expect.pxW || H !== expect.pxH) errs.push('image ' + W + ' x ' + H);
   if (!/\/OutputIntents \[8 0 R\]/.test(txt) || !/\/DestOutputProfile 9 0 R/.test(txt)) errs.push('output intent');
+  if (!/\/OutputConditionIdentifier \(CGATS TR 006\)/.test(txt)) errs.push('output intent is not GRACoL 2006 (CGATS TR 006)');
   const len = +((/\n7 0 obj\n(\d+)\nendobj/.exec(txt) || [])[1]);
   const start = txt.indexOf('stream\n', txt.indexOf('\n4 0 obj')) + 7;
   if (txt.substr(start + len, 10) !== '\nendstream') errs.push('image length');
@@ -122,15 +123,15 @@ function serve() {
   await p.evaluate(s => { for (const k in s) localStorage.setItem(k, s[k]); }, SEED);
   await p.reload();
   await p.waitForFunction(() => window.photoPdf && document.querySelector('#export'));
-  ok((await p.textContent('h1')).trim() === 'Photo PDFs', 'page heading');
-  ok((await p.title()).indexOf('Photo PDFs') >= 0, 'page title');
-  ok(/4 . 6 in . 600 ppi . CMYK FOGRA39/.test(await p.textContent('#spec')), 'defaults: 4x6, 600 ppi, FOGRA39 (' + (await p.textContent('#spec')) + ')');
+  ok((await p.textContent('h1')).trim() === 'JPEG to PDF Cropper', 'page heading');
+  ok((await p.title()).indexOf('JPEG to PDF Cropper') >= 0, 'page title');
+  ok(/4 . 6 in . 600 ppi . CMYK GRACoL/.test(await p.textContent('#spec')), 'defaults: 4x6, 600 ppi, GRACoL (' + (await p.textContent('#spec')) + ')');
 
-  // colour table
+  // colour table (GRACoL 2006 coated, perceptual; values from LittleCMS through the same table)
   const cm = await p.evaluate(async () => (await window.photoPdf.pool.run({ type: 'convert', rgb: [255, 255, 255, 0, 0, 0, 200, 60, 40], profiled: true })).cmyk);
   ok(cm.slice(0, 4).join() === '0,0,0,0', 'white -> no ink (' + cm.slice(0, 4) + ')');
-  ok(cm[7] >= 200 && cm[4] + cm[5] + cm[6] + cm[7] <= 255 * 3.5, 'black -> rich black within ink limit (' + cm.slice(4, 8) + ')');
-  ok(Math.abs(cm[8] - 0) <= 3 && Math.abs(cm[9] - 228) <= 3 && Math.abs(cm[10] - 236) <= 3 && Math.abs(cm[11] - 46) <= 3, 'sRGB 200,60,40 -> about 0,228,236,46 (' + cm.slice(8) + ')');
+  ok(cm[7] >= 250 && cm[4] + cm[5] + cm[6] + cm[7] <= 255 * 3 + 4, 'black -> rich black within the 300% ink limit (' + cm.slice(4, 8) + ')');
+  ok(Math.abs(cm[8] - 0) <= 3 && Math.abs(cm[9] - 224) <= 3 && Math.abs(cm[10] - 233) <= 3 && Math.abs(cm[11] - 42) <= 3, 'sRGB 200,60,40 -> about 0,224,233,42 (' + cm.slice(8) + ')');
 
   // a settings change is saved under the page's own key
   await p.check('input[name=exists][value=replace]', { force: true });
@@ -210,7 +211,7 @@ function serve() {
   const [tab] = await Promise.all([c2.waitForEvent('page'), link.click()]);
   await tab.waitForLoadState('domcontentloaded');
   ok(tab.url() === url, 'link opened ' + tab.url() + ' in a new tab');
-  ok((await tab.textContent('h1')).trim() === 'Photo PDFs', 'new tab shows the Photo PDFs page');
+  ok((await tab.textContent('h1')).trim() === 'JPEG to PDF Cropper', 'new tab shows the JPEG to PDF Cropper page');
   ok(e.url() === BASE, 'estimator tab stayed on the estimator');
   await e.emulateMedia({ media: 'print' });
   ok(!(await link.isVisible()), 'link hidden when printing');
