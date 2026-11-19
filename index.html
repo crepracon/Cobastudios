@@ -1287,7 +1287,8 @@
           <div class="rate-item">Panel overlap: <input type="number" id="r-tile-ov" value="1" min="0" step="0.25" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(pieces wider than the roll are split into panels)</span></div>
           <div class="rate-div"></div>
           <div class="rate-item">Gap between prints: <input type="number" id="r-gap" value="0.5" min="0" step="0.25" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(between pieces, across and down the roll; about 0.25-0.5)</span></div>
-          <div class="rate-item">Start + end margin: <input type="number" id="r-job-feed" value="2" min="0" step="0.5" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(blank roll at the start and end of each job; each line in the table is a job)</span></div>
+          <div class="rate-item">Start + end margin: <input type="number" id="r-job-feed" value="12" min="0" step="0.5" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(blank roll at the start and end of each run, laminating included; each line in the table is one run; a 40 in print takes 52 in)</span></div>
+          <div class="rate-item">Board cost: <select id="r-board-mode" onchange="rCalc()" style="width:auto;flex:0 0 auto"><option value="strip" selected>The strip of the sheet it uses</option><option value="sign">Just the sign</option></select> <span style="font-size:10px;color:#888">(Signage: the full sheet width for the length the signs take, sheet size from Inventory; a used-up sheet counts whole)</span></div>
           <div class="rate-div"></div>
           <div class="rate-item">Ink cost: $<input type="number" id="r-ink" value="0.50" min="0" step="0.05" oninput="rCalc()" style="width:60px">/sq ft</div>
           <div class="rate-div"></div>
@@ -4689,6 +4690,7 @@ function rBuildSubstrateOpts(selId){
   inventory.substrates.forEach(s=>{
     const o=document.createElement('option');
     o.value=s.cost; o.textContent=s.name+(s.cost?' ($'+s.cost+'/sqft)':'');
+    const sh=rSheetFromSize(s.size); if(sh) o.setAttribute('data-sheet', sh[0]+'x'+sh[1]);   // v56: sheet size (4x8ft = 48x96 in) for the board cost
     if(String(s.cost)===cur) o.selected=true;
     sel.appendChild(o);
   });
@@ -4834,6 +4836,37 @@ function rRollLayoutGap(w, h, q, U, gap, ov, edge){
     const ipp = Math.max(1, Math.floor((U + gap) / (across + gap) + 1e-9)), passes = Math.ceil(q * panels / ipp);
     const runIn = passes * feed + (passes - 1) * gap + edge;
     if(!best || runIn < best.runIn - 1e-9) best = { passes, panels, ipp, runIn };
+  });
+  return best;
+}
+// v56 (Nov 19 2026): boards. Chris counts every sq ft a job uses up ("that extra space and material is going to be pretty
+// much thrown out"), and picked "the strip it uses": each sign line pays for the full sheet width for the length its signs
+// take, laid out across the sheet like the roll (no gap, whichever way round takes less); a sheet that gets used up counts
+// whole (its end scrap included). A sign wider than the sheet both ways falls back to its own area. Panels saved before
+// v56 have no r-board-mode select, so their board stays on the sign area (pricing integrity).
+function rSheetFromSize(size){
+  const m = /(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*x\s*(\d+(?:\.\d+)?)\s*(ft|feet|'|in|")?/i.exec(String(size || ''));
+  if(!m) return null;
+  let a = parseFloat(m[1]), b = parseFloat(m[2]);
+  const unit = (m[3] || '').toLowerCase();
+  if(unit === 'ft' || unit === 'feet' || unit === "'" || (!unit && a <= 12 && b <= 12)){ a *= 12; b *= 12; }
+  return a > 0 && b > 0 ? [Math.min(a, b), Math.max(a, b)] : null;
+}
+function rBoardSheetOf(selId){
+  const sel = document.getElementById(selId), o = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+  const m = o ? /^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/.exec(o.getAttribute('data-sheet') || '') : null;
+  return m ? [parseFloat(m[1]), parseFloat(m[2])] : [48, 96];
+}
+function rBoardLayout(w, h, q, SW, SL){
+  const big = Math.max(w, h), small = Math.min(w, h);
+  let best = null;
+  [[big, small], [small, big]].forEach(([a, feed]) => {
+    if(a > SW + 1e-9) return;
+    const ipp = Math.max(1, Math.floor(SW / a + 1e-9)), rows = Math.ceil(q / ipp);
+    let lenIn = rows * feed;
+    if(feed <= SL + 1e-9){ const per = Math.max(1, Math.floor(SL / feed + 1e-9)), full = Math.floor(rows / per); lenIn = full * SL + (rows - full * per) * feed; }
+    const sf = SW * lenIn / 144;
+    if(!best || sf < best.sf - 1e-9) best = { sf, rows, ipp, lenIn };
   });
   return best;
 }
@@ -5037,7 +5070,9 @@ function rCalc(){
     // v53: vinyl + laminate on the full roll width for the length run (shared with Stickers), ink on the printed faces,
     // board on the sign area. Jobs saved before v53 (no r-roll-full) keep sign area x (faces + board).
     const wc = rNewWaste() ? rWasteCtx('r-sgn-vinyl', 'r-sgn-lam-type', vinylCost, lamCost, inkSF) : null;
-    let sgnFilm=0, sgnLamFilm=0;
+    const boardEl = document.getElementById('r-board-mode');   // v56: the strip of the sheet each line uses (none before v56)
+    const boardStrip = !!(wc && boardEl && boardEl.value === 'strip' && subCost > 0), sheet = boardStrip ? rBoardSheetOf('r-sgn-sub') : null;
+    let sgnFilm=0, sgnLamFilm=0, sgnBoard=0;
     rSgnRows.forEach(id=>{
       const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
       const sdEl=document.getElementById(id+'-sd'), sides=sdEl && sdEl.value==='2' ? 2 : 1;
@@ -5049,8 +5084,10 @@ function rCalc(){
         const retail=sqft*sgnRate*(sides===2?side2x:1), per=retail/q;
         if(wc){
           const wr=rWasteCost(w, h, q*sides, wc);   // each face is its own print
-          cost=wr.cost+sqft*subCost; sgnFilm+=wr.vinSf; sgnLamFilm+=wr.lamSf;
-          if(sfEl) sfEl.title='Vinyl used: '+rsfmt(wr.vinSf)+' ('+wr.L.passes+(wr.L.passes>1?' rows':' row')+' on a '+wc.Wv+' in roll'+(wr.L.panels>1?', '+wr.L.panels+' panels per face':'')+')';
+          const bl=boardStrip ? rBoardLayout(w, h, q, sheet[0], sheet[1]) : null, boardSf=bl ? bl.sf : sqft;
+          cost=wr.cost+boardSf*subCost; sgnFilm+=wr.vinSf; sgnLamFilm+=wr.lamSf; if(boardStrip) sgnBoard+=boardSf;
+          if(sfEl) sfEl.title='Vinyl used: '+rsfmt(wr.vinSf)+' ('+wr.L.passes+(wr.L.passes>1?' rows':' row')+' on a '+wc.Wv+' in roll'+(wr.L.panels>1?', '+wr.L.panels+' panels per face':'')+')'+
+            (bl ? '; board used: '+rsfmt(boardSf)+' ('+sheet[0]+' in sheet width x '+(+bl.lenIn.toFixed(2))+' in)' : (boardStrip ? '; board: the sign area (wider than the sheet)' : ''));
         }
         if(sfEl) sfEl.textContent=rsfmt(w*h/144);
         if(coEl) coEl.textContent=rfmt(cost);
@@ -5061,7 +5098,8 @@ function rCalc(){
     });
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
     set('r-sgn-sqft', sgnArea>0?rsfmt(sgnArea):'0 sq ft');
-    set('r-sgn-film', wc && sgnFilm>0 ? 'Vinyl used: '+rsfmt(sgnFilm)+' (full '+wc.Wv+' in roll width'+(lamCost>0 && wc.Wl!==wc.Wv ? '; laminate '+rsfmt(sgnLamFilm)+', '+wc.Wl+' in' : '')+')' : '');
+    set('r-sgn-film', wc && sgnFilm>0 ? 'Vinyl used: '+rsfmt(sgnFilm)+' (full '+wc.Wv+' in roll width'+(lamCost>0 && wc.Wl!==wc.Wv ? '; laminate '+rsfmt(sgnLamFilm)+', '+wc.Wl+' in' : '')+')'+
+      (boardStrip && sgnBoard>0 ? '; board used: '+rsfmt(sgnBoard)+' ('+sheet[0]+' in sheet width)' : '') : '');
     set('r-sgn-cost', rfmt(sgnCost));
     set('r-sgn-retail', rfmt(sgnRetail));
     set('r-sgn-2s', '2 sided = '+side2x.toFixed(2)+'x the 1 sided price (2 faces + 1 board)');
@@ -5126,7 +5164,7 @@ function rCalc(){
 
 function resetRoland(){
   cobaConfirm('New Roland estimate? This will clear all Roland fields.', ()=>{
-    if((!document.getElementById('r-stk-mode') || !document.querySelector('#r-sgn-lam-type[data-drives]') || !document.querySelector('#r-stk-lam-type[data-drives]') || !document.querySelector('#r-sgn-sub[data-drives]') || !document.getElementById('r-roll-full') || !document.getElementById('r-gap')) && R_PANEL_PRISTINE){ // a job saved before v28/v29/v30/v39/v53/v54 replaced the panel markup
+    if((!document.getElementById('r-stk-mode') || !document.querySelector('#r-sgn-lam-type[data-drives]') || !document.querySelector('#r-stk-lam-type[data-drives]') || !document.querySelector('#r-sgn-sub[data-drives]') || !document.getElementById('r-roll-full') || !document.getElementById('r-gap') || !document.getElementById('r-board-mode')) && R_PANEL_PRISTINE){ // a job saved before v28/v29/v30/v39/v53/v54/v56 replaced the panel markup
       const pv=document.getElementById('panel-vinyl'); if(pv){ pv.innerHTML=R_PANEL_PRISTINE; rebuildRolandDropdowns(); }
     }
     const sm=document.getElementById('r-stk-mode'); if(sm) sm.value='market';
