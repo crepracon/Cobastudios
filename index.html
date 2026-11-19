@@ -1286,7 +1286,8 @@
           <div class="rate-item">Full roll width: <input type="number" id="r-roll-full" value="54" min="1" step="1" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(vinyl + laminate are charged at the full width; a roll size in the Inventory notes, e.g. 24x50ft, wins)</span></div>
           <div class="rate-item">Panel overlap: <input type="number" id="r-tile-ov" value="1" min="0" step="0.25" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(pieces wider than the roll are split into panels)</span></div>
           <div class="rate-div"></div>
-          <div class="rate-item">Registry / cut overhead: <input type="number" id="r-reg-overhead" value="8" min="0" step="1" oninput="rCalc()" style="width:50px"> in <span style="font-size:10px;color:#888">(extra feed per row for cut marks, Stickers and Signage)</span></div>
+          <div class="rate-item">Gap between prints: <input type="number" id="r-gap" value="0.5" min="0" step="0.25" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(between pieces, across and down the roll; about 0.25-0.5)</span></div>
+          <div class="rate-item">Start + end margin: <input type="number" id="r-job-feed" value="2" min="0" step="0.5" oninput="rCalc()" style="width:55px"> in <span style="font-size:10px;color:#888">(blank roll at the start and end of each job; each line in the table is a job)</span></div>
           <div class="rate-div"></div>
           <div class="rate-item">Ink cost: $<input type="number" id="r-ink" value="0.50" min="0" step="0.05" oninput="rCalc()" style="width:60px">/sq ft</div>
           <div class="rate-div"></div>
@@ -4796,7 +4797,13 @@ function rClassicStk(cost, q){ const t = getStickerTier(q); return Math.max(cost
 // always did: longer side across when it fits, Registry / cut overhead added per row. New: a piece wider than the usable
 // width both ways is split into panels (Panel overlap at each seam). Stickers and Signage share this, so one job costs the
 // same in both. Panels saved before v53 have no r-roll-full input and keep the old math (pricing integrity).
+// v54 (Nov 19 2026): spacing from Chris's VersaWorks layout replaces the 8 in per row: Gap between prints (about 0.25-0.5 in,
+// across and down the roll) and a Start + end margin once per job (each line in the table). Pieces go whichever way round uses
+// the least roll (his 8x12 sheets sit 5 across, short side across), and a piece wider than the roll both ways is split into
+// panels whichever way uses the least roll. Panels saved in v53 have no r-gap input and keep 8 in per row (pricing integrity).
+// The Registry / cut overhead input left the settings in v54; classic sticker prices keep it (8 in per row) as their basis.
 function rNewWaste(){ return !!document.getElementById('r-roll-full'); }
+function rGapWaste(){ return !!document.getElementById('r-gap'); }
 function rRollWidthFromNotes(v){
   const m = /(\d+(?:\.\d+)?)\s*(?:in|inch|inches|")?\s*x\s*\d+(?:\.\d+)?\s*(?:ft|feet|foot|')/i.exec(String((v && v.notes) || ''));
   const w = m ? parseFloat(m[1]) : 0;
@@ -4815,13 +4822,26 @@ function rRollLayout(w, h, q, U, oh, ov){
   const ipp = Math.max(1, Math.floor(U / across)), passes = Math.ceil(q * panels / ipp);
   return { passes, panels, ipp, runIn: passes * (feed + oh) };
 }
+function rRollLayoutGap(w, h, q, U, gap, ov, edge){
+  const big = Math.max(w, h), small = Math.min(w, h);
+  let best = null;
+  [[big, small], [small, big]].forEach(([a, feed]) => {   // a = the side across the roll; ties keep the longer side across
+    let panels = 1, across = a;
+    if(a > U){ panels = Math.ceil((a - ov) / Math.max(U - ov, 0.01)); across = (a + (panels - 1) * ov) / panels; }
+    const ipp = Math.max(1, Math.floor((U + gap) / (across + gap) + 1e-9)), passes = Math.ceil(q * panels / ipp);
+    const runIn = passes * feed + (passes - 1) * gap + edge;
+    if(!best || runIn < best.runIn - 1e-9) best = { passes, panels, ipp, runIn };
+  });
+  return best;
+}
 function rWasteCtx(vinSel, lamSel, vin, lam, ink){
   const Wv = rRollWidthOf(vinSel), Wl = lam > 0 ? rRollWidthOf(lamSel) : Wv;
-  const full = rGetV('r-roll-full') || 54, usable = rGetV('r-roll-w') || 50;
-  return { Wv, Wl, U: Math.max(1, Wv - Math.max(0, full - usable)), oh: rGetV('r-reg-overhead') || 8, ov: rGetV('r-tile-ov'), vin, lam, ink };
+  const full = rGetV('r-roll-full') || 54, usable = rGetV('r-roll-w') || 50, gapOn = rGapWaste();
+  return { Wv, Wl, U: Math.max(1, Wv - Math.max(0, full - usable)), oh: rGetV('r-reg-overhead') || 8, ov: rGetV('r-tile-ov'),
+    gapOn, gap: gapOn ? Math.max(0, rGetV('r-gap')) : 0, edge: gapOn ? Math.max(0, rGetV('r-job-feed')) : 0, vin, lam, ink };
 }
 function rWasteCost(w, h, q, c){
-  const L = rRollLayout(w, h, q, c.U, c.oh, c.ov);
+  const L = c.gapOn ? rRollLayoutGap(w, h, q, c.U, c.gap, c.ov, c.edge) : rRollLayout(w, h, q, c.U, c.oh, c.ov);
   const vinSf = L.runIn * c.Wv / 144, lamSf = c.lam > 0 ? L.runIn * c.Wl / 144 : 0, printSf = w * h * q / 144;
   return { L, vinSf, lamSf, printSf, cost: vinSf * c.vin + lamSf * c.lam + printSf * c.ink };
 }
@@ -4915,7 +4935,7 @@ function rCalc(){
     const lamOn      = document.getElementById('r-stk-lam').checked;
     const lamCost    = lamOn ? rGetV('r-stk-lam-type') : 0;
     const matCost    = vinylCost + inkSF + lamCost;
-    const regOverhead = rGetV('r-reg-overhead') || 8;
+    const regOverhead = rGetV('r-reg-overhead') || 8;   // classic price basis only since v54 (input gone from new panels -> 8)
     const stkMode = rStkSel('r-stk-mode', 'classic');   // pre-v28 saved jobs have no Pricing select -> classic
     const stkMktRows = [];
     const wc = rNewWaste() ? rWasteCtx('r-stk-vinyl', 'r-stk-lam-type', vinylCost, lamCost, inkSF) : null;   // v53: full roll width (old jobs: null)
@@ -5103,7 +5123,7 @@ function rCalc(){
 
 function resetRoland(){
   cobaConfirm('New Roland estimate? This will clear all Roland fields.', ()=>{
-    if((!document.getElementById('r-stk-mode') || !document.querySelector('#r-sgn-lam-type[data-drives]') || !document.querySelector('#r-stk-lam-type[data-drives]') || !document.querySelector('#r-sgn-sub[data-drives]') || !document.getElementById('r-roll-full')) && R_PANEL_PRISTINE){ // a job saved before v28/v29/v30/v39/v53 replaced the panel markup
+    if((!document.getElementById('r-stk-mode') || !document.querySelector('#r-sgn-lam-type[data-drives]') || !document.querySelector('#r-stk-lam-type[data-drives]') || !document.querySelector('#r-sgn-sub[data-drives]') || !document.getElementById('r-roll-full') || !document.getElementById('r-gap')) && R_PANEL_PRISTINE){ // a job saved before v28/v29/v30/v39/v53/v54 replaced the panel markup
       const pv=document.getElementById('panel-vinyl'); if(pv){ pv.innerHTML=R_PANEL_PRISTINE; rebuildRolandDropdowns(); }
     }
     const sm=document.getElementById('r-stk-mode'); if(sm) sm.value='market';
