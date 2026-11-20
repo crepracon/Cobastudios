@@ -1,13 +1,13 @@
-# VistaPrint print products: calendars, coasters, brochures, postcards, flyers, rack cards, note cards — runbook
+# VistaPrint print products: calendars, coasters, brochures, postcards, flyers, rack cards, note and greeting cards — runbook
 
 Price ladders behind the estimator's VistaPrint comparisons:
 - **UV Printing > Coasters (v34).** New coaster quotes are priced from VistaPrint ceramic coasters (like for like: Coba makes ceramic tiles). Since v36 each coaster row keeps the VistaPrint price it was quoted at, so a refresh never changes a saved quote. Changing a row's quantity re-prices it.
 - **Paper tab > Calendar / Brochure references (v35).** Reference only. They never change the quote and always show the latest captured prices.
-- **Paper tab > Postcards, flyers, cards & posters (v46).** Reference only, like the calendar / brochure boxes. VistaPrint first, Staples Canada second, for the same product, size, paper and sides.
+- **Paper tab > Postcards, flyers, cards & posters (v46).** Reference only, like the calendar / brochure boxes. VistaPrint first, Staples Canada second, for the same product, size, paper and sides. Since v58 cards also show VistaPrint's Greeting Cards page and holiday cards, plus MOO and Canva as a sanity check (never in the Defend / Compete advice).
 
 The same data file holds two groups this refresh does not touch. Each has a `refresh` field, and `build-print.js` skips them:
 - `refresh: "art"`: VistaPrint posters (`vp-poster-*`), copied from the Oct 30 2026 art capture (`../art/data/art-market-2026-10-30.json`).
-- `refresh: "manual"`: Staples Canada paper products (`stp-*`), read by hand on Nov 13 2026 (see "Staples Canada, by hand" below).
+- `refresh: "manual"`: Staples Canada paper products (`stp-*`), read by hand on Nov 13 2026 (see "Staples Canada, by hand" below), and since v58 the card prices read by hand on Nov 20 2026: `vp-greet-folded`, `vp-xmas-folded`, `vp-xmas-flat`, `moo-greet-folded`, `canva-folded` (see "Greeting and holiday cards, by hand" below).
 
 A scheduled Claude task refreshes the rest every 4 months (March, July, November), alongside the sticker prices (`../README.md`). It uses the Claude desktop app's built-in browser on Chris's computer, because plain web fetch can't see these prices. Anyone can follow the steps by hand too.
 
@@ -19,6 +19,8 @@ A scheduled Claude task refreshes the rest every 4 months (March, July, November
 | `apply-print.js` | Writes the newest data file into `index.html` as `<script type="application/json" id="market-print">`, right after the sticker block. It never touches `id="market-data"`. Never hand-edit the block or the prices. |
 | `seed-paper.js` | One-time (Nov 13 2026): added the v46 products to the grid. It reads `raw/2026-11-13/` (the collector's results for the four paper pages, packed as `q` = quantities and `items` = [options, prices in `q` order], plus `staples-paper.json`) and the art capture's VistaPrint posters, and writes `data/vistaprint-print-2026-11-13.json`. Running it again rebuilds that same file; once a regular refresh has written a newer data file it does nothing. |
 | `raw/2026-11-13/` | The inputs `seed-paper.js` was built from, kept so the seed can be checked or rebuilt. |
+| `seed-cards.js` | One-time (Nov 20 2026, v58): adds VistaPrint's Greeting Cards and holiday cards, MOO and Canva cards from `raw/2026-11-20/cards.json` (read by hand) to the Nov 13 grid and writes `data/vistaprint-print-2026-11-20.json`, keeping the grid's `captured` date (the collector's last run). Also adds a short display name (`short`) to the two note-card products. Running it again rebuilds the same file; once a newer data file exists it does nothing. |
+| `raw/2026-11-20/cards.json` | What was read on Nov 20 2026: VistaPrint price per card for each quantity (`unit`, with list and sale when a sale was on), MOO and Canva pack totals (`total`), and how each page was read. |
 | `data/` | The captured grids. Each `sellers[]` entry has `sizes[].ladder` rows of `[qty, price]`, or `[qty, list, sale]` when a sale price was showing. Paper product sizes are labelled smaller side first (`4 x 6`), with `w` = the long side. A copy of the current grid is in the claude.ai project as `claude/print-market-grid-2026-11-13.json` (the Nov 2 grid: `claude/calendar-coaster-brochure-market-grid-2026-11-02.json`). |
 
 ## Product pages (16)
@@ -84,6 +86,15 @@ VistaPrint product pages show every option (size, paper, quantity) as radio butt
 
 If VistaPrint renames an option, update the `PAGES` table at the top of the collector (the option values) and the mapping at the top of `build-print.js` (`WALL`, `DESK`, `FOLD`, `PC_STOCK`, `FLY_STOCK`, `RACK_STOCK`).
 
+## Greeting and holiday cards, by hand (v58, not on the scheduled refresh yet)
+Read on Nov 20 2026 in the built-in browser. These pages list quantities in a dropdown (VistaPrint, Canva) or a pack table (MOO), which the collector does not read.
+- **VistaPrint Greeting Cards** (https://www.vistaprint.ca/stationery/greeting-cards, `vp-greet-folded`): folded only (flat cards are the note-cards page). Click each Size radio (5.5" x 4", 4.6" x 7.2", 5.5" x 5.5"), open the **Quantity** dropdown and read the price per card for every quantity (10 to 20,000; "20,000+" is a quote). The page has no paper choice and is priced on **Premium Matte 325 gsm (16pt)** (its links carry that paper); the same card on Standard Matte 14pt is the note-cards price. 4.6 x 7.2 is stored with `as: "5 x 7"`.
+- **VistaPrint holiday / Christmas cards** (https://www.vistaprint.ca/holiday/christmas-cards, `vp-xmas-folded`, `vp-xmas-flat`): click the **Upload your own design** tile. The panel's options are checkboxes that stay picked, so close and reopen the panel between Fold choices. Folded: Orientation Vertical, Fold Folded, Size 4.6" x 7.2" then 5.5" x 5.5" (the only folded sizes). Flat: Orientation Horizontal, Fold Flat, Size 5" x 7". Read the **Quantity** dropdown (list and sale per card when a sale is on); leave out the quantity 1 sample card. Paper is picked after the design; the price is their Standard Uncoated 14pt. Seasonal: re-read them in November.
+- **MOO** (https://www.moo.com/ca/greeting-cards, `moo-greet-folded`): one size (A6, 4.13 x 5.83). The pack table shows to 200; the rest (to 1,000) is in the page's data (`quantity: 250, price: 'CDN$ 381.00'`). The struck-out amount beside each pack is the 25-pack price per card times the quantity, not a sale.
+- **Canva** (https://www.canva.com/en_ca/cards/folded/, `canva-folded`): one size (5 x 7). Reject the optional cookies, open **How many?** and read the total for each quantity. The % off shown is their quantity discount; don't apply their promo codes. Envelopes are sold separately.
+
+To update them: put the new numbers in a new `raw/<date>/cards.json`, point `seed-cards.js` at it (or edit the newest data file the way the Staples note below says), run `apply-print.js` and the tests, and say in the commit which prices were read by hand.
+
 ## Staples Canada, by hand (not on the scheduled refresh yet)
 Read on Nov 13 2026 in the built-in browser from shop.staplescopyandprint.ca: postcard (4x6, 5x7), rack-cards (3.5x8.5), flyers (8.5x11, 11x17), folded-cards (5x7), flat-card (5x7) and enclosure-card (4.25x5.5), 1- and 2-sided, standard stock only. Stored as `stp-<product>-<sides>` with `refresh: "manual"`.
 - Postcards, rack cards and flyers are sold in packs. Each product page has a price table per pack size (`input[name="input-table"]` rows such as "50 $0.40 $19.99").
@@ -97,6 +108,7 @@ To update them: copy the newest data file to a new date, change the `stp-*` ladd
 - **2026-11-02, morning:** captured by hand in the built-in browser, from the configurator quantity lists, each page's "Show pricing guide" and every brochure size and paper.
 - **2026-11-02, afternoon:** first run of the collector on all 12 pages. No price changes; it added the larger and in-between quantities (brochures up to 20,000, desk calendars 11 to 15, mouse pad calendars up to 20,000, wall calendars 6 to 14).
 - **2026-11-13:** first capture of postcards, flyers, rack cards and note cards (the collector, in the built-in browser) and Staples Canada's paper products (by hand); VistaPrint posters copied in from the Oct 30 art capture. Seeded with `seed-paper.js` (v46).
+- **2026-11-20:** VistaPrint Greeting Cards (product page) and holiday cards (folded 4.6 x 7.2 and 5.5 x 5.5, flat 5 x 7; Black Friday sale on), MOO greeting cards and Canva folded cards, all read by hand in the built-in browser. Seeded with `seed-cards.js` (v58).
 
 ## Like-for-like notes
 - **Coasters.** VistaPrint ceramic coasters have a cork back and come as 3.9" square or 4.1" round, at the same price. The minimum is 2 and they quote above 400. Coba's tile cost should include cork to compare fairly.
@@ -107,5 +119,6 @@ To update them: copy the newest data file to a new date, change the `stp-*` ladd
   - Quirks kept as captured: the 8.5x14 recycled tri-fold is cheaper at 1,000 than at 750, and the 11x17 uncoated bi-fold is about double the matte price.
 - **Postcards, flyers, cards & posters (v46).** Never mix stocks: postcards, rack cards and note cards are card stock; flyers are paper (VistaPrint's Budget thickness); posters are poster stock (premium matte 14pt, semi-gloss 9.3pt, premium glossy 8pt). VistaPrint's prices print the front only, so a 2-sided job is compared with Staples, and the box says so.
   - Two sizes count as the same when their area and their shape are both within 10%: VistaPrint's 3.74 x 8.27 rack card = Staples 3.5 x 8.5; VistaPrint's 4 x 5.5 note card = Staples' 4.25 x 5.5 enclosure card. The box labels these "closest size".
-  - Staples-only sizes (folded 5x7 greeting cards) are in the size list, marked "Staples only".
+  - Sizes nobody but Staples (or the sanity-check sellers) sells are in the size list, marked "<seller> only". Until v58 that was folded 5x7 greeting cards; VistaPrint's closest, 4.6 x 7.2, is now listed under 5 x 7 (`as`), labelled "5 x 7 in (VistaPrint 4.6 x 7.2)".
+  - **Cards (v58).** VistaPrint's folded cards arrive flat, scored for folding. Their Greeting Cards page is priced on 16pt premium matte, the note cards and holiday cards on 14pt; holiday cards print the back free (the flat one is `sides: 2`). MOO (16pt, envelopes in) and Canva (envelopes extra) are a sanity check: shown, but never in the You comparison or the Defend / Compete range.
 - **Between quantities.** VistaPrint only sells its listed quantities. The estimator's VistaPrint price for q pieces is the cheapest way to get at least q: q at the unit price of the break at or below q, or the next break's total if that costs less (10 brochures = their 25 for $40.29). Staples packs work the same way.

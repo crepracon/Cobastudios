@@ -281,14 +281,49 @@ function openWin(ls, html) {
   // posters: VistaPrint poster stock, no Staples poster at 8.5 x 11
   G.set('p-pg-prod', 'poster'); G.w.pPgOptions(); G.set('p-finished-qty', 5); G.w.pCalc(); gout = pgOut();
   ok(G.$('p-pg-size').value === '8.5 x 11' && hasAll(gout, refLine(lad('vp-poster-pmatte', '8.5 x 11'), 5)) && !/Staples Canada/.test(gout.split('<div')[0]) && /Defend/.test(gout), 'posters: VistaPrint premium matte 8.5 x 11 at 5, no Staples line, Defend');
-  // folded greeting cards: VistaPrint folds 4 x 5.5 only; Staples sells 5 x 7 folded (with a sale on)
+  // folded greeting cards (v58): VistaPrint sells 4 x 5.5 (note card 14pt + greeting card 16pt), 4.6 x 7.2 (their closest
+  // to 5 x 7: greeting card + holiday card) and 5.5 x 5.5; Staples 5 x 7 (with a sale on); MOO 4.13 x 5.83 and Canva 5 x 7
+  // as a sanity check (shown, never in "You" or the Defend / Compete range)
+  ['vp-greet-folded', 'vp-xmas-folded', 'vp-xmas-flat', 'moo-greet-folded', 'canva-folded'].forEach(id => ok(!!seller(id) && seller(id).refresh === 'manual', 'v58 price data has ' + id + ' (read by hand)'));
+  const sale = (ladder, q) => '$' + tier(ladder, q, 2).toFixed(2) + ' each';
   G.set('p-pg-prod', 'folded'); G.w.pPgOptions(); G.set('p-finished-qty', 25); G.w.pCalc(); gout = pgOut();
   const fz = Array.from(G.$('p-pg-size').options).map(o => o.textContent);
-  ok(G.$('p-pg-stock-wrap').style.display === 'none' && fz.some(t => /^4 x 5\.5 in$/.test(t)) && fz.some(t => /^5 x 7 in - Staples only$/.test(t)) && G.$('p-pg-size').value === '5 x 7', 'folded sizes: 4 x 5.5 (VistaPrint) and 5 x 7 (Staples only); paper choice hidden');
-  ok(/their folded cards are 4 x 5\.5 only/.test(gout) && hasAll(gout, refLine(lad('stp-folded-1', '5 x 7'), 25)) && /on sale when captured: \$1\.25 each/.test(gout) && /% vs Staples\)/.test(gout), 'folded 5 x 7: Staples price (sale noted), compared with Staples');
-  ok(!/price break at 1|over 1 they quote/.test(gout) && /Staples: Same price per card at any quantity/.test(gout) && !/Rows are/.test(gout), 'per-card Staples price: no price-break notes, plain-language note');
-  G.set('p-pg-size', '4 x 5.5'); G.w.pCalc();
+  ok(G.$('p-pg-stock-wrap').style.display === 'none' && fz.join('|') === '4 x 5.5 in|5.5 x 5.5 in|5 x 7 in (VistaPrint 4.6 x 7.2)' && G.$('p-pg-size').value === '5 x 7', 'folded sizes, smallest first: 4 x 5.5, 5.5 x 5.5, 5 x 7 (VistaPrint 4.6 x 7.2); nothing "Staples only"; paper choice hidden: ' + fz.join(' | '));
+  const g57 = lad('vp-greet-folded', '4.6 x 7.2'), x57 = lad('vp-xmas-folded', '4.6 x 7.2'), s57 = lad('stp-folded-1', '5 x 7'), c57 = lad('canva-folded', '5 x 7');
+  ok(/VistaPrint<\/strong> greeting card, premium matte 16pt \(4\.6 x 7\.2 in, closest size, front only\)/.test(gout) && hasAll(gout, refLine(g57, 25)), 'folded 5 x 7: VistaPrint greeting card 4.6 x 7.2 as their closest size: ' + missing(gout, refLine(g57, 25)));
+  ok(/VistaPrint<\/strong> seasonal holiday card, standard 14pt \(4\.6 x 7\.2 in, closest size, front only\)/.test(gout) && hasAll(gout, refLine(x57, 25)) && gout.indexOf('on sale when captured: ' + sale(x57, 25)) >= 0, 'folded 5 x 7: VistaPrint holiday card, list price with the sale noted');
+  ok(hasAll(gout, refLine(s57, 25)) && /on sale when captured: \$1\.25 each/.test(gout) && /Canva<\/strong> folded card, envelopes extra \(5 x 7 in\)/.test(gout) && hasAll(gout, refLine(c57, 25)) && !/MOO<\/strong>/.test(gout), 'folded 5 x 7: Staples (sale noted) and Canva lines, no MOO (A6 only)');
+  ok(gout.indexOf('<strong>VistaPrint</strong>') < gout.indexOf('<strong>Staples Canada</strong>') && gout.indexOf('<strong>Staples Canada</strong>') < gout.indexOf('<strong>Canva</strong>') && gout.indexOf('<strong>Canva</strong>') < gout.indexOf('<strong>You</strong>'), 'order: VistaPrint, Staples, the others, then You');
+  ok(/% vs VistaPrint\)/.test(gout) && /VistaPrint price breaks \(greeting card, premium matte 16pt\)/.test(gout) && /Canva captured .* \(a sanity check, left out of the Defend \/ Compete advice\)/.test(gout), 'compared with VistaPrint; their price breaks named; Canva flagged as a sanity check');
+  ok(!/price break at 1[^0-9]|over 1 they quote/.test(gout) && /Staples: Same price per card at any quantity/.test(gout) && !/Rows are/.test(gout), 'per-card Staples price: no price-break notes, plain-language note');
+  // the Defend / Compete range is VistaPrint and Staples only: Canva's lower price never becomes the market low
+  const gEach = money(G.$('p-quote-total').textContent) / 25, low57 = Math.min(tier(g57, 25), tier(x57, 25), tier(s57, 25));
+  ok(tier(c57, 25) < low57 && (gEach < low57 ? gout.indexOf('under the market low ($' + low57.toFixed(2) + ')') >= 0 : /at or above market/.test(gout)) && gout.indexOf('market low ($' + tier(c57, 25).toFixed(2) + ')') < 0, 'Defend advice uses VistaPrint and Staples (low $' + low57.toFixed(2) + '), not Canva ($' + tier(c57, 25).toFixed(2) + ')');
+  // 2-sided: every VistaPrint card price is front only, so compare with Staples
+  G.set('p-pg-sides', '2'); G.w.pCalc(); gout = pgOut();
+  ok(/VistaPrint prints the front only at this price/.test(gout) && hasAll(gout, refLine(lad('stp-folded-2', '5 x 7'), 25)) && /% vs Staples\)/.test(gout), 'folded 5 x 7, 2-sided: front-only warning, compared with Staples');
+  G.set('p-pg-sides', '1');
+  G.set('p-pg-size', '4 x 5.5'); G.w.pCalc(); gout = pgOut();
+  ok(hasAll(gout, refLine(lad('vp-note-folded', '4 x 5.5'), 25)) && hasAll(gout, refLine(lad('vp-greet-folded', '4 x 5.5'), 25)) && gout.indexOf('<strong>VistaPrint</strong> folded note card') < gout.indexOf('<strong>VistaPrint</strong> greeting card'), 'folded 4 x 5.5: VistaPrint note card (14pt) first, then their greeting card (16pt)');
+  ok(/MOO<\/strong> greeting card, 16pt uncoated \(4\.13 x 5\.83 in, closest size\)/.test(gout) && hasAll(gout, refLine(lad('moo-greet-folded', '4.13 x 5.83'), 25)) && !/Canva<\/strong>/.test(gout) && !/holiday card/.test(gout), 'folded 4 x 5.5: MOO A6 as the closest size, no Canva or holiday card');
+  G.set('p-pg-size', '5.5 x 5.5'); G.w.pCalc(); gout = pgOut();
+  ok(hasAll(gout, refLine(lad('vp-greet-folded', '5.5 x 5.5'), 25)) && hasAll(gout, refLine(lad('vp-xmas-folded', '5.5 x 5.5'), 25)) && /Staples Canada<\/strong>: not sold in this size/.test(gout), 'folded 5.5 x 5.5: VistaPrint greeting and holiday cards, Staples does not sell it');
+  // flat 5 x 7: the holiday card prints both sides at its price, the note card the front only
+  G.set('p-pg-prod', 'flat'); G.w.pPgOptions(); G.set('p-pg-size', '5 x 7'); G.w.pCalc(); gout = pgOut();
+  ok(hasAll(gout, refLine(lad('vp-note-flat', '5 x 7'), 25)) && /seasonal holiday card, standard 14pt \(5 x 7 in, both sides\)/.test(gout) && hasAll(gout, refLine(lad('vp-xmas-flat', '5 x 7'), 25)) && /% vs VistaPrint\)/.test(gout), 'flat 5 x 7: VistaPrint note card and holiday card (both sides), compared with VistaPrint');
+  G.set('p-pg-sides', '2'); G.w.pCalc(); gout = pgOut();
+  ok(/VistaPrint flat note card, standard matte 14pt: front only at this price/.test(gout) && !/VistaPrint prints the front only at this price/.test(gout) && /% vs Staples\)/.test(gout), 'flat 5 x 7, 2-sided: only the note card is flagged front only; compared with Staples');
+  G.set('p-pg-sides', '1'); G.set('p-pg-prod', 'folded'); G.w.pPgOptions(); G.set('p-pg-size', '4 x 5.5'); G.w.pCalc();
   ok(hasAll(pgOut(), refLine(lad('vp-note-folded', '4 x 5.5'), 25)), 'folded 4 x 5.5: VistaPrint note card price');
+  // a job saved before v58 (old size list: 4 x 5.5, 5 x 7 Staples only) gets today's list on reopen, its size kept
+  G.set('p-pg-size', '5 x 7'); G.$('p-pg-size').innerHTML = '<option value="4 x 5.5">4 x 5.5 in</option><option value="5 x 7">5 x 7 in - Staples only</option>'; G.set('p-pg-size', '5 x 7');
+  G.set('cb-name', 'Card Cust'); G.set('cb-title', 'pre-v58 cards'); G.w.eval('jobsActive = null'); G.w.saveEstimate(); await sleep(20); G.w.eval('jobsActive = null');
+  const V58 = openWin({ 'coba-jobs-v1': G.w.localStorage.getItem('coba-jobs-v1') }); await sleep(40);
+  const rc = V58.w.eval('jobsData.customers[0]');
+  V58.w.loadEstimate(rc.id, rc.estimates.find(e => e.title === 'pre-v58 cards').id, false); V58.w.cobaConfirmAnswer(true);
+  const rz = Array.from(V58.$('p-pg-size').options).map(o => o.textContent);
+  ok(V58.$('p-pg-prod').value === 'folded' && V58.$('p-pg-size').value === '5 x 7' && rz.indexOf('5.5 x 5.5 in') >= 0 && rz.indexOf('5 x 7 in (VistaPrint 4.6 x 7.2)') >= 0 && /greeting card, premium matte 16pt/.test(V58.$('p-pg-out').innerHTML), 'pre-v58 card job reopens on 5 x 7 with the new size list and VistaPrint lines');
+  ok(V58.errs.length === 0, 'no errors reopening the pre-v58 card job: ' + V58.errs.join(' | '));
   // v46 fix: a Defend job under the market low says so (it used to say "no need to chase them down to $low")
   const dUnder = G.w.stratAdvice('defend', 1.33, 0.63, 2.09, 2.09), dOver = G.w.stratAdvice('defend', 2.50, 0.63, 2.09, 2.09);
   ok(/under the market low \(\$2\.09\)/.test(dUnder) && /room to charge more/.test(dUnder) && !/chase/.test(dUnder) && /at or above market/.test(dOver), 'Defend advice: under the market low says there is room to charge more');
