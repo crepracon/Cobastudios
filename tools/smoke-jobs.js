@@ -10,9 +10,12 @@
 // the To-Do / To-Invoice box (v42: add / flip / delete / undo across devices, changes made offline
 // or signed out sent on reconnect; v48: reorder synced as one small write per move, moves made
 // offline sent on reconnect, a name deleted elsewhere never comes back, the date added coloured by
-// age; v50: move a To-Do name to To-Invoice, live and offline, with Undo), v50 Paid jobs (Paid
-// section under the list, synced, per-device open state, search, Not paid), and the structured
-// paper inventory migration. Plain ASCII only.
+// age; v50: move a To-Do name to To-Invoice, live and offline, with Undo; v59: every new job puts
+// "Customer - Job title" on To-Do (saved, duplicated, logged, saved offline; not on an update or a
+// merge), back from To-Invoice to To-Do in its old place, the x on To-Invoice files a name in the
+// Archived folder (per-device open state, back to To-Invoice, delete for good, offline)), v50 Paid
+// jobs (Paid section under the list, synced, per-device open state, search, Not paid), and the
+// structured paper inventory migration. Plain ASCII only.
 const fs = require('fs'), path = require('path');
 const { JSDOM } = require('jsdom');
 const SRC = process.argv[2] || path.resolve(__dirname, '..', 'index.html');
@@ -117,6 +120,7 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(e && /T\d\d:\d\d/.test(e.taken || ''), 'date and time taken recorded');
   ok(/Save updates it/.test(A.$('cb-active-hint').textContent), 'hint shows the saved job is open');
   ok(server.cols.estimates.size === 1 && server.cols.customers.size === 1, 'job pushed to the cloud');
+  ok(A.$('jobs-toast').textContent === 'Saved "10 name tags" under Test Cust - added to To-Do', 'v59: the save toast says it went on To-Do: ' + A.$('jobs-toast').textContent);
   const cid = jd(A).customers[0].id, eid = e.id;
 
   // ---------- device B: sees it, reopens it, edits, Save updates in place ----------
@@ -137,6 +141,7 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(server.cols.estimates.size === 1, 'Save on an opened job updates it instead of adding a copy');
   ok(firstEst(A).totals.quote === quoteB && jd(A).customers[0].estimates.length === 1, 'A sees the updated quote, still one job');
   ok(firstEst(A).taken === e.taken && firstEst(A).status === 'Waiting', 'update keeps the date taken and the status');
+  ok(/^Updated /.test(B.$('jobs-toast').textContent) && !/To-Do/.test(B.$('jobs-toast').textContent), 'v59: an update says nothing about To-Do');
 
   // duplicate = new working copy, saved as a second job
   B.w.loadEstimate(cid, eid, true); B.w.cobaConfirmAnswer(true);
@@ -187,6 +192,7 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   C.set('cb-name', 'Offline Cust'); C.set('cb-title', 'offline job');
   C.w.saveEstimate(); await sleep(20);
   ok(JSON.parse(C.w.localStorage.getItem('coba-jobs-v1')).customers.some(c => c.name === 'Offline Cust'), 'offline save kept on the device');
+  ok(Object.values(JSON.parse(C.w.localStorage.getItem('coba-reminders-v1')).out.add).some(x => x.text === 'Offline Cust - offline job' && x.list === 'todo'), 'v59: a job saved offline: its To-Do name waits on the device');
   await connect(C, server); await sleep(60);
   ok(Array.from(server.cols.customers.values()).some(d => d.name === 'Offline Cust'), 'offline job pushed on reconnect');
   ok(jd(A).customers.some(c => c.name === 'Offline Cust'), 'A receives the offline job');
@@ -204,6 +210,21 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   // ---------- v42: To-Do / To-Invoice box ----------
   const rem = win => win.w.eval('remItems');
   const remDocs = () => Array.from(server.cols.reminders.values());
+
+  // ---------- v59: every new job also went on To-Do (saved, duplicated + saved, logged, saved offline) ----------
+  const autoTexts = ['Test Cust - 10 name tags', 'Test Cust - 10 name tags (copy)', 'Walk-in - Phone order', 'Offline Cust - offline job'];
+  ok(remDocs().length === 4 && autoTexts.every(t => remDocs().filter(d => d.text === t).length === 1) && remDocs().every(d => d.list === 'todo'),
+    'v59: each new job put one name on To-Do: ' + remDocs().map(d => d.text).join(', '));
+  const auto0 = remDocs().find(d => d.text === autoTexts[0]) || {};
+  ok(auto0.job === eid && auto0.cid === cid && auto0.t === Date.parse(e.taken), 'v59: the name keeps the job ids and is dated when the job was taken');
+  ok(remDocs().filter(d => d.job === eid).length === 1, 'v59: saving the opened job again (an update) added no second name');
+  ok((remDocs().find(d => d.text === autoTexts[1]) || {}).job === dupId && (remDocs().find(d => d.text === autoTexts[2]) || {}).job === walk.estimates[0].id, 'v59: the saved duplicate and the logged job have names of their own');
+  ok(!remDocs().some(d => /Legacy Co/.test(d.text)), 'v59: jobs merged from an old device are not new jobs: no names for them');
+  ok(B.$('rem-n-todo').textContent === '4' && /Test Cust - 10 name tags/.test(B.$('rem-list').textContent) && B.$('rem-list').querySelectorAll('.rem-date').length === 4, 'v59: B shows them on To-Do with their dates');
+  // cleared, so the v42 checks below start from an empty box as before
+  A.w.eval('remItems.slice().forEach(x => remDelete(x.id)); remUndoHide();'); await sleep(80);
+  ok(remDocs().length === 0 && rem(B).length === 0 && rem(C).length === 0, 'v59: cleared for the checks below');
+
   ok(A.$('rem-box') && A.$('rem-box').closest('#panel-jobs'), 'To-Do / To-Invoice box sits on the Jobs tab');
   ok(A.$('rem-tab-todo').classList.contains('on') && /Nothing/.test(A.$('rem-list').textContent), 'box opens on To-Do, empty');
   A.set('rem-input', '   '); A.w.remAdd();
@@ -420,6 +441,142 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(server.cols.reminders.get(omId).list === 'invoice' && rem(S).some(x => x.id === omId), 'v50: and is still there after reconnecting');
   S.w.remShow('todo');
   [omId, toId].forEach(id => A.w.remDelete(id)); await sleep(60);
+
+  // ---------- v59: To-Invoice name back to To-Do; the x on To-Invoice = done, filed in the Archived folder ----------
+  const doc59 = id => server.cols.reminders.get(id);
+  const archShown = win => Array.from(win.$('rem-arch-list').querySelectorAll('.rem-arch-item .rem-text')).map(el => el.textContent);
+  const rowOf = (win, id) => win.$('rem-list').querySelector('.rem-item[data-id="' + id + '"]');
+  const archRow = (win, id) => win.$('rem-arch-list').querySelector('.rem-arch-item[data-id="' + id + '"]');
+  const kids = el => el ? Array.from(el.children).map(c => c.className).join() : '(none)';
+  A.w.remShow('todo'); B.w.remShow('todo');
+  A.set('rem-input', 'Zed Graphics'); A.w.remAdd(); await sleep(60);
+  const zId = rid(A, 'Zed Graphics');
+  A.w.remMove(zId, 2); await sleep(60);   // a place of its own (o) on To-Do
+  const zAt = shown(B).indexOf('Zed Graphics'), z0 = Object.assign({}, rem(A).find(x => x.id === zId));
+  ok(zAt === 2 && typeof z0.o === 'number', 'v59: a To-Do name with a place of its own (3rd)');
+  await sleep(5);
+  A.w.remToInvoice(zId); await sleep(60);
+  let zd = doc59(zId);
+  ok(zd.list === 'invoice' && zd.pt === z0.t && zd.po === z0.o && !('o' in zd) && zd.t > z0.t, 'v59: the move to To-Invoice remembers its To-Do date and place');
+  B.w.remShow('invoice');
+  const zRow = rowOf(B, zId);
+  ok(kids(zRow) === 'rem-grip,rem-text,rem-date,rem-back,rem-del', 'v59: a To-Invoice name = grip, text, date, back to To-Do, x: ' + kids(zRow));
+  ok(zRow.querySelector('.rem-back').title === 'Back to To-Do' && zRow.querySelector('.rem-del').title === 'Done - file it in Archived', 'v59: the buttons say what they do');
+  zRow.querySelector('.rem-back').click(); await sleep(60);
+  zd = doc59(zId);
+  ok(zd.list === 'todo' && zd.t === z0.t && zd.o === z0.o && !('pt' in zd) && !('po' in zd), 'v59: back on To-Do with its old date and place, saved to the cloud');
+  ok(shown(A).indexOf('Zed Graphics') === zAt && todo(B).indexOf('Zed Graphics') === zAt, 'v59: A and B show it back in its place');
+  ok(B.$('rem-undo').style.display === 'flex' && B.$('rem-undo-msg').textContent === 'Moved Zed Graphics back to To-Do' && B.$('rem-box').getAttribute('data-view') === 'invoice', 'v59: Undo offered, the box stays on To-Invoice');
+  B.w.remUndo(); await sleep(60);
+  zd = doc59(zId);
+  ok(zd.list === 'invoice' && zd.pt === z0.t && zd.po === z0.o, 'v59: Undo puts it back on To-Invoice (its To-Do place still remembered)');
+  // a name typed straight into To-Invoice never had a To-Do place: back = top of To-Do
+  B.set('rem-input', 'Direct Inv'); B.w.remAdd(); await sleep(60);
+  const diId = rid(B, 'Direct Inv'), tDi = Date.now();
+  await sleep(5);
+  B.w.remToTodo(diId); await sleep(60);
+  ok(doc59(diId).list === 'todo' && doc59(diId).t >= tDi && shown(A)[0] === 'Direct Inv', 'v59: a name typed into To-Invoice goes on top of To-Do');
+  let w59 = server.writes;
+  B.w.remToTodo(diId); B.w.remArchive(diId); B.w.remUnarchive(zId); await sleep(30);
+  ok(server.writes === w59, 'v59: back / archive / unarchive do nothing to a name not in that list');
+  // the x on a To-Invoice name files it in Archived
+  const nInv59 = rem(A).filter(x => x.list === 'invoice').length;
+  ok(A.$('rem-n-arch').textContent === '0' && !A.$('rem-arch').classList.contains('open') && A.$('rem-arch-list').innerHTML === '' && A.$('rem-arch-hint').textContent === 'tap to show' && A.$('rem-arch-head').getAttribute('aria-expanded') === 'false',
+    'v59: Archived folder at the bottom, empty and closed');
+  ok(A.$('rem-arch').closest('#rem-box') === A.$('rem-box') && !A.$('rem-arch').closest('#rem-list'), 'v59: the folder is in the box, under the list');
+  const zt = doc59(zId).t;
+  rowOf(B, zId).querySelector('.rem-del').click(); await sleep(60);
+  zd = doc59(zId);
+  ok(zd && zd.list === 'archived' && zd.a > 0 && zd.t === zt && zd.text === 'Zed Graphics' && zd.pt === z0.t, 'v59: the x archives it (kept in the cloud as archived, with the time)');
+  ok(A.$('rem-n-invoice').textContent === String(nInv59 - 1) && A.$('rem-n-arch').textContent === '1' && B.$('rem-n-arch').textContent === '1', 'v59: To-Invoice count down one, Archived 1, on both devices');
+  ok(!rowOf(A, zId) && !rowOf(B, zId) && !rem(A).some(x => x.id === zId && x.list !== 'archived'), 'v59: an archived name is in neither list');
+  ok(B.$('rem-undo-msg').textContent === 'Archived Zed Graphics', 'v59: Undo offered after archiving');
+  B.w.remUndo(); await sleep(60);
+  ok(doc59(zId).list === 'invoice' && !('a' in doc59(zId)) && A.$('rem-n-arch').textContent === '0', 'v59: Undo takes it back out of Archived');
+  B.w.remArchive(zId); await sleep(30);
+  B.set('rem-input', 'Second <i>Inv</i>'); B.w.remAdd(); await sleep(60);
+  const siId = rid(B, 'Second <i>Inv</i>');
+  B.w.remArchive(siId); await sleep(60);
+  // the folder: closed by default, opened per device, newest archived first, under both lists
+  B.w.remArchToggle();
+  ok(B.$('rem-arch').classList.contains('open') && B.$('rem-box').classList.contains('arch-open') && B.w.localStorage.getItem('coba-reminders-arch-open-v1') === '1' && B.$('rem-arch-hint').textContent === 'tap to hide' && B.$('rem-arch-head').getAttribute('aria-expanded') === 'true',
+    'v59: tapping Archived opens it, remembered on this device');
+  ok(archShown(B).join('|') === 'Second <i>Inv</i>|Zed Graphics' && !B.$('rem-arch-list').querySelector('.rem-text i'), 'v59: newest archived first, names shown as typed: ' + archShown(B).join(', '));
+  const zArch = archRow(B, zId);
+  ok(kids(zArch) === 'rem-text,rem-date rem-arch-date,rem-back,rem-del' &&zArch.querySelector('.rem-back').title === 'Back to To-Invoice' && zArch.querySelector('.rem-del').title === 'Delete for good',
+    'v59: an archived name = text, date archived, back to To-Invoice, delete for good: ' + kids(zArch));
+  ok(/^[A-Z][a-z]{2} \d{1,2}$/.test(zArch.querySelector('.rem-date').textContent) && /^Archived .+ \(on To-Invoice since [A-Z][a-z]{2} \d{1,2}\)$/.test(zArch.querySelector('.rem-date').title), 'v59: date archived shown, hover tells when: ' + zArch.querySelector('.rem-date').title);
+  ok(!A.$('rem-arch').classList.contains('open') && A.$('rem-arch-list').innerHTML === '' && A.$('rem-n-arch').textContent === '2', 'v59: A keeps its folder closed (count 2)');
+  B.w.remShow('todo');
+  ok(archShown(B).length === 2 && B.$('rem-list').querySelectorAll('.rem-item').length === rem(B).filter(x => x.list === 'todo').length, 'v59: the folder shows under the To-Do list too');
+  // back to To-Invoice from the folder, in the place it had
+  archRow(B, zId).querySelector('.rem-back').click(); await sleep(60);
+  zd = doc59(zId);
+  ok(zd.list === 'invoice' && !('a' in zd) && zd.t === zt && zd.pt === z0.t && zd.po === z0.o, 'v59: back to To-Invoice from Archived with its date (its To-Do place still remembered)');
+  ok(rem(A).find(x => x.id === zId).list === 'invoice' && archShown(B).join() === 'Second <i>Inv</i>' && B.$('rem-undo-msg').textContent === 'Moved Zed Graphics back to To-Invoice' && B.$('rem-box').getAttribute('data-view') === 'todo',
+    'v59: A follows; Undo offered; the box keeps its list');
+  // delete for good from the folder, with Undo
+  archRow(B, siId).querySelector('.rem-del').click(); await sleep(60);
+  ok(!server.cols.reminders.has(siId) && !rem(A).some(x => x.id === siId) && B.$('rem-n-arch').textContent === '0' && /^Deleted Second/.test(B.$('rem-undo-msg').textContent), 'v59: delete for good removes it everywhere, Undo offered');
+  B.w.remUndo(); await sleep(60);
+  ok(doc59(siId) && doc59(siId).list === 'archived' && doc59(siId).a > 0 && B.w.eval('remView') === 'todo' && archShown(B).join() === 'Second <i>Inv</i>', 'v59: Undo puts it back in Archived; the box stays on To-Do');
+  // the x on a To-Do name still deletes
+  B.set('rem-input', 'Todo Delete'); B.w.remAdd(); await sleep(60);
+  const tdId = rid(B, 'Todo Delete');
+  ok(rowOf(B, tdId).querySelector('.rem-del').title === 'Delete', 'v59: the To-Do x is still Delete');
+  rowOf(B, tdId).querySelector('.rem-del').click(); await sleep(60);
+  ok(!server.cols.reminders.has(tdId) && B.$('rem-n-arch').textContent === '1', 'v59: x on a To-Do name deletes it (not archived)');
+  B.w.remUndoHide();
+  // a job's To-Do name keeps the job ids through every move
+  A.w.switchTabByName('paper');
+  A.set('cb-name', 'Linked Cust'); A.set('cb-title', 'link job'); A.w.eval('jobsActive = null'); A.w.saveEstimate(); await sleep(80);
+  const lkC = jd(A).customers.find(c => c.name === 'Linked Cust'), lkE = lkC.estimates[0];
+  const lkId = rid(A, 'Linked Cust - link job');
+  const hasIds = () => !!doc59(lkId) && doc59(lkId).job === lkE.id && doc59(lkId).cid === lkC.id;
+  ok(hasIds() && doc59(lkId).list === 'todo' && /added to To-Do$/.test(A.$('jobs-toast').textContent), 'v59: a Paper job saved: its name is on To-Do with the job ids');
+  A.w.remToInvoice(lkId); await sleep(40); const s1 = hasIds() && doc59(lkId).list === 'invoice';
+  A.w.remArchive(lkId); await sleep(40); const s2 = hasIds() && doc59(lkId).list === 'archived';
+  A.w.remUnarchive(lkId); await sleep(40); const s3 = hasIds() && doc59(lkId).list === 'invoice';
+  A.w.remToTodo(lkId); await sleep(40); const s4 = hasIds() && doc59(lkId).list === 'todo';
+  ok(s1 && s2 && s3 && s4, 'v59: the ids stay through To-Invoice, Archived and back (' + [s1, s2, s3, s4].join() + ')');
+  A.w.remUndoHide(); A.w.switchTabByName('jobs');
+  // a logged job dated earlier goes on To-Do with that date; one dated later is dated now (never above newer names)
+  const d3 = new Date(); d3.setDate(d3.getDate() - 3); d3.setHours(0, 0, 0, 0);
+  A.set('jl-cust', 'Backdated Co'); A.set('jl-title', 'phone job'); A.set('jl-date', A.w.jobsLocalDate(d3)); A.w.jobsLogManual(); await sleep(60);
+  const bd = rem(A).find(x => x.text === 'Backdated Co - phone job');
+  ok(bd && bd.t === d3.getTime() && doc59(bd.id).t === d3.getTime() && A.$('jobs-toast').textContent === 'Logged under Backdated Co - added to To-Do', 'v59: a logged job dated 3 days ago goes on To-Do dated that day');
+  const d9 = new Date(); d9.setDate(d9.getDate() + 9);
+  const tFut = Date.now();
+  A.set('jl-cust', 'Future Co'); A.set('jl-title', 'booked job'); A.set('jl-date', A.w.jobsLocalDate(d9)); A.w.jobsLogManual(); await sleep(60);
+  const fu = rem(A).find(x => x.text === 'Future Co - booked job');
+  ok(fu && fu.t >= tFut && fu.t <= Date.now(), 'v59: a logged job dated later is dated now on To-Do');
+  // offline: archiving and moving back wait on the device and are sent on reconnect
+  await sleep(40);
+  S.w.cloudStop(); S.w.eval('cloudUser = null'); S.w.remShow('invoice');
+  S.w.remArchive(zId);                       // Zed is on To-Invoice
+  S.w.remUnarchive(siId);                    // Second back from Archived...
+  S.w.remToTodo(siId);                       // ...and on to To-Do (typed into To-Invoice: goes on top)
+  S.set('rem-input', 'Offline Archived'); S.w.remAdd();
+  const oaId = rid(S, 'Offline Archived'); S.w.remArchive(oaId);
+  let so = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1'));
+  ok(so.out.upd[zId] && so.out.upd[zId].list === 'archived' && so.out.upd[zId].a > 0 && so.out.upd[siId] && so.out.upd[siId].list === 'todo' && so.out.add[oaId] && so.out.add[oaId].list === 'archived' && !so.out.upd[oaId],
+    'v59: offline archive and moves wait on the device');
+  ok(so.items.some(x => x.id === zId && x.list === 'archived') && S.$('rem-n-arch').textContent === '2', 'v59: the device keeps its archived names');
+  ok(doc59(zId).list === 'invoice' && !doc59(oaId), 'v59: nothing sent while offline');
+  S.w.eval("cloudUser = { email:'chris@example.com' }; cloudStart();"); await sleep(100);
+  ok(doc59(zId).list === 'archived' && doc59(siId).list === 'todo' && doc59(oaId) && doc59(oaId).list === 'archived' && A.$('rem-n-arch').textContent === '2', 'v59: sent on reconnect, A follows');
+  so = JSON.parse(S.w.localStorage.getItem('coba-reminders-v1')).out;
+  ok(Object.keys(so.upd).length === 0 && Object.keys(so.add).length === 0 && Object.keys(so.del).length === 0, 'v59: nothing left waiting');
+  // an archived name moved back offline but deleted on another device meanwhile stays deleted
+  S.w.cloudStop(); S.w.eval('cloudUser = null');
+  S.w.remUnarchive(oaId);
+  A.w.remDelete(oaId); await sleep(60);
+  S.w.eval("cloudUser = { email:'chris@example.com' }; cloudStart();"); await sleep(100);
+  ok(!doc59(oaId) && !rem(S).some(x => x.id === oaId), 'v59: unarchived offline but deleted elsewhere: stays deleted');
+  S.w.remShow('todo');
+  // a saved copy with archived names loads on a device that is not connected
+  const V2 = openWin({ reminders: S.w.localStorage.getItem('coba-reminders-v1') }); await sleep(40);
+  ok(V2.$('rem-n-arch').textContent === '1' && !V2.$('rem-arch').classList.contains('open') && V2.$('rem-n-invoice').textContent === S.$('rem-n-invoice').textContent, 'v59: a saved copy with archived names loads (folder closed on that device)');
 
   // ---------- v50: Paid jobs ----------
   const inMain = (win, eid) => Array.from(win.$('jobs-list').querySelectorAll('.jobs-est[data-eid="' + eid + '"]')).some(el => !el.closest('#jobs-paid'));
@@ -691,7 +848,7 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   ok(H2.w.eval('inventory.papers').filter(isHam).length === 0, 'v55: a removed Hammermill 28# stays removed');
 
   // ---------- no page errors anywhere ----------
-  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V, U5, U6, H1, H2].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V','U5','U6','H1','H2'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
+  [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V, V2, U5, U6, H1, H2].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V','V2','U5','U6','H1','H2'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);

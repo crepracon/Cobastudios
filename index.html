@@ -287,6 +287,23 @@
     /* v50: move a To-Do name to To-Invoice */
     .rem-mv { flex:none; width:26px; height:28px; padding:0; border:none; border-radius:5px; background:transparent; font-size:14px; line-height:1; font-family:inherit; cursor:pointer; opacity:.75; }
     .rem-mv:hover, .rem-mv:focus-visible { opacity:1; background:#f0fdf4; }
+    /* v59: a To-Invoice name back to To-Do (an archived one back to To-Invoice); Archived folder at the bottom of the box */
+    .rem-back { flex:none; width:26px; height:28px; padding:0; border:none; border-radius:5px; background:transparent; color:#888; font-size:17px; line-height:1; font-family:inherit; cursor:pointer; }
+    .rem-back:hover, .rem-back:focus-visible { color:#1e40af; background:#eff6ff; }
+    .rem-arch-item .rem-back:hover, .rem-arch-item .rem-back:focus-visible { color:#166534; background:#f0fdf4; }
+    .rem-arch { border-top:1px solid #e5e5e5; background:#f4f4f1; }
+    .rem-arch-head { display:flex; align-items:center; gap:8px; width:100%; padding:9px 12px; border:none; background:transparent; font-size:13px; font-weight:600; font-family:inherit; color:#666; cursor:pointer; text-align:left; }
+    .rem-arch-head:hover { background:#ecece7; color:#333; }
+    .rem-arch-chev { flex:none; width:0; height:0; border-left:6px solid #888; border-top:4px solid transparent; border-bottom:4px solid transparent; transition:transform .15s; }
+    .rem-arch.open .rem-arch-chev { transform:rotate(90deg); }
+    .rem-arch-hint { margin-left:auto; font-size:11px; font-weight:400; color:#999; }
+    .rem-box[data-view=invoice] #rem-list .rem-del:hover { background:#f0fdf4; color:#166534; }   /* the x there = done (archived), not a delete */
+    .rem-arch-list { display:none; max-height:30vh; overflow-y:auto; padding:4px 10px 4px; }
+    .rem-arch.open .rem-arch-list { display:block; }
+    .rem-box.arch-open .rem-list { max-height:40vh; }
+    .rem-arch-item { background:#fafaf8; padding-left:8px; }
+    .rem-arch-item .rem-text { color:#777; }
+    .rem-arch-date { background:#ececea; color:#777; border-color:#deded9; }
     .rem-empty { font-size:12px; color:#999; text-align:center; padding:12px 6px 16px; }
     .rem-undo { display:none; align-items:center; gap:8px; font-size:12px; color:#555; background:#fff8e6; border-top:1px solid #e6d9a8; padding:7px 10px; }
     .rem-undo span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -294,7 +311,8 @@
     @media (max-width:760px){
       .jobs-layout { flex-direction:column; }
       .rem-box { position:static; flex:none; width:100%; order:-1; }
-      .rem-list { max-height:50vh; }
+      .rem-list, .rem-box.arch-open .rem-list { max-height:50vh; }
+      .rem-arch-list { max-height:50vh; }
     }
     /* ===== WALK-INS TAB (v44) ===== */
     .w-layout { display:flex; gap:1.25rem; align-items:flex-start; }
@@ -1919,6 +1937,11 @@
       </div>
       <div class="rem-list" id="rem-list"></div>
       <div class="rem-undo" id="rem-undo"><span id="rem-undo-msg"></span><button onclick="remUndo()">Undo</button></div>
+      <!-- v59: To-Invoice names marked done (x) are filed here; closed until tapped (per device) -->
+      <div class="rem-arch" id="rem-arch">
+        <button type="button" class="rem-arch-head" id="rem-arch-head" onclick="remArchToggle()" aria-expanded="false" aria-controls="rem-arch-list"><span class="rem-arch-chev"></span>Archived <span class="rem-count" id="rem-n-arch">0</span><span class="rem-arch-hint" id="rem-arch-hint">tap to show</span></button>
+        <div class="rem-arch-list" id="rem-arch-list"></div>
+      </div>
     </aside>
    </div>
   </div>
@@ -2459,7 +2482,8 @@ function saveEstimate(){
     cust.estimates.unshift(e);
     jobsActive = { cid: cust.id, eid: e.id };
     jobsSave();
-    jobsToast('Saved "' + title + '" under ' + cust.name);
+    const td = remAddJob(cust, e);   // v59: a new job also goes on the To-Do list
+    jobsToast('Saved "' + title + '" under ' + cust.name + (td ? ' - added to To-Do' : ''));
   }
   jobsActiveHint();
   if(!document.getElementById('cb-title').value.trim()) document.getElementById('cb-title').value = title;
@@ -2480,7 +2504,7 @@ function jobsLogManual(){
   if(!name){ notify('Enter a customer name.'); return; }
   const amt = parseFloat(document.getElementById('jl-amount').value);
   const cust = jobsUpsertCustomer(name);
-  cust.estimates.unshift({
+  const e = {
     id: 'e' + Date.now(),
     title: document.getElementById('jl-title').value.trim() || 'Logged job',
     tab: 'log',
@@ -2490,12 +2514,14 @@ function jobsLogManual(){
     totals: { grand: isNaN(amt) ? '' : '$' + amt.toFixed(2) },
     noteText: document.getElementById('jl-notes').value.trim(),
     snap: null
-  });
+  };
+  cust.estimates.unshift(e);
   jobsSave();
+  const td = remAddJob(cust, e);   // v59: a new job also goes on the To-Do list
   ['jl-cust','jl-title','jl-amount','jl-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('jobs-logform').style.display = 'none';
   renderJobs();
-  jobsToast('Logged under ' + cust.name);
+  jobsToast('Logged under ' + cust.name + (td ? ' - added to To-Do' : ''));
 }
 
 // --- load / duplicate / delete / status ---
@@ -3048,22 +3074,44 @@ document.addEventListener('focusout', ()=>{
 // The whole doc is set again (remReplace); made while the cloud is not connected, the new version
 // waits in remOut.upd (id -> item) and is sent on reconnect only if the cloud still has that name,
 // so a name deleted on another device meanwhile stays deleted.
+// v59: a new job (Save estimate saving a new one, or Log a job) also puts "Customer - Job title" on
+// To-Do (remAddJob), dated when the job was taken; the name keeps the job's ids (job, cid). A move to
+// To-Invoice remembers the name's To-Do date and place (pt, po), so its return button (remToTodo)
+// puts it back where it was. The x on a To-Invoice name (done) files it in the Archived folder at the
+// bottom of the box (list 'archived', a = when); there its return button puts it back on To-Invoice
+// and its x deletes it for good. Pages older than v59 skip archived names (not a list they know).
 const REM_KEY = 'coba-reminders-v1';
 const REM_LISTS = {
   todo:    { ph: 'Add to To-Do...',      empty: 'Nothing on the to-do list.' },
   invoice: { ph: 'Add to To-Invoice...', empty: 'Nobody waiting to be invoiced.' }
 };
 const REM_FADE_DAYS = 6;
-let remItems = [];                           // { id, list: 'todo' | 'invoice', text, t, o? } top of the list first
+const REM_ARCH = 'archived';                          // v59: the Archived folder (not one of the two lists)
+const REM_ARCH_KEY = 'coba-reminders-arch-open-v1';   // v59: per device, is the Archived folder open ('1')
+const REM_NUMS = ['a', 'pt', 'po'];                   // v59: when archived; To-Do date and place before the move to To-Invoice
+const REM_STRS = ['job', 'cid'];                      // v59: the saved job a name was made for, and its customer
+let remItems = [];                           // { id, list: 'todo' | 'invoice' | 'archived', text, t, o?, a?, pt?, po?, job?, cid? } top of the list first
 let remOut = { add: {}, del: {}, mov: {}, upd: {} };  // made while the cloud was not connected: id -> item / true / o / item
 let remView = 'todo';                        // which list the box shows (per device)
 let remCloud = null;                         // Map id -> doc data while the cloud list is live
 let remUndoItem = null;
 let remUndoKind = 'del';                     // v50: what Undo reverses: 'del' (put the name back) or 'move' (back to To-Do)
 let remDrag = null;                          // v48: the drag in progress (the list is not redrawn under it)
+let remArchOpen = false;                     // v59: Archived folder open on this device
+try{ remArchOpen = localStorage.getItem(REM_ARCH_KEY) === '1'; }catch(e){}
 
-function remValid(x){ return !!x && typeof x.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(x.id) && (x.list in REM_LISTS) && typeof x.text === 'string' && x.text !== ''; }
+function remValid(x){ return !!x && typeof x.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(x.id) && ((x.list in REM_LISTS) || x.list === REM_ARCH) && typeof x.text === 'string' && x.text !== ''; }
 function remHasO(x){ return !!x && typeof x.o === 'number' && isFinite(x.o); }
+// v59: copy the optional fields that are set and well formed (cloud doc <-> this device's copy)
+function remExtra(from, to){
+  if(from){
+    REM_NUMS.forEach(k=>{ if(typeof from[k] === 'number' && isFinite(from[k])) to[k] = from[k]; });
+    REM_STRS.forEach(k=>{ if(typeof from[k] === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(from[k])) to[k] = from[k]; });
+  }
+  return to;
+}
+// v59: a name moved to another list keeps the job it was made for
+function remLinks(from, to){ REM_STRS.forEach(k=>{ if(from && typeof from[k] === 'string' && from[k]) to[k] = from[k]; }); return to; }
 function remKey(x){ return remHasO(x) ? x.o : (+x.t || 0); }
 function remLoad(){
   try{
@@ -3083,7 +3131,7 @@ function remWrite(item, del){
   // Firestore queues the write if the connection drops and sends it when it is back
   const fs = fb.fs, ref = fs.doc(fb.db, 'reminders', item.id), b = fs.writeBatch(fb.db);
   if(del) b.delete(ref);
-  else{ const d = { list: item.list, text: item.text, t: item.t }; if(remHasO(item)) d.o = item.o; b.set(ref, d); }
+  else{ const d = remExtra(item, { list: item.list, text: item.text, t: item.t }); if(remHasO(item)) d.o = item.o; b.set(ref, d); }
   b.commit().catch(err=>{
     console.error('reminder save', err);
     cloudStatus('error', 'Cloud save failed: ' + (err.code || err.message) + ' - that change is only on this device');
@@ -3135,8 +3183,59 @@ function remReplace(item){
 function remToInvoice(id){
   const x = remItems.find(y=>y.id === id); if(!x || x.list !== 'todo') return;
   const before = Object.assign({}, x);
-  remReplace({ id: x.id, list: 'invoice', text: x.text, t: Date.now() });   // top of To-Invoice, date restarts
+  const inv = remLinks(x, { id: x.id, list: 'invoice', text: x.text, t: Date.now() });   // top of To-Invoice, date restarts
+  if(+x.t) inv.pt = +x.t;            // v59: its To-Do date and place, for the move back
+  if(remHasO(x)) inv.po = x.o;
+  remReplace(inv);
   remUndoShow(before, 'move', 'Moved ' + x.text + ' to To-Invoice');
+}
+// v59: a To-Invoice name back to To-Do (moved over by mistake), with the date and place it had there;
+// a name that never was on To-Do here (typed into To-Invoice, or moved by an older page) goes on top
+function remToTodo(id){
+  const x = remItems.find(y=>y.id === id); if(!x || x.list !== 'invoice') return;
+  const before = Object.assign({}, x);
+  const back = remLinks(x, { id: x.id, list: 'todo', text: x.text, t: (typeof x.pt === 'number' && isFinite(x.pt) && x.pt > 0) ? x.pt : Date.now() });
+  if(typeof x.po === 'number' && isFinite(x.po)) back.o = x.po;
+  remReplace(back);
+  remUndoShow(before, 'move', 'Moved ' + x.text + ' back to To-Do');
+}
+// v59: the x on a To-Invoice name (done) files it in Archived, as it was, with the time
+function remArchive(id){
+  const x = remItems.find(y=>y.id === id); if(!x || x.list !== 'invoice') return;
+  const before = Object.assign({}, x);
+  remReplace(Object.assign({}, x, { list: REM_ARCH, a: Date.now() }));
+  remUndoShow(before, 'move', 'Archived ' + x.text);
+}
+// v59: an archived name back on To-Invoice, in the place it had
+function remUnarchive(id){
+  const x = remItems.find(y=>y.id === id); if(!x || x.list !== REM_ARCH) return;
+  const before = Object.assign({}, x), back = Object.assign({}, x, { list: 'invoice' });
+  delete back.a;
+  remReplace(back);
+  remUndoShow(before, 'move', 'Moved ' + x.text + ' back to To-Invoice');
+}
+function remArchToggle(){
+  remArchOpen = !remArchOpen;
+  try{ localStorage.setItem(REM_ARCH_KEY, remArchOpen ? '1' : '0'); }catch(e){}
+  remRender();
+}
+// v59: when a job was taken, in ms (old jobs and back-dated logged jobs have a date only: that day, local time)
+function jobsTakenMs(e){
+  const s = String((e && (e.taken || e.date)) || '');
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  const t = m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : Date.parse(s);
+  return isFinite(t) ? t : 0;
+}
+// v59: a new job also goes on To-Do as "Customer - Job title", dated when it was taken (never later than now)
+function remAddJob(c, e){
+  if(!c || !e) return false;
+  const text = (String(c.name || '') + (e.title ? ' - ' + e.title : '')).replace(/\s+/g, ' ').trim().slice(0, 160);
+  if(!text) return false;
+  const now = Date.now(), t = Math.min(jobsTakenMs(e) || now, now);
+  const item = { id: 'r' + now + '-' + Math.random().toString(36).slice(2, 6), list: 'todo', text, t };
+  remExtra({ job: e.id, cid: c.id }, item);
+  remPut(item);
+  return true;
 }
 function remDelete(id){
   const item = remItems.find(x=>x.id === id); if(!item) return;
@@ -3160,7 +3259,7 @@ function remUndoHide(){ remUndoItem = null; const u = document.getElementById('r
 function remUndo(){
   const item = remUndoItem, kind = remUndoKind; if(!item) return;
   remUndoHide();
-  remView = item.list;
+  if(item.list in REM_LISTS) remView = item.list;   // v59: an archived name stays in the folder; the box keeps its list
   if(kind === 'move'){
     if(!remItems.some(x=>x.id === item.id)) return;   // deleted meanwhile (here or on another device)
     remReplace(item);
@@ -3313,7 +3412,7 @@ function remRender(){
   const box = document.getElementById('rem-box'); if(!box) return;
   if(remDrag) return;   // redrawn when the drag ends
   const n = { todo: 0, invoice: 0 };
-  remItems.forEach(x=>{ n[x.list]++; });
+  remItems.forEach(x=>{ if(x.list in n) n[x.list]++; });
   Object.keys(REM_LISTS).forEach(k=>{
     document.getElementById('rem-n-' + k).textContent = n[k];
     document.getElementById('rem-tab-' + k).classList.toggle('on', k === remView);
@@ -3329,10 +3428,39 @@ function remRender(){
           ' onpointerdown="remDragStart(event, \'' + x.id + '\')" onkeydown="remGripKey(event, \'' + x.id + '\')"></button>' +
         '<div class="rem-text">' + jobsEsc(x.text) + '</div>' +
         (x.t ? '<span class="rem-date" data-t="' + (+x.t) + '" style="' + remAgeStyle(x.t, now) + '" title="' + jobsEsc(remAgeTitle(x.t, now)) + '">' + jobsEsc(remDate(x.t)) + '</span>' : '') +
-        (x.list === 'todo' ? '<button type="button" class="rem-mv" title="Move to To-Invoice" aria-label="Move ' + jobsEsc(x.text) + ' to To-Invoice" onclick="remToInvoice(\'' + x.id + '\')">&#129534;</button>' : '') +
-        '<button class="rem-del" title="Delete" onclick="remDelete(\'' + x.id + '\')">&times;</button></div>').join('')
+        (x.list === 'todo'
+          ? '<button type="button" class="rem-mv" title="Move to To-Invoice" aria-label="Move ' + jobsEsc(x.text) + ' to To-Invoice" onclick="remToInvoice(\'' + x.id + '\')">&#129534;</button>' +
+            '<button class="rem-del" title="Delete" onclick="remDelete(\'' + x.id + '\')">&times;</button></div>'
+          // v59: back to To-Do; the x = done, filed in Archived
+          : '<button type="button" class="rem-back" title="Back to To-Do" aria-label="Move ' + jobsEsc(x.text) + ' back to To-Do" onclick="remToTodo(\'' + x.id + '\')">&#8617;</button>' +
+            '<button class="rem-del" title="Done - file it in Archived" aria-label="Done: archive ' + jobsEsc(x.text) + '" onclick="remArchive(\'' + x.id + '\')">&times;</button></div>')).join('')
     : '<div class="rem-empty">' + REM_LISTS[remView].empty + '</div>';
   if(keep) remFocusGrip(keep);
+  remArchRender();
+}
+// v59: the Archived folder at the bottom of the box: newest archived first; rows drawn only while it is open
+function remArchRender(){
+  const wrap = document.getElementById('rem-arch'); if(!wrap) return;
+  const arch = remItems.filter(x=>x.list === REM_ARCH).sort((a, b)=> ((+b.a || +b.t || 0) - (+a.a || +a.t || 0)) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0));
+  document.getElementById('rem-n-arch').textContent = arch.length;
+  wrap.classList.toggle('open', remArchOpen);
+  document.getElementById('rem-box').classList.toggle('arch-open', remArchOpen);
+  document.getElementById('rem-arch-head').setAttribute('aria-expanded', remArchOpen ? 'true' : 'false');
+  document.getElementById('rem-arch-hint').textContent = remArchOpen ? 'tap to hide' : 'tap to show';
+  document.getElementById('rem-arch-list').innerHTML = !remArchOpen ? ''
+    : arch.length ? arch.map(x=>{
+        const at = +x.a || +x.t || 0;
+        const tip = 'Archived ' + remWhen(at) + (x.t && x.a ? ' (on To-Invoice since ' + remDate(x.t) + ')' : '');
+        return '<div class="rem-item rem-arch-item" data-id="' + x.id + '">' +
+          '<div class="rem-text">' + jobsEsc(x.text) + '</div>' +
+          (at ? '<span class="rem-date rem-arch-date" title="' + jobsEsc(tip) + '">' + jobsEsc(remDate(at)) + '</span>' : '') +
+          '<button type="button" class="rem-back" title="Back to To-Invoice" aria-label="Move ' + jobsEsc(x.text) + ' back to To-Invoice" onclick="remUnarchive(\'' + x.id + '\')">&#8617;</button>' +
+          '<button class="rem-del" title="Delete for good" aria-label="Delete ' + jobsEsc(x.text) + ' for good" onclick="remDelete(\'' + x.id + '\')">&times;</button></div>';
+      }).join('')
+    : '<div class="rem-empty">Nothing archived yet. The &times; on a To-Invoice name files it here.</div>';
+}
+function remWhen(t){
+  try{ return new Date(t).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }catch(e){ return remDate(t); }
 }
 // live listener on the 'reminders' collection, started by cloudStart()
 function remListen(onErr){
@@ -3348,7 +3476,7 @@ function remListen(onErr){
 function remCloudApply(first){
   const list = [];
   remCloud.forEach((d, id)=>{
-    const x = { id, list: d && d.list, text: d && d.text, t: (d && +d.t) || 0 };
+    const x = remExtra(d, { id, list: d && d.list, text: d && d.text, t: (d && +d.t) || 0 });   // v59: and the optional fields
     if(d && typeof d.o === 'number' && isFinite(d.o)) x.o = d.o;
     if(remValid(x)) list.push(x);
   });
