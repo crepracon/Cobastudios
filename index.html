@@ -254,9 +254,10 @@
     #jobs-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#222; color:#fff; padding:10px 20px; border-radius:8px; font-size:14px; display:none; z-index:999; }
     @media (max-width:600px){ .jobs-est-total { margin-left:0; width:100%; } }
     /* ===== TO-DO / TO-INVOICE BOX (v42, Jobs tab) ===== */
-    .jobs-layout { display:flex; gap:1.25rem; align-items:flex-start; }
-    .jobs-main { flex:1; min-width:0; }
-    .rem-box { flex:0 0 280px; width:280px; position:sticky; top:12px; border:1px solid #e5e5e5; border-top:3px solid #2563eb; border-radius:8px; background:#fafaf8; overflow:hidden; }
+    /* v60: the Jobs tab is a grid: jobs list | Notes | To-Do (was a flex row of two); the Notes column shrinks to a slim tab when folded */
+    .jobs-layout { display:grid; grid-template-columns:minmax(0,1fr) auto 280px; grid-template-areas:"main notes todo"; gap:1.25rem; align-items:start; }
+    .jobs-main { grid-area:main; min-width:0; }
+    .rem-box { grid-area:todo; width:280px; position:sticky; top:12px; border:1px solid #e5e5e5; border-top:3px solid #2563eb; border-radius:8px; background:#fafaf8; overflow:hidden; }
     .rem-box[data-view=invoice] { border-top-color:#16a34a; }
     .rem-tabs { display:flex; background:#fff; border-bottom:1px solid #e5e5e5; }
     .rem-tab { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 4px; font-size:13px; font-weight:600; font-family:inherit; color:#888; background:transparent; border:none; cursor:pointer; }
@@ -308,11 +309,36 @@
     .rem-undo { display:none; align-items:center; gap:8px; font-size:12px; color:#555; background:#fff8e6; border-top:1px solid #e6d9a8; padding:7px 10px; }
     .rem-undo span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .rem-undo button { flex:none; padding:4px 10px; font-size:12px; font-weight:600; font-family:inherit; border:1px solid #e6d9a8; border-radius:5px; background:#fff; cursor:pointer; }
+    /* ===== NOTES (v60, Jobs tab): a notepad between the jobs list and the To-Do box ===== */
+    .notes-box { grid-area:notes; width:300px; position:sticky; top:12px; border:1px solid #e5e5e5; border-top:3px solid #d4a72c; border-radius:8px; background:#fffdf6; overflow:hidden; }
+    .notes-box:focus-within { border-color:#e6d9a8; border-top-color:#d4a72c; }
+    .notes-head { display:flex; align-items:center; gap:8px; width:100%; padding:10px 12px; border:none; border-bottom:1px solid #f0e8cf; background:#fff; font-size:13px; font-weight:600; font-family:inherit; color:#7a5d00; cursor:pointer; text-align:left; }
+    .notes-head:hover { background:#fdf8ea; }
+    .notes-head:focus-visible { outline:2px solid #d4a72c; outline-offset:-2px; }
+    .notes-chev { flex:none; width:0; height:0; border-left:6px solid #b8952a; border-top:4px solid transparent; border-bottom:4px solid transparent; transform:rotate(90deg); transition:transform .15s; }
+    .notes-status { margin-left:auto; font-size:11px; font-weight:400; color:#999; white-space:nowrap; }
+    #notes-text { display:block; height:60vh; min-height:200px; max-height:80vh; padding:10px 12px; border:none; border-radius:0; background:transparent; font-size:14px; line-height:1.55; }
+    #notes-text:focus { background:#fff; }
+    .notes-box.closed { width:40px; }
+    .notes-box.closed .notes-body { display:none; }
+    .notes-box.closed .notes-head { flex-direction:column; gap:10px; padding:12px 0; min-height:132px; border-bottom:none; }
+    .notes-box.closed .notes-title { writing-mode:vertical-rl; letter-spacing:.06em; }
+    .notes-box.closed .notes-chev { transform:none; }
+    .notes-box.closed .notes-status { display:none; }
+    /* narrower screens: no room for three columns, so Notes goes across the top of the jobs list (To-Do stays on the right) */
+    @media (max-width:1099px){
+      .jobs-layout { grid-template-columns:minmax(0,1fr) 280px; grid-template-areas:"notes todo" "main todo"; }
+      .notes-box, .notes-box.closed { position:static; width:auto; }
+      .notes-box.closed .notes-head { flex-direction:row; gap:8px; padding:10px 12px; min-height:0; }
+      .notes-box.closed .notes-title { writing-mode:horizontal-tb; }
+      #notes-text { height:30vh; }
+    }
     @media (max-width:760px){
-      .jobs-layout { flex-direction:column; }
-      .rem-box { position:static; flex:none; width:100%; order:-1; }
+      .jobs-layout { grid-template-columns:minmax(0,1fr); grid-template-areas:"todo" "notes" "main"; }   /* v60: To-Do, Notes, then the jobs list */
+      .rem-box { position:static; width:100%; }
       .rem-list, .rem-box.arch-open .rem-list { max-height:50vh; }
       .rem-arch-list { max-height:50vh; }
+      #notes-text { height:40vh; font-size:16px; }   /* 16px: phones don't zoom in when it is tapped */
     }
     /* ===== WALK-INS TAB (v44) ===== */
     .w-layout { display:flex; gap:1.25rem; align-items:flex-start; }
@@ -1925,6 +1951,13 @@
     </div>
     <div id="jobs-list"></div>
     </div>
+    <!-- v60: Notes - a plain-text notepad between the jobs list and the To-Do box; its header folds it to a slim tab (per device); synced like Jobs -->
+    <aside class="notes-box no-print" id="notes-box">
+      <button type="button" class="notes-head" id="notes-head" onclick="notesToggle()" aria-expanded="true" aria-controls="notes-body" title="Hide notes"><span class="notes-chev"></span><span class="notes-title">Notes</span><span class="notes-status" id="notes-status"></span></button>
+      <div class="notes-body" id="notes-body">
+        <textarea id="notes-text" maxlength="200000" spellcheck="true" placeholder="Quick notes - type anything here. It saves as you type." aria-label="Notes" oninput="notesInput()" onblur="notesFlush()"></textarea>
+      </div>
+    </aside>
     <!-- To-Do / To-Invoice box (v42): one box, the header flips between the two lists; synced like Jobs -->
     <aside class="rem-box no-print" id="rem-box" data-view="todo">
       <div class="rem-tabs">
@@ -2613,7 +2646,7 @@ function jobsEstRow(c, e, inPaid){
   const noteLine = (!e.snap && e.noteText) ? '<div class="jobs-est-meta" style="width:100%">' + jobsEsc(e.noteText) + '</div>' : '';
   return '<div class="jobs-est' + (inPaid ? ' is-paid' : '') + '" data-eid="' + e.id + '">' +
     '<span class="jobs-est-title-wrap"><span class="jobs-dot ' + si.dot + '" title="' + jobsEsc(si.label) + '"></span><span class="jobs-est-title">' + jobsEsc(e.title) + '</span></span>' +
-    '<span class="jobs-est-meta">Taken ' + jobsEsc(jobsFmtTaken(e)) + ' &middot; ' + (JOBS_TABS[e.tab]||'Logged') + (inPaid ? ' &middot; Paid ' + jobsEsc(jobsFmtPaid(e)) : '') + '</span>' +
+    '<span class="jobs-est-meta">Taken ' + jobsEsc(jobsFmtTaken(e)) + ' &middot; ' + (JOBS_TABS[e.tab] || (e.todo ? 'To-Do' : 'Logged')) + (inPaid ? ' &middot; Paid ' + jobsEsc(jobsFmtPaid(e)) : '') + '</span>' +
     (inPaid ? '' : '<select class="jobs-status ' + si.cls + '" onchange="setEstStatus(' + ids + ',this.value)">' + opts + '</select>') +
     '<span class="jobs-est-total">' + jobsEsc((e.totals&&e.totals.grand)||'') + '</span>' +
     loadBtns +
@@ -2872,6 +2905,7 @@ function cloudStop(){
   cloudUnsubs.forEach(u=>{ try{ u(); }catch(e){} });
   cloudUnsubs = []; cloudLoaded = false;
   remCloud = null;   // the To-Do / To-Invoice box goes back to this device's copy
+  notesCloud = null; notesOnline = false; notesStatus();   // v60: and the notes
 }
 function cloudStart(){
   cloudStop();
@@ -2891,6 +2925,7 @@ function cloudStart(){
   cloudUnsubs.push(listen('customers', m=>{ cloudCust = m; }, ()=>cloudCust));
   cloudUnsubs.push(listen('estimates', m=>{ cloudEst = m; }, ()=>cloudEst));
   cloudUnsubs.push(remListen(onErr));   // v42: To-Do / To-Invoice box
+  cloudUnsubs.push(notesListen(onErr)); // v60: Notes
 }
 function cloudParse(key, json){
   const hit = cloudParseCache.get(key);
@@ -3080,6 +3115,11 @@ document.addEventListener('focusout', ()=>{
 // puts it back where it was. The x on a To-Invoice name (done) files it in the Archived folder at the
 // bottom of the box (list 'archived', a = when); there its return button puts it back on To-Invoice
 // and its x deletes it for good. Pages older than v59 skip archived names (not a list they know).
+// v60: a name typed into To-Do (not To-Invoice) also goes into Jobs & Customers as a logged job
+// (remTodoJob): "Customer - job title" splits at the first spaced dash, a plain name is the customer with
+// a job titled From To-Do, and an existing customer (same name) gets the job. The job carries todo = the
+// name's id; deleting the name from To-Do also deletes that job while it is still empty (remDropTodoJob),
+// and Undo brings it back.
 const REM_KEY = 'coba-reminders-v1';
 const REM_LISTS = {
   todo:    { ph: 'Add to To-Do...',      empty: 'Nothing on the to-do list.' },
@@ -3096,6 +3136,7 @@ let remView = 'todo';                        // which list the box shows (per de
 let remCloud = null;                         // Map id -> doc data while the cloud list is live
 let remUndoItem = null;
 let remUndoKind = 'del';                     // v50: what Undo reverses: 'del' (put the name back) or 'move' (back to To-Do)
+let remUndoJob = null;                       // v60: the To-Do job deleted with the name, put back by Undo
 let remDrag = null;                          // v48: the drag in progress (the list is not redrawn under it)
 let remArchOpen = false;                     // v59: Archived folder open on this device
 try{ remArchOpen = localStorage.getItem(REM_ARCH_KEY) === '1'; }catch(e){}
@@ -3156,8 +3197,11 @@ function remAdd(){
   const text = inp.value.replace(/\s+/g, ' ').trim().slice(0, 160);
   if(!text){ inp.focus(); return; }
   const now = Date.now();
-  remPut({ id: 'r' + now + '-' + Math.random().toString(36).slice(2, 6), list: remView, text, t: now });
+  const item = { id: 'r' + now + '-' + Math.random().toString(36).slice(2, 6), list: remView, text, t: now };
+  const job = remView === 'todo' ? remTodoJob(item) : null;   // v60: a name typed into To-Do is also a job in Jobs & Customers
+  remPut(item);
   inp.value = ''; inp.focus();
+  if(job) jobsToast('Added to To-Do and to Jobs & Customers (' + job.c.name + ')');
 }
 function remPut(item){
   remItems = [item].concat(remItems.filter(x=>x.id !== item.id));
@@ -3237,6 +3281,80 @@ function remAddJob(c, e){
   remPut(item);
   return true;
 }
+// ---- v60: a name typed into To-Do is also a job in Jobs & Customers ----
+// "Customer - job title" (a dash with a space each side; the first one splits) = that customer and job title;
+// a plain name = the customer, with a job titled From To-Do. A customer already in the list (same name, any
+// case) gets the new job; no second customer. The job is a logged job (no estimate yet) taken now, Waiting,
+// marked todo = the name's id; the name keeps the job's ids (job, cid) like a v59 name. The customer bar's
+// phone and email are NOT copied (they may be for someone else).
+const REM_TODO_TITLE = 'From To-Do';
+const REM_DASH_RE = new RegExp('^(.*?\\S)\\s+[-' + String.fromCharCode(8211, 8212) + ']\\s+(\\S.*)$');   // hyphen, en dash, em dash (phones turn -- into one)
+function remSplitJob(text){
+  const m = REM_DASH_RE.exec(String(text || ''));
+  return m ? { name: m[1].trim(), title: m[2].trim() } : { name: String(text || '').trim(), title: '' };
+}
+function remNameKey(s){ return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+function jobsNewId(prefix, t){   // 'c' / 'e' + ms, one up while that id is taken
+  const used = new Set();
+  jobsData.customers.forEach(c=>{ used.add(c.id); (c.estimates || []).forEach(e=>used.add(e.id)); });
+  while(used.has(prefix + t)) t++;
+  return prefix + t;
+}
+function remTodoJob(item){
+  const sp = remSplitJob(item.text), key = remNameKey(sp.name);
+  if(!key) return null;
+  const now = +item.t || Date.now(), d = new Date(now);
+  let c = jobsData.customers.find(x=>remNameKey(x.name) === key);
+  if(!c){
+    c = { id: jobsNewId('c', now), name: sp.name, phone: '', email: '', notes: '', estimates: [], todo: item.id };
+    jobsData.customers.unshift(c);
+  }
+  if(!Array.isArray(c.estimates)) c.estimates = [];
+  const e = { id: jobsNewId('e', now), title: sp.title || REM_TODO_TITLE, tab: 'log', date: jobsLocalDate(d), taken: d.toISOString(),
+              status: 'Waiting', totals: { grand: '' }, noteText: '', snap: null, todo: item.id };
+  c.estimates.unshift(e);
+  jobsSave();
+  remExtra({ job: e.id, cid: c.id }, item);
+  jobsRenderSoon();
+  return { c, e };
+}
+// Deleting that name from To-Do also removes its job while nothing has been added to it (still Waiting, not
+// paid, no estimate, amount or notes), and the customer it made if that is left empty too, so a typo leaves
+// nothing behind in Jobs. Undo puts them back. A job someone has touched always stays.
+function remTodoJobEmpty(e, rid){
+  return !!e && e.todo === rid && !e.snap && !e.paid && jobsStatusNorm(e.status) === 'Waiting' &&
+    !String(e.noteText || '').trim() && !(e.totals && String(e.totals.grand || '').trim());
+}
+function remDropTodoJob(item){
+  if(!item || item.list !== 'todo' || !item.job) return null;
+  let c = jobsData.customers.find(x=>x.id === item.cid && (x.estimates || []).some(y=>y.id === item.job));
+  if(!c) c = jobsData.customers.find(x=>(x.estimates || []).some(y=>y.id === item.job));
+  const e = c && c.estimates.find(y=>y.id === item.job);
+  if(!remTodoJobEmpty(e, item.id)) return null;
+  const at = c.estimates.indexOf(e);
+  c.estimates.splice(at, 1);
+  if(jobsActive && jobsActive.eid === e.id) jobsActive = null;
+  let custAt = -1;
+  if(c.todo === item.id && !c.estimates.length && !String(c.notes || '').trim() && !c.phone && !c.email){
+    custAt = jobsData.customers.indexOf(c);
+    jobsData.customers.splice(custAt, 1);
+    jobsOpen.delete(c.id); jobsOpen.delete('p:' + c.id);
+  }
+  jobsSave(); jobsRenderSoon();
+  return { c: Object.assign({}, c, { estimates: [] }), cust: custAt >= 0, custAt, e: Object.assign({}, e), at };
+}
+function remPutBackTodoJob(j){
+  if(!j) return;
+  let c = jobsData.customers.find(x=>x.id === j.c.id);
+  if(!c){
+    if(!j.cust) return;   // its customer was deleted meanwhile (here or on another device): leave it deleted
+    c = Object.assign({}, j.c, { estimates: [] });
+    jobsData.customers.splice(Math.max(0, Math.min(j.custAt, jobsData.customers.length)), 0, c);
+  }
+  if(!Array.isArray(c.estimates)) c.estimates = [];
+  if(!c.estimates.some(x=>x.id === j.e.id)) c.estimates.splice(Math.max(0, Math.min(j.at, c.estimates.length)), 0, j.e);
+  jobsSave(); jobsRenderSoon();
+}
 function remDelete(id){
   const item = remItems.find(x=>x.id === id); if(!item) return;
   remItems = remItems.filter(x=>x.id !== id);
@@ -3244,27 +3362,29 @@ function remDelete(id){
   if(remLive()) remWrite(item, true);
   else if(remOut.add[id]) delete remOut.add[id];   // never reached the cloud
   else remOut.del[id] = true;
+  const job = remDropTodoJob(item);   // v60
   remStore(); remRender();
-  remUndoShow(item, 'del', 'Deleted ' + item.text);
+  remUndoShow(item, 'del', 'Deleted ' + item.text + (job ? ' from To-Do and Jobs' : ''));
+  remUndoJob = job;
 }
 // the Undo strip under the list, for 8 seconds after a delete or a move
 function remUndoShow(item, kind, msg){
-  remUndoItem = item; remUndoKind = kind;
+  remUndoItem = item; remUndoKind = kind; remUndoJob = null;
   document.getElementById('rem-undo-msg').textContent = msg;
   document.getElementById('rem-undo').style.display = 'flex';
   clearTimeout(remUndoShow._h);
   remUndoShow._h = setTimeout(remUndoHide, 8000);
 }
-function remUndoHide(){ remUndoItem = null; const u = document.getElementById('rem-undo'); if(u) u.style.display = 'none'; }
+function remUndoHide(){ remUndoItem = null; remUndoJob = null; const u = document.getElementById('rem-undo'); if(u) u.style.display = 'none'; }
 function remUndo(){
-  const item = remUndoItem, kind = remUndoKind; if(!item) return;
+  const item = remUndoItem, kind = remUndoKind, job = remUndoJob; if(!item) return;
   remUndoHide();
   if(item.list in REM_LISTS) remView = item.list;   // v59: an archived name stays in the folder; the box keeps its list
   if(kind === 'move'){
     if(!remItems.some(x=>x.id === item.id)) return;   // deleted meanwhile (here or on another device)
     remReplace(item);
   }
-  else remPut(item);
+  else { remPut(item); remPutBackTodoJob(job); }   // v60: and the job deleted with it
 }
 function remShow(list){ if(!(list in REM_LISTS)) return; remView = list; remStore(); remRender(); }
 
@@ -3503,6 +3623,238 @@ function remCloudApply(first){
     remItems = list;
   }
   remSort(); remStore(); remRender();
+}
+
+// ══════════════════════════════════════════════
+//  NOTES  (v60, Jobs tab; localStorage: coba-notes-v1, folded or open per device: coba-notes-open-v1)
+// ══════════════════════════════════════════════
+// A plain-text notepad between the jobs list and the To-Do box. Typing is saved on this device at once
+// and, with cloud sync on, sent NOTES_DELAY ms after the last key (or when the box loses focus or the
+// page is hidden) to one Firestore doc, notes/pad = { text, v, t }, where v counts the saves. Each save
+// is a transaction that starts from the version this device last agreed with (notesBase / notesV). If
+// the cloud has moved on since (another device saved, or this one was offline), the two versions are
+// merged line by line against that last shared version (notesMerge): lines changed on one side only
+// are taken from that side, and where both sides changed the same lines both are kept (this device's
+// first), so nothing typed on any device is lost. Other devices' saves show up live while this device
+// has nothing unsent; unsent typing is merged by its own save instead. Offline, it waits on this device.
+const NOTES_KEY = 'coba-notes-v1';
+const NOTES_OPEN_KEY = 'coba-notes-open-v1';
+const NOTES_DOC = 'pad';
+const NOTES_DELAY = 1200;
+const NOTES_NL = String.fromCharCode(10);
+let notesText = '';         // what the notepad holds on this device
+let notesBase = '';         // the cloud text this device last agreed with
+let notesV = 0;             // its version (0 = never synced)
+let notesT = 0;             // when it was last typed in on this device
+let notesCloud = null;      // { text, v } of the cloud doc while the listener is live (null = not connected)
+let notesOnline = false;    // the listener's last snapshot came from the server, not the offline cache
+let notesTimer = 0, notesBusy = false;
+let notesRetry = 0;         // ms before a failed save is tried again (doubles to a minute; 0 after a good save)
+let notesOpen = true;
+try{ notesOpen = localStorage.getItem(NOTES_OPEN_KEY) !== '0'; }catch(e){}
+
+function notesLoad(){
+  try{
+    const d = JSON.parse(localStorage.getItem(NOTES_KEY) || 'null');
+    if(d && typeof d.text === 'string'){
+      notesText = d.text;
+      notesBase = typeof d.base === 'string' ? d.base : '';
+      notesV = (typeof d.v === 'number' && isFinite(d.v)) ? d.v : 0;
+      notesT = +d.t || 0;
+    }
+  }catch(e){ console.error('notes load failed', e); }
+}
+function notesStore(){ try{ localStorage.setItem(NOTES_KEY, JSON.stringify({ text: notesText, base: notesBase, v: notesV, t: notesT })); }catch(e){} }
+function notesDirty(){ return notesText !== notesBase; }
+function notesLive(){ return !!(fb && cloudUser && notesCloud); }
+function notesVer(d){ return d && typeof d.v === 'number' && isFinite(d.v) ? d.v : 0; }
+function notesTxt(d){ return d && typeof d.text === 'string' ? d.text : ''; }
+function notesStatus(){
+  const el = document.getElementById('notes-status'); if(!el) return;
+  el.textContent = !(fb && cloudUser) ? 'Saved on this device'
+    : !notesCloud ? 'Connecting...'
+    : !notesDirty() ? 'Synced'
+    : !notesOnline ? 'Offline - will sync'
+    : notesRetry ? 'Not synced yet - retrying' : 'Saving...';
+}
+function notesShow(){
+  const ta = document.getElementById('notes-text');
+  if(ta && ta.value !== notesText){
+    const focused = document.activeElement === ta, a = ta.selectionStart, b = ta.selectionEnd, old = ta.value;
+    ta.value = notesText;
+    if(focused){ try{ ta.setSelectionRange(notesCaret(old, notesText, a), notesCaret(old, notesText, b)); }catch(e){} }
+  }
+  notesStatus();
+}
+// the caret stays on the same text when the notes change around it
+function notesCaret(a, b, pos){
+  let p = 0; const n = Math.min(a.length, b.length);
+  while(p < n && a.charCodeAt(p) === b.charCodeAt(p)) p++;
+  return pos <= p ? pos : Math.max(p, Math.min(b.length, pos + b.length - a.length));
+}
+function notesLayout(){
+  const box = document.getElementById('notes-box'); if(!box) return;
+  box.classList.toggle('closed', !notesOpen);
+  const h = document.getElementById('notes-head');
+  h.setAttribute('aria-expanded', notesOpen ? 'true' : 'false');
+  h.title = notesOpen ? 'Hide notes' : 'Show notes';
+}
+function notesToggle(){
+  notesOpen = !notesOpen;
+  try{ localStorage.setItem(NOTES_OPEN_KEY, notesOpen ? '1' : '0'); }catch(e){}
+  notesLayout();
+}
+function notesInput(){
+  const ta = document.getElementById('notes-text'); if(!ta) return;
+  notesText = ta.value; notesT = Date.now();
+  notesStore(); notesStatus();
+  clearTimeout(notesTimer); notesTimer = setTimeout(notesPush, NOTES_DELAY);
+}
+function notesFlush(){ clearTimeout(notesTimer); notesPush(); }
+// send this device's notes in one transaction, merged first if the cloud moved on since notesBase
+function notesPush(){
+  clearTimeout(notesTimer);
+  if(notesBusy || !notesDirty() || !notesLive() || !notesOnline){ notesStatus(); return; }
+  notesBusy = true; notesStatus();
+  const fs = fb.fs, ref = fs.doc(fb.db, 'notes', NOTES_DOC);
+  const sent = notesText, base = notesBase, baseV = notesV;
+  let res = null;
+  fs.runTransaction(fb.db, tx=> tx.get(ref).then(snap=>{
+    const d = snap.exists() ? snap.data() : null, cv = notesVer(d), ct = notesTxt(d);
+    const text = (cv === baseV && ct === base) ? sent : notesMerge(base, sent, ct);
+    if(text === ct){ res = { text, v: cv }; return; }   // the cloud has this already
+    res = { text, v: cv + 1 };
+    tx.set(ref, { text, v: cv + 1, t: Date.now() });
+  })).then(()=>{
+    notesBusy = false; notesRetry = 0;
+    notesSaved(res.text, res.v, sent);
+  }, err=>{
+    // offline or refused: kept on this device, tried again later (and on the next key or reconnect)
+    notesBusy = false;
+    notesRetry = Math.min(60000, notesRetry ? notesRetry * 2 : 5000);
+    console.warn('notes save', err && (err.code || err.message));
+    notesStatus();
+    clearTimeout(notesTimer); notesTimer = setTimeout(notesPush, notesRetry);
+  });
+}
+// the cloud now holds text at version v; sent = what this device had when the save started
+function notesSaved(text, v, sent){
+  notesBase = text; notesV = v;
+  notesText = notesText === sent ? text : notesMerge(sent, notesText, text);   // typed during the save: kept
+  notesStore(); notesShow();
+  notesCloudApply();   // a newer save from another device that came in meanwhile, or more typing to send
+}
+// the cloud doc changed (or the connection came back): show it, unless there is unsent typing here,
+// which its own save merges with it
+function notesCloudApply(){
+  const c = notesCloud;
+  if(c && !notesBusy && !notesDirty() && (c.v !== notesV || c.text !== notesBase)){
+    notesText = notesBase = c.text; notesV = c.v;
+    notesStore(); notesShow();
+  }
+  notesStatus();
+  if(c && !notesBusy && !notesRetry && notesDirty() && notesOnline) notesPush();
+}
+// live listener on the 'notes' collection (one doc, notes/pad), started by cloudStart()
+function notesListen(onErr){
+  const fs = fb.fs;
+  notesCloud = null; notesOnline = false;
+  return fs.onSnapshot(fs.collection(fb.db, 'notes'), { includeMetadataChanges: true }, snap=>{
+    let c = notesCloud || { text: '', v: 0 };
+    snap.docChanges().forEach(ch=>{
+      if(ch.doc.id !== NOTES_DOC) return;
+      const d = ch.type === 'removed' ? null : ch.doc.data();
+      c = { text: notesTxt(d), v: notesVer(d) };
+    });
+    notesCloud = c;
+    const was = notesOnline;
+    notesOnline = !(snap.metadata && snap.metadata.fromCache);
+    if(notesOnline && !was) notesRetry = 0;   // back online: a waiting save goes now
+    notesCloudApply();
+  }, onErr);
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) notesFlush(); });
+
+// ---- line-by-line merge of two versions of the notes that both started from base ----
+// map[i] = where line i of base is in X, or -1 (fewest lines changed: same start and end trimmed, then the
+// Myers diff, fast when few lines differ; more than NOTES_MAXD changes in the middle counts as all changed)
+const NOTES_MAXD = 1000;
+function notesMatch(O, X){
+  const n = O.length, m = X.length, map = new Array(n).fill(-1);
+  let p = 0, s = 0;
+  while(p < n && p < m && O[p] === X[p]){ map[p] = p; p++; }
+  while(s < n - p && s < m - p && O[n - 1 - s] === X[m - 1 - s]){ map[n - 1 - s] = m - 1 - s; s++; }
+  const N = n - p - s, M = m - p - s;
+  if(!N || !M) return map;
+  const D = Math.min(N + M, NOTES_MAXD), off = D + 1, V = new Int32Array(2 * D + 3), trace = [];
+  let found = -1;
+  for(let d = 0; d <= D && found < 0; d++){
+    trace.push(V.slice(off - d - 1, off + d + 2));   // the furthest points after step d - 1, diagonals -d-1 .. d+1
+    for(let k = -d; k <= d; k += 2){
+      let x = (k === -d || (k !== d && V[off + k - 1] < V[off + k + 1])) ? V[off + k + 1] : V[off + k - 1] + 1, y = x - k;
+      while(x < N && y < M && O[p + x] === X[p + y]){ x++; y++; }
+      V[off + k] = x;
+      if(x >= N && y >= M){ found = d; break; }
+    }
+  }
+  if(found < 0) return map;
+  let x = N, y = M;
+  for(let d = found; d > 0; d--){   // walk back: each step's run of equal lines = matched lines
+    const T = trace[d], at = kk=> T[kk + d + 1], k = x - y;
+    const down = k === -d || (k !== d && at(k - 1) < at(k + 1)), pk = down ? k + 1 : k - 1;
+    const px = at(pk), py = px - pk, mx = down ? px : px + 1, my = down ? py + 1 : py;
+    while(x > mx && y > my){ x--; y--; map[p + x] = p + y; }
+    x = px; y = py;
+  }
+  while(x > 0 && y > 0){ x--; y--; map[p + x] = p + y; }
+  return map;
+}
+// the stretches X changed: base lines [s, e) became lines (s === e: lines put in just before base line s)
+function notesHunks(n, map, X){
+  const hunks = [];
+  for(let i = 0, xi = 0; ; ){
+    let k = i; while(k < n && map[k] < 0) k++;
+    const xe = k < n ? map[k] : X.length;
+    if(k > i || xe > xi) hunks.push({ s: i, e: k, lines: X.slice(xi, xe) });
+    if(k >= n) break;
+    xi = map[k] + 1; i = k + 1;
+  }
+  return hunks;
+}
+// a and b both started from base: every stretch changed on one side only is taken from that side (next-door
+// lines changed on different sides are both taken); the same lines changed differently on both sides, or
+// different lines put in at the same place, are both kept, a first
+function notesMerge(base, a, b){
+  if(a === b || b === base) return a;
+  if(a === base) return b;
+  const O = base.split(NOTES_NL), A = a.split(NOTES_NL), B = b.split(NOTES_NL), n = O.length;
+  const ins = h=> h.s === h.e;
+  const all = notesHunks(n, notesMatch(O, A), A).map(h=>Object.assign(h, { side: 0 }))
+    .concat(notesHunks(n, notesMatch(O, B), B).map(h=>Object.assign(h, { side: 1 })))
+    .sort((x, y)=> (x.s - y.s) || ((ins(x) ? 0 : 1) - (ins(y) ? 0 : 1)) || (x.side - y.side));
+  const out = [], add = x=>{ for(let k = 0; k < x.length; k++) out.push(x[k]); };
+  const version = (grp, side, cs, ce)=>{   // one side's text for base lines [cs, ce)
+    const v = []; let j = cs;
+    grp.forEach(h=>{ if(h.side !== side) return; for(; j < h.s; j++) v.push(O[j]); for(let k = 0; k < h.lines.length; k++) v.push(h.lines[k]); j = h.e; });
+    for(; j < ce; j++) v.push(O[j]);
+    return v;
+  };
+  let i = 0, k = 0;
+  while(k < all.length){
+    const h = all[k++], cs = h.s, grp = [h];
+    let ce = h.e;
+    while(k < all.length && (all[k].s < ce || (cs === ce && all[k].s === cs && ins(all[k])))){ grp.push(all[k]); ce = Math.max(ce, all[k].e); k++; }
+    for(; i < cs; i++) out.push(O[i]);
+    if(grp.every(g=>g.side === h.side)) add(version(grp, h.side, cs, ce));
+    else {
+      const va = version(grp, 0, cs, ce), vb = version(grp, 1, cs, ce);
+      add(va);
+      if(va.join(NOTES_NL) !== vb.join(NOTES_NL)) add(vb);   // both changed it: keep both (once if the same)
+    }
+    i = ce;
+  }
+  for(; i < n; i++) out.push(O[i]);
+  return out.join(NOTES_NL);
 }
 
 // ══════════════════════════════════════════════
@@ -6772,6 +7124,7 @@ function resetUV(){
 invLoad();
 jobsLoad();
 remLoad(); remRender(); setInterval(remAgeRefresh, 600000);   // v48: date colours follow the time of day
+notesLoad(); notesLayout(); notesShow();   // v60: Notes on the Jobs tab
 wMenuBuild(); wCalc();
 invRenderAll();
 rebuildDropdowns();

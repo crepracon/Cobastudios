@@ -14,8 +14,14 @@
 // "Customer - Job title" on To-Do (saved, duplicated, logged, saved offline; not on an update or a
 // merge), back from To-Invoice to To-Do in its old place, the x on To-Invoice files a name in the
 // Archived folder (per-device open state, back to To-Invoice, delete for good, offline)), v50 Paid
-// jobs (Paid section under the list, synced, per-device open state, search, Not paid), and the
-// structured paper inventory migration. Plain ASCII only.
+// jobs (Paid section under the list, synced, per-device open state, search, Not paid), the
+// structured paper inventory migration, and v60: the Notes box (between the jobs list and To-Do,
+// folds per device, saved as you type and synced; two devices saving at once, the same line changed
+// on both, typing during a save, offline / signed-out edits merged on reconnect, the caret kept, a
+// refused save not retried in a loop, the line merge itself) and names typed into To-Do going into
+// Jobs & Customers (split at " - ", existing customer reused, To-Invoice untouched, a just-typed name
+// deleted takes its empty job with it and Undo brings it back, touched jobs kept, offline, ids).
+// Plain ASCII only.
 const fs = require('fs'), path = require('path');
 const { JSDOM } = require('jsdom');
 const SRC = process.argv[2] || path.resolve(__dirname, '..', 'index.html');
@@ -26,7 +32,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('FAIL: ' + m); 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---- fake Firestore: one server, any number of client windows ----
-function makeServer() { return { cols: { customers: new Map(), estimates: new Map(), reminders: new Map() }, listeners: [], writes: 0 }; }
+function makeServer() { return { cols: { customers: new Map(), estimates: new Map(), reminders: new Map(), notes: new Map() }, listeners: [], writes: 0 }; }
 function deliver(server, l) {
   const m = server.cols[l.name], changes = [];
   m.forEach((data, id) => {
@@ -62,6 +68,33 @@ function makeFs(server) {
           }, 5));
         }
       };
+    },
+    // v60 (Notes): like Firestore, the update function runs again (up to 5 tries) when a doc it read
+    // changed before the commit; server.txFail = an error code to refuse every commit with
+    runTransaction: (db, fn) => {
+      const attempt = n => {
+        const reads = [], writes = [];
+        server.tx = (server.tx || 0) + 1;
+        const tx = {
+          get(ref) {
+            return new Promise(res => setTimeout(() => {
+              const m = server.cols[ref.name], has = m.has(ref.id), j = has ? JSON.stringify(m.get(ref.id)) : null;
+              reads.push([ref, j]);
+              res({ id: ref.id, exists: () => has, data: () => (has ? JSON.parse(j) : undefined) });
+            }, 2));
+          },
+          set(ref, data) { writes.push([ref, JSON.parse(JSON.stringify(data))]); return tx; }
+        };
+        return Promise.resolve(fn(tx)).then(() => new Promise((res, rej) => setTimeout(() => {
+          if (server.txFail) { rej({ code: server.txFail }); return; }
+          const stale = reads.some(r => { const m = server.cols[r[0].name]; return (m.has(r[0].id) ? JSON.stringify(m.get(r[0].id)) : null) !== r[1]; });
+          if (stale) { server.txRetries = (server.txRetries || 0) + 1; if (n >= 5) rej({ code: 'aborted' }); else res(attempt(n + 1)); return; }
+          writes.forEach(w => { server.cols[w[0].name].set(w[0].id, w[1]); server.writes++; });
+          if (writes.length) server.listeners.slice().forEach(l => deliver(server, l));
+          res();
+        }, 5)));
+      };
+      return attempt(1);
     }
   };
 }
@@ -79,6 +112,7 @@ function openWin(opts) {
       if (opts.jobs) w.localStorage.setItem('coba-jobs-v1', JSON.stringify(opts.jobs));
       if (opts.inventory) w.localStorage.setItem('coba-inventory-v2', opts.inventory);
       if (opts.reminders) w.localStorage.setItem('coba-reminders-v1', opts.reminders);
+      if (opts.ls) Object.keys(opts.ls).forEach(k => w.localStorage.setItem(k, opts.ls[k]));   // v60: any other saved keys
       w.addEventListener('error', e => errs.push(String(e.message)));
       w.console.error = function () { const s = Array.prototype.map.call(arguments, String).join(' '); if (!/cloud init failed/.test(s)) errs.push(s); };
       w.console.warn = function () {};
@@ -846,6 +880,200 @@ const firstEst = win => { const c = jd(win).customers[0]; return c && c.estimate
   inv55.papers = inv55.papers.filter(p => !isHam(p));
   const H2 = openWin({ inventory: JSON.stringify(inv55) }); await sleep(40);
   ok(H2.w.eval('inventory.papers').filter(isHam).length === 0, 'v55: a removed Hammermill 28# stays removed');
+
+  // ---------- v60: Notes box on the Jobs tab (between the jobs list and To-Do; synced) ----------
+  const NL = '\n';
+  const s60 = makeServer();
+  const N1 = openWin({ joined: true }), N2 = openWin({ joined: true });
+  await connect(N1, s60); await connect(N2, s60);
+  const nt = win => win.$('notes-text').value;
+  const nst = win => win.$('notes-status').textContent;
+  const typeNotes = (win, v) => { win.$('notes-text').value = v; win.w.notesInput(); };
+  const pad = () => s60.cols.notes.get('pad');
+  const order60 = Array.from(N1.$('panel-jobs').querySelector('.jobs-layout').children).map(el => el.id || el.className);
+  ok(order60.join() === 'jobs-main,notes-box,rem-box', 'v60: Notes sits between the jobs list and the To-Do box: ' + order60.join());
+  ok(/Notes/.test(N1.$('notes-head').textContent) && N1.$('notes-head').getAttribute('aria-expanded') === 'true' && !N1.$('notes-box').classList.contains('closed') &&
+    N1.$('notes-box').classList.contains('no-print'), 'v60: Notes starts open (not printed)');
+  ok(nt(N1) === '' && nst(N1) === 'Synced' && !pad(), 'v60: empty and synced; nothing in the cloud yet (' + nst(N1) + ')');
+  // folded or open, per device
+  N1.w.notesToggle();
+  ok(N1.$('notes-box').classList.contains('closed') && N1.$('notes-head').getAttribute('aria-expanded') === 'false' && N1.$('notes-head').title === 'Show notes' &&
+    N1.w.localStorage.getItem('coba-notes-open-v1') === '0', 'v60: the header folds it, remembered on this device');
+  ok(!N2.$('notes-box').classList.contains('closed'), 'v60: other devices keep their own');
+  const N3 = openWin({ ls: { 'coba-notes-open-v1': '0' } }); await sleep(60);
+  ok(N3.$('notes-box').classList.contains('closed') && nst(N3) === 'Saved on this device', 'v60: a device that folded it opens folded; no cloud = saved on this device (' + nst(N3) + ')');
+  N1.w.notesToggle();
+  ok(!N1.$('notes-box').classList.contains('closed') && N1.$('notes-head').title === 'Hide notes' && N1.w.localStorage.getItem('coba-notes-open-v1') === '1', 'v60: and unfolds');
+  // typing: saved on the device at once, sent after a pause
+  typeNotes(N1, 'Call Bob re: proof');
+  ok(nst(N1) === 'Saving...' && JSON.parse(N1.w.localStorage.getItem('coba-notes-v1')).text === 'Call Bob re: proof' && !pad(), 'v60: typing is kept on the device at once, not sent on every key');
+  await sleep(1400);
+  ok(pad() && pad().text === 'Call Bob re: proof' && pad().v === 1 && pad().t > 0, 'v60: sent to the cloud after a pause: ' + JSON.stringify(pad()));
+  await sleep(30);
+  ok(nst(N1) === 'Synced' && nt(N2) === 'Call Bob re: proof' && nst(N2) === 'Synced', 'v60: synced; the other device shows it live');
+  typeNotes(N2, nt(N2) + NL + 'Order more 13oz banner');
+  N2.$('notes-text').focus(); N2.$('notes-text').blur(); await sleep(40);
+  ok(pad().text === 'Call Bob re: proof' + NL + 'Order more 13oz banner' && pad().v === 2 && nt(N1) === pad().text, 'v60: leaving the box sends it at once');
+  // a change from another device keeps the caret on the same text
+  const ta1 = N1.$('notes-text'); ta1.focus(); ta1.setSelectionRange(18, 18);
+  typeNotes(N2, 'Top line' + NL + nt(N2)); N2.w.notesFlush(); await sleep(40);
+  ok(nt(N1).indexOf('Top line' + NL) === 0 && ta1.selectionStart === 27 && ta1.selectionEnd === 27 && N1.w.document.activeElement === ta1, 'v60: caret kept on its text while another device adds above it (' + ta1.selectionStart + ')');
+  ta1.blur();
+  // two devices save at once: the second save starts again from the first one, both edits kept
+  const b60 = nt(N1), rt0 = s60.txRetries || 0;
+  typeNotes(N1, b60.replace('Call Bob re: proof', 'Call Bob re: proof - done'));
+  typeNotes(N2, b60 + NL + 'Pick up toner');
+  N1.w.notesFlush(); N2.w.notesFlush(); await sleep(100);
+  const want60 = ['Top line', 'Call Bob re: proof - done', 'Order more 13oz banner', 'Pick up toner'].join(NL);
+  ok(pad().text === want60 && nt(N1) === want60 && nt(N2) === want60, 'v60: two devices saving at once: both edits kept, each in its place: ' + JSON.stringify(pad().text));
+  ok((s60.txRetries || 0) > rt0 && pad().v === 5 && nst(N1) === 'Synced' && nst(N2) === 'Synced', 'v60: the later save was redone on top of the first (v' + pad().v + ')');
+  // the same line changed differently on both: both versions kept
+  const b61 = nt(N1);
+  typeNotes(N1, b61.replace('Pick up toner', 'Pick up toner (black)'));
+  typeNotes(N2, b61.replace('Pick up toner', 'Pick up toner x2'));
+  N1.w.notesFlush(); N2.w.notesFlush(); await sleep(100);
+  const L61 = pad().text.split(NL);
+  ok(L61.indexOf('Pick up toner') < 0 && L61.indexOf('Pick up toner (black)') >= 0 && L61.indexOf('Pick up toner x2') >= 0 && nt(N1) === pad().text && nt(N2) === pad().text,
+    'v60: the same line changed on both devices: both versions kept: ' + JSON.stringify(pad().text));
+  // typing during a save: kept, and sent next
+  typeNotes(N1, nt(N1) + NL + 'A'); N1.w.notesFlush();
+  typeNotes(N1, nt(N1) + NL + 'B'); await sleep(150);
+  ok(pad().text.split(NL).slice(-2).join() === 'A,B' && nt(N1) === pad().text && nt(N2) === pad().text && nst(N1) === 'Synced', 'v60: what is typed while a save is on its way is kept and sent next');
+  // a device with its own offline notes connects: merged with the cloud, nothing lost
+  const N4 = openWin({ joined: true, lastsync: Date.now() - 5000, ls: { 'coba-notes-v1': JSON.stringify({ text: 'Offline idea', base: '', v: 0, t: 1 }) } });
+  await sleep(60);
+  ok(nt(N4) === 'Offline idea' && nst(N4) === 'Saved on this device', 'v60: a device not connected shows its own notes');
+  await connect(N4, s60); await sleep(80);
+  ok(pad().text.split(NL)[0] === 'Offline idea' && pad().text.indexOf('Top line') > 0 && nt(N4) === pad().text && nt(N1) === pad().text && nst(N4) === 'Synced',
+    'v60: on connecting, its notes and the cloud ones are both kept: ' + JSON.stringify(pad().text));
+  await connect(N3, s60); await sleep(60);
+  ok(nt(N3) === pad().text && nst(N3) === 'Synced', 'v60: a device with no notes of its own just takes the cloud ones');
+  // signed out: edits stay on the device, then merge with what changed meanwhile
+  N2.w.eval('cloudUser = null; cloudStop(); cloudStatus("signedout");');   // as the sign-out handler does it
+  ok(nst(N2) === 'Saved on this device', 'v60: signed out: saved on this device');
+  typeNotes(N2, nt(N2).replace('Order more 13oz banner', 'Order more 13oz banner - ordered'));
+  typeNotes(N1, nt(N1) + NL + 'From N1 while N2 was out'); N1.w.notesFlush(); await sleep(60);
+  ok(pad().text.indexOf('ordered') < 0 && nt(N2).indexOf('From N1') < 0, 'v60: signed out: its edit stays on the device');
+  N2.w.eval("cloudUser = { email:'chris@example.com' }; cloudStart();"); await sleep(120);
+  const L62 = pad().text.split(NL);
+  ok(L62.indexOf('Order more 13oz banner - ordered') >= 0 && L62.indexOf('Order more 13oz banner') < 0 && L62.indexOf('From N1 while N2 was out') >= 0 && nt(N2) === pad().text && nt(N1) === pad().text,
+    'v60: signed back in: its edit and the other device\'s both kept (the changed line replaced, not doubled)');
+  // a refused save is not retried in a loop
+  s60.txFail = 'permission-denied';
+  const tx60 = s60.tx || 0;
+  typeNotes(N1, nt(N1) + NL + 'refused'); N1.w.notesFlush(); await sleep(300);
+  ok((s60.tx || 0) - tx60 === 1 && N1.w.eval('notesRetry') === 5000 && nst(N1) === 'Not synced yet - retrying', 'v60: a refused save is tried again in 5 s, not in a loop (' + ((s60.tx || 0) - tx60) + ' tries, ' + nst(N1) + ')');
+  ok(JSON.parse(N1.w.localStorage.getItem('coba-notes-v1')).text.split(NL).slice(-1)[0] === 'refused', 'v60: ... and kept on the device meanwhile');
+  s60.txFail = null;
+  typeNotes(N1, nt(N1) + '!'); await sleep(1450);
+  ok(pad().text.split(NL).slice(-1)[0] === 'refused!' && nst(N1) === 'Synced' && N1.w.eval('notesRetry') === 0, 'v60: the next key sends it once the cloud takes it again');
+  // the line merge itself
+  const M60 = (o, a, b) => N1.w.notesMerge(o, a, b);
+  ok(M60('x', 'x', 'y') === 'y' && M60('x', 'y', 'x') === 'y' && M60('x', 'y', 'y') === 'y', 'v60 merge: one side changed, or both the same way');
+  ok(M60('a\nb\nc', 'a\nB\nc', 'a\nb\nC') === 'a\nB\nC', 'v60 merge: different lines changed on each side');
+  ok(M60('a\nb', 'a\nb\nx', 'a\nb\ny') === 'a\nb\nx\ny', 'v60 merge: both added at the end: both kept, this device first');
+  ok(M60('a\nb\nc', 'a\nc', 'a\nb\nc\nd') === 'a\nc\nd', 'v60 merge: removed on one side, added on the other');
+  ok(M60('a\nb\nc', 'a\nc', 'a\nB\nc') === 'a\nB\nc', 'v60 merge: removed on one side, changed on the other: the changed line stays');
+  ok(M60('a\n\nb\n', 'a\nx\n\nb\n', 'a\n\ny\nb\n') === 'a\nx\n\ny\nb\n', 'v60 merge: blank lines and a last newline');
+  ok(M60('', 'one', 'two') === 'one\ntwo', 'v60 merge: never synced before: both kept');
+  const big = Array.from({ length: 3000 }, (x, i) => 'line ' + i), bigA = big.slice(), bigB = big.slice();
+  bigA[1500] = 'changed here'; bigB[10] = 'changed there'; bigB.splice(2500, 1);
+  const tBig = Date.now(), mBig = M60(big.join(NL), bigA.join(NL), bigB.join(NL)).split(NL);
+  ok(mBig.length === 2999 && mBig[1500] === 'changed here' && mBig[10] === 'changed there' && mBig.indexOf('line 2500') < 0 && Date.now() - tBig < 2000, 'v60 merge: 3000 lines in ' + (Date.now() - tBig) + ' ms');
+
+  // ---------- v60: a name typed into To-Do also goes into Jobs & Customers ----------
+  const jd60 = win => win.w.eval('jobsData');
+  const custBy = (win, name) => jd60(win).customers.find(c => c.name === name);
+  const remBy = (win, t) => win.w.eval('remItems').find(x => x.text === t);
+  N1.w.switchTabByName('jobs'); N2.w.switchTabByName('jobs'); N1.w.remShow('todo');
+  N1.set('cb-phone', '613-555-0000'); N1.set('cb-email', 'someone@else.com');   // the customer bar holds someone else
+  N1.set('rem-input', '  Maple   Dental -  500 appointment cards '); N1.w.remAdd(); await sleep(60);
+  const md = custBy(N1, 'Maple Dental'), mdItem = remBy(N1, 'Maple Dental - 500 appointment cards'), mdJob = md && md.estimates[0];
+  ok(md && md.estimates.length === 1 && mdJob.title === '500 appointment cards' && mdJob.tab === 'log' && mdJob.status === 'Waiting' && !mdJob.snap && !mdJob.paid,
+    'v60: "Customer - job" typed into To-Do = that customer with that job (Waiting, no estimate yet)');
+  ok(md && md.phone === '' && md.email === '', 'v60: the customer bar phone and email are not copied onto it');
+  ok(mdItem && mdItem.job === mdJob.id && mdItem.cid === md.id && mdJob.todo === mdItem.id, 'v60: the To-Do name and the job point at each other');
+  ok(/T\d\d:\d\d/.test(mdJob.taken) && mdJob.date === N1.w.jobsLocalDate(), 'v60: taken now');
+  ok(N1.$('jobs-toast').textContent === 'Added to To-Do and to Jobs & Customers (Maple Dental)', 'v60: the toast says where it went: ' + N1.$('jobs-toast').textContent);
+  ok(Array.from(s60.cols.customers.values()).some(d => d.name === 'Maple Dental') && (s60.cols.estimates.get(mdJob.id) || {}).cid === md.id && (s60.cols.reminders.get(mdItem.id) || {}).job === mdJob.id,
+    'v60: customer, job and the linked name saved to the cloud');
+  ok(!!custBy(N2, 'Maple Dental') && /500 appointment cards/.test(N2.$('jobs-list').textContent) && !!remBy(N2, mdItem.text), 'v60: the other device shows the job and the name');
+  const mdRow = N1.$('jobs-list').querySelector('[data-eid="' + mdJob.id + '"] .jobs-est-meta');
+  ok(mdRow && / To-Do$/.test(mdRow.textContent), 'v60: the job row says it came from To-Do: ' + (mdRow && mdRow.textContent));
+  N1.set('rem-input', 'Kelly Signs'); N1.w.remAdd(); await sleep(60);
+  const ks = custBy(N1, 'Kelly Signs');
+  ok(ks && ks.estimates.length === 1 && ks.estimates[0].title === 'From To-Do', 'v60: a plain name = the customer, with a job titled From To-Do');
+  const nCust60 = jd60(N1).customers.length;
+  N1.set('rem-input', 'maple dental - reminder postcards'); N1.w.remAdd(); await sleep(60);
+  ok(jd60(N1).customers.length === nCust60 && custBy(N1, 'Maple Dental').estimates.length === 2 && custBy(N1, 'Maple Dental').estimates[0].title === 'reminder postcards',
+    'v60: an existing customer (any case) gets the new job: no second customer');
+  const en = String.fromCharCode(8211), em = String.fromCharCode(8212);
+  N1.set('rem-input', 'Lee Farms ' + en + ' fall flyers'); N1.w.remAdd();
+  N1.set('rem-input', 'Rideau Ales ' + em + ' tap labels'); N1.w.remAdd();
+  N1.set('rem-input', 'Smith-Jones Law'); N1.w.remAdd(); await sleep(60);
+  ok(((custBy(N1, 'Lee Farms') || {}).estimates || [{}])[0].title === 'fall flyers' && ((custBy(N1, 'Rideau Ales') || {}).estimates || [{}])[0].title === 'tap labels',
+    'v60: an en or em dash splits too (phones turn -- into one)');
+  ok(((custBy(N1, 'Smith-Jones Law') || {}).estimates || [{}])[0].title === 'From To-Do', 'v60: a hyphen inside a name does not split it');
+  N1.w.remShow('invoice');
+  const nC61 = jd60(N1).customers.length, nE61 = s60.cols.estimates.size;
+  N1.set('rem-input', 'Invoice Only Co'); N1.w.remAdd(); await sleep(60);
+  ok(jd60(N1).customers.length === nC61 && s60.cols.estimates.size === nE61 && !!remBy(N1, 'Invoice Only Co') && !remBy(N1, 'Invoice Only Co').job, 'v60: a name typed into To-Invoice stays a name only');
+  N1.w.remShow('todo');
+  // a typo deleted right away takes its empty job and new customer with it; Undo brings all back
+  N1.set('rem-input', 'Typo Bakry - cake boxes'); N1.w.remAdd(); await sleep(60);
+  const ty = remBy(N1, 'Typo Bakry - cake boxes'), tyCust = custBy(N1, 'Typo Bakry');
+  ok(!!tyCust && s60.cols.customers.has(tyCust.id) && s60.cols.estimates.has(ty.job), 'v60: (the typo is in Jobs and the cloud)');
+  N1.w.remDelete(ty.id); await sleep(60);
+  ok(!custBy(N1, 'Typo Bakry') && !custBy(N2, 'Typo Bakry') && !s60.cols.customers.has(tyCust.id) && !s60.cols.estimates.has(ty.job) && !s60.cols.reminders.has(ty.id),
+    'v60: deleting the name right away deletes its empty job and the customer it made, everywhere');
+  ok(N1.$('rem-undo-msg').textContent === 'Deleted Typo Bakry - cake boxes from To-Do and Jobs', 'v60: the Undo strip says so: ' + N1.$('rem-undo-msg').textContent);
+  N1.w.remUndo(); await sleep(60);
+  const tyBack = custBy(N1, 'Typo Bakry');
+  ok(tyBack && tyBack.id === tyCust.id && tyBack.estimates.length === 1 && tyBack.estimates[0].id === ty.job && tyBack.estimates[0].todo === ty.id &&
+    s60.cols.estimates.has(ty.job) && (s60.cols.reminders.get(ty.id) || {}).job === ty.job && !!custBy(N2, 'Typo Bakry'), 'v60: Undo puts the name, the job and the customer back, everywhere, still linked');
+  // an existing customer keeps itself and its other jobs
+  const rp = remBy(N1, 'maple dental - reminder postcards');
+  N1.w.remDelete(rp.id); await sleep(60);
+  ok(custBy(N1, 'Maple Dental').estimates.length === 1 && custBy(N1, 'Maple Dental').estimates[0].id === mdJob.id && !s60.cols.estimates.has(rp.job), 'v60: its job goes; the customer stays with its other job');
+  // a job that was changed stays (status changed on another device)
+  const kItem = remBy(N1, 'Kelly Signs');
+  N2.w.setEstStatus(kItem.cid, kItem.job, 'In Production'); await sleep(60);
+  N1.w.remDelete(kItem.id); await sleep(60);
+  ok(!!custBy(N1, 'Kelly Signs') && s60.cols.estimates.has(kItem.job) && N1.$('rem-undo-msg').textContent === 'Deleted Kelly Signs', 'v60: a job someone changed stays when its name is deleted');
+  // a customer with notes stays; its untouched job goes
+  const lf60 = N1.w.eval('remItems').find(x => /^Lee Farms/.test(x.text));
+  N1.w.setCustNotes(lf60.cid, 'pays cash'); await sleep(40);
+  N1.w.remDelete(lf60.id); await sleep(60);
+  ok(custBy(N1, 'Lee Farms') && custBy(N1, 'Lee Farms').estimates.length === 0 && custBy(N1, 'Lee Farms').notes === 'pays cash', 'v60: a customer with notes stays (its empty job goes)');
+  // a saved estimate's own To-Do name (v59) never takes its job with it
+  N1.w.switchTabByName('paper'); N1.set('cb-name', 'Saved Co'); N1.set('cb-title', 'flyers'); N1.w.saveEstimate(); await sleep(60);
+  N1.w.switchTabByName('jobs');
+  const sv = remBy(N1, 'Saved Co - flyers');
+  ok(sv && sv.job && custBy(N1, 'Saved Co').estimates[0].snap && !custBy(N1, 'Saved Co').estimates[0].todo, 'v60: a saved estimate still puts its own name on To-Do (v59), not a To-Do job');
+  N1.w.remDelete(sv.id); await sleep(60);
+  ok(custBy(N1, 'Saved Co').estimates.length === 1 && s60.cols.estimates.has(sv.job), 'v60: deleting that name never deletes the saved job');
+  // moved on to To-Invoice and Archived, then deleted for good there: the job stays
+  const ra = remBy(N1, 'Rideau Ales ' + em + ' tap labels');
+  N1.w.remToInvoice(ra.id); N1.w.remArchive(ra.id); N1.w.remDelete(ra.id); await sleep(60);
+  ok(!!custBy(N1, 'Rideau Ales') && s60.cols.estimates.has(ra.job), 'v60: a name deleted from Archived leaves its job alone');
+  // deleted on another device: same
+  const sj = remBy(N2, 'Smith-Jones Law');
+  N2.w.remDelete(sj.id); await sleep(60);
+  ok(!custBy(N1, 'Smith-Jones Law') && !custBy(N2, 'Smith-Jones Law') && !s60.cols.estimates.has(sj.job), 'v60: deleting the name on another device does the same');
+  // typed offline: the job waits on the device and goes up on reconnect with its name
+  const N5 = openWin({ joined: true, lastsync: Date.now() - 5000 }); await sleep(60);
+  N5.w.switchTabByName('jobs');
+  N5.set('rem-input', 'Offline Bakery - cupcake boxes'); N5.w.remAdd(); await sleep(20);
+  const ob = remBy(N5, 'Offline Bakery - cupcake boxes');
+  ok(JSON.parse(N5.w.localStorage.getItem('coba-jobs-v1')).customers.some(c => c.name === 'Offline Bakery') && !Array.from(s60.cols.customers.values()).some(d => d.name === 'Offline Bakery'),
+    'v60: offline: the job waits on the device');
+  await connect(N5, s60); await sleep(100);
+  ok(Array.from(s60.cols.customers.values()).some(d => d.name === 'Offline Bakery') && s60.cols.estimates.has(ob.job) && (s60.cols.reminders.get(ob.id) || {}).job === ob.job && !!custBy(N1, 'Offline Bakery'),
+    'v60: sent on reconnect (customer, job and the linked name); the other device sees it');
+  // two jobs made in the same millisecond get ids of their own
+  const ids60 = N1.w.eval("(function(){ var a = remTodoJob({ id: 'rSame1', list: 'todo', text: 'Same Ms A', t: 1700000000000 }), b = remTodoJob({ id: 'rSame2', list: 'todo', text: 'Same Ms B', t: 1700000000000 }); return [a.c.id, a.e.id, b.c.id, b.e.id].join(); })()");
+  ok(ids60 === 'c1700000000000,e1700000000000,c1700000000001,e1700000000001', 'v60: two jobs made in the same millisecond get ids of their own: ' + ids60);
+  [N1, N2, N3, N4, N5].forEach((x, i) => ok(x.errs.length === 0, 'v60 window N' + (i + 1) + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
 
   // ---------- no page errors anywhere ----------
   [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Q, R, S, P, P2, V, V2, U5, U6, H1, H2].forEach((x, i) => ok(x.errs.length === 0, 'window ' + ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','Q','R','S','P','P2','V','V2','U5','U6','H1','H2'][i] + ' page errors: ' + x.errs.slice(0, 3).join(' | ')));
