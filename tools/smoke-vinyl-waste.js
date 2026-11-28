@@ -32,7 +32,7 @@ const SRC = path.resolve(process.argv[2] || path.join(__dirname, '..', 'index.ht
         const sd = document.getElementById(id + '-sd'); if(sd) sd.value = String(sides || 1); rCalc(); return id; },
       stk(w, h, q, vinyl, lam, mode){ T.off('sgn'); T.on('stk'); T.pick('r-stk-vinyl', vinyl); if(lam) T.pick('r-stk-lam-type', lam); else document.getElementById('r-stk-lam-type').value = '';
         document.getElementById('r-stk-mode').value = mode || 'market'; const id = T.row('stk', w, h, q);
-        return { sf: T.text(id + '-sf'), co: T.money(id + '-co'), rt: T.money(id + '-rt'), ps: T.text(id + '-ps'), psTitle: (document.getElementById(id + '-ps') || {}).title || '', roll: T.text('r-stk-roll'), box: document.getElementById('r-stk-mkt').innerHTML }; },
+        return { sf: T.text(id + '-sf'), co: T.money(id + '-co'), rt: T.money(id + '-rt'), hasPs: !!document.getElementById(id + '-ps'), sfTitle: (document.getElementById(id + '-sf') || {}).title || '',   /* v61: no Passes column; the panels note is on the Material sq ft hover */ roll: T.text('r-stk-roll'), box: document.getElementById('r-stk-mkt').innerHTML }; },
       sgn(w, h, q, sides, vinyl, sub, lam){ T.off('stk'); T.on('sgn'); T.pick('r-sgn-vinyl', vinyl);
         if(sub) T.pick('r-sgn-sub', sub); else document.getElementById('r-sgn-sub').value = '';
         if(lam) T.pick('r-sgn-lam-type', lam); else document.getElementById('r-sgn-lam-type').value = '';
@@ -52,7 +52,7 @@ const SRC = path.resolve(process.argv[2] || path.join(__dirname, '..', 'index.ht
   // 1. Chris's 44 x 86 window piece: one run, 86 + 12 = 98 in of the 54 in roll (36.75 sq ft), ink on 26.278 sq ft printed
   const exp1 = r2((54 * 98 / 144) * (0.56 + 0.63) + (44 * 86 / 144) * 0.5);
   const s1 = await p.evaluate(() => T.stk(44, 86, 1, 'Matte Vinyl', 'Gloss Laminate', 'market'));
-  ok(s1.sf.indexOf('36.750') === 0 && /^1 pass/.test(s1.ps), 'stickers 44x86: 1 row, material 36.750 sq ft (got ' + s1.sf + ', ' + s1.ps + ')');
+  ok(s1.sf.indexOf('36.750') === 0 && !s1.hasPs, 'stickers 44x86: 1 row (54 x 98 in), material 36.750 sq ft, no Passes cell (got ' + s1.sf + ')');
   ok(near(s1.co, exp1), 'stickers 44x86: cost $' + exp1 + ' (got ' + s1.co + ')');
   ok(near(s1.rt, 99.29), 'stickers 44x86: classic fallback price unchanged at $99.29 (got ' + s1.rt + ')');
   ok(/full 54 in roll width/.test(s1.roll) && /26\.278 sq ft printed/.test(s1.roll), 'stickers info says full 54 in width and ink on the printed area (got ' + s1.roll + ')');
@@ -66,12 +66,12 @@ const SRC = path.resolve(process.argv[2] || path.join(__dirname, '..', 'index.ht
 
   // 2. Chris's VersaWorks screenshot: 8 x 12 sheets sit 5 across, short side across, in one row (12 + 12 = 24 in)
   const s2 = await p.evaluate(() => T.stk(8, 12, 5, 'Matte Vinyl', 'Gloss Laminate', 'market'));
-  ok(/^1 pass/.test(s2.ps) && s2.sf.indexOf('9.000') === 0, '8x12 x5: one row of 5, 9.000 sq ft (got ' + s2.ps + ', ' + s2.sf + ')');
+  ok(s2.sf.indexOf('9.000') === 0 && !s2.hasPs, '8x12 x5: one row of 5 (54 x 24 in), 9.000 sq ft (got ' + s2.sf + ')');
 
   // 3. Wider than the roll both ways: 60 x 86 = 2 panels of 60 x 43.5 (horizontal seam, the least roll), 2 x 60 + 0.5 + 12 = 132.5 in
   const exp3 = r2((54 * 132.5 / 144) * (0.56 + 0.63) + (60 * 86 / 144) * 0.5);
   const s3 = await p.evaluate(() => T.stk(60, 86, 1, 'Matte Vinyl', 'Gloss Laminate', 'market'));
-  ok(s3.sf.indexOf('49.688') === 0 && /^2 passes/.test(s3.ps) && /2 panels/.test(s3.psTitle), 'stickers 60x86: 2 panels, 49.688 sq ft (got ' + s3.sf + ', ' + s3.ps + ')');
+  ok(s3.sf.indexOf('49.688') === 0 && /each piece is printed in 2 panels/.test(s3.sfTitle) && !s3.hasPs, 'stickers 60x86: 2 panels (said on the Material sq ft hover), 49.688 sq ft (got ' + s3.sf + ', ' + s3.sfTitle + ')');
   ok(near(s3.co, exp3), 'stickers 60x86: cost ' + exp3 + ' (got ' + s3.co + ')');
   const g3 = await p.evaluate(() => T.sgn(60, 86, 1, 1, 'Matte Vinyl', '', 'Gloss Laminate'));
   ok(near(g3.co, s3.co), 'signage 60x86 costs the same as stickers (got ' + g3.co + ')');

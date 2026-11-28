@@ -482,7 +482,72 @@ function openWin(ls, html) {
   await sleep(80);
   ok(tileOf(T5).length === 1 && T5.w.eval('inventory.added').indexOf('coaster-tile-v52') >= 0 && JSON.parse(T5.w.localStorage.getItem('coba-inventory-v2')).other.some(o => o.code === 'coaster-tile'), 'v52: importing a v51 inventory file adds the tile');
 
-  [A, B, R, K, F, P, Q, G, H, E, J, K2, K3, T, T2, T3, T4, T5].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
+  // ---------- v61: no Passes / Per pass columns (Paper and Epson lamination, Stickers, Canvas Prints); old jobs reopen without them ----------
+  const X = openWin(); await sleep(40);
+  const tbl = (win, sel) => sel.charAt(0) === '#' && sel.indexOf(' ') < 0 ? win.$(sel.slice(1)).closest('table') : win.w.document.querySelector(sel);   // '#lam-items-body' = the table around that body
+  const heads = (win, sel) => Array.from(tbl(win, sel).querySelectorAll('thead th')).map(th => th.textContent.trim());
+  const cols = (win, sel) => { const t = tbl(win, sel); return { h: t.querySelectorAll('thead th').length, f: t.tFoot ? Array.from(t.tFoot.rows[0].cells).reduce((n, c) => n + (c.colSpan || 1), 0) : null, r: t.tBodies[0].rows[0] ? t.tBodies[0].rows[0].cells.length : null }; };
+  X.w.lamAddRow(); X.set('lam0-w', 5); X.set('lam0-h', 7); X.set('lam0-q', 10); X.w.lamCalc();
+  X.w.switchTabByName('epson'); X.w.eLamAddRow(); X.set('el0-w', 24); X.set('el0-h', 36); X.set('el0-q', 2); X.w.eLamCalc();
+  X.w.switchTabByName('vinyl');
+  ['stk', 'can'].forEach(t => { const c = X.$('r-' + t + '-on'); if (!c.checked) { c.checked = true; X.w.rToggle(t); } if (!X.w.eval(t === 'stk' ? 'rStkRows.length' : 'rCanRows.length')) X.w.rAddRow(t); });
+  const sId = X.w.eval('rStkRows[0]'), cId = X.w.eval('rCanRows[0]');
+  X.set(sId + '-w', 3); X.set(sId + '-h', 3); X.set(sId + '-q', 50); X.set(cId + '-w', 16); X.set(cId + '-h', 20); X.set(cId + '-q', 2); X.w.rCalc();
+  const lamT = '#lam-items-body', elT = '#e-lam-items-body';
+  const allHeads = [].concat(heads(X, '#lam-items-body'), heads(X, '#e-lam-items-body'), heads(X, '#r-stk-section table'), heads(X, '#r-can-section table'));
+  ok(allHeads.length > 0 && !allHeads.some(h => /pass/i.test(h)), 'v61: no Passes / Per pass headings: ' + allHeads.join(', '));
+  const words = ['#panel-paper', '#panel-vinyl', '#panel-epson'].map(s => X.w.document.querySelector(s).textContent).join(' ');
+  ok(!/\bpass(es)?\b/i.test(words), 'v61: the word "pass" appears nowhere on the Paper, Vinyl / Roland or Epson tabs');
+  ok(!X.$('lam0-pp') && !X.$('lam0-ps') && !X.$('el0-pp') && !X.$('el0-ps') && !X.$(sId + '-ps') && !X.$(cId + '-ps') && !X.$('lam-tot-passes') && !X.$('e-lam-tot-ppass'), 'v61: no passes cells in the rows or totals');
+  const cl61 = cols(X, '#lam-items-body'), ce61 = cols(X, '#e-lam-items-body'), cs61 = cols(X, '#r-stk-section table'), cc61 = cols(X, '#r-can-section table');
+  ok(cl61.h === 10 && cl61.f === 10 && cl61.r === 10 && ce61.h === 10 && ce61.f === 10 && ce61.r === 10 && cs61.h === 8 && cs61.r === 8 && cc61.h === 9 && cc61.r === 9,
+    'v61: headings, rows and totals still line up (lam ' + JSON.stringify(cl61) + ', epson lam ' + JSON.stringify(ce61) + ', stickers ' + JSON.stringify(cs61) + ', canvas ' + JSON.stringify(cc61) + ')');
+  ok(/sq ft/.test(X.$('lam0-sf').textContent) && /^\$\d/.test(X.$('lam0-co').textContent) && /sq ft/.test(X.$('el0-sf').textContent) && /^\$\d/.test(X.$(sId + '-co').textContent) && /^\$\d/.test(X.$(cId + '-co').textContent),
+    'v61: every table still works out film, cost and price');
+  // an old job (saved with the Passes cells, as v60 did) reopens without them, with its numbers unchanged
+  const addOld = (win) => {
+    const d = win.w.document, mk = (tag, txt, id) => { const e = d.createElement(tag); e.textContent = txt; if (id) e.id = id; return e; };
+    const lamTable = d.querySelector('#lam-items-body').closest('table'), qh = lamTable.tHead.rows[0].cells[3];
+    qh.after(mk('th', 'Per pass'), mk('th', 'Passes'));
+    win.$('lam0-q').closest('td').after(mk('td', '3 items', 'lam0-pp'), mk('td', '4 passes', 'lam0-ps'));
+    lamTable.tFoot.rows[0].cells[0].after(mk('td', '-', 'lam-tot-ppass'), mk('td', '4 passes', 'lam-tot-passes'));
+  };
+  const X2 = openWin(); await sleep(40);
+  X2.w.lamAddRow(); X2.set('lam0-n', 'menu'); X2.set('lam0-w', 5); X2.set('lam0-h', 7); X2.set('lam0-q', 10); X2.w.lamCalc();
+  addOld(X2); X2.w.lamCalc();
+  ok(X2.$('lam0-ps') && heads(X2, '#lam-items-body').indexOf('Passes') >= 0, 'v61: (an old-style Paper panel with Passes cells, as saved by v60)');
+  const oldTotals = X2.$('lam-tot-cost').textContent + '|' + X2.$('lam-tot-retail').textContent + '|' + X2.$('p-quote-total').textContent;
+  X2.set('cb-name', 'Old Lam Co'); X2.set('cb-title', 'laminated menus'); X2.w.saveEstimate(); await sleep(20);
+  ok(/Passes/.test(JSON.parse(X2.w.localStorage.getItem('coba-jobs-v1')).customers[0].estimates[0].snap.html), 'v61: (the saved snapshot has the Passes column)');
+  const X3 = openWin({ 'coba-jobs-v1': X2.w.localStorage.getItem('coba-jobs-v1') }); await sleep(40);
+  const oc = X3.w.eval('jobsData.customers[0]');
+  X3.w.loadEstimate(oc.id, oc.estimates[0].id, false); X3.w.cobaConfirmAnswer(true);
+  const ol = cols(X3, '#lam-items-body');
+  ok(!X3.$('lam0-ps') && !X3.$('lam0-pp') && !X3.$('lam-tot-passes') && !X3.$('lam-tot-ppass') && !heads(X3, '#lam-items-body').some(h => /pass/i.test(h)) && ol.h === 10 && ol.f === 10 && ol.r === 10,
+    'v61: the old Paper job reopens without the Passes columns, still lined up: ' + JSON.stringify(ol));
+  ok(X3.$('lam0-n').value === 'menu' && X3.$('lam0-w').value === '5' && X3.$('lam0-q').value === '10' && X3.$('lam-tot-cost').textContent + '|' + X3.$('lam-tot-retail').textContent + '|' + X3.$('p-quote-total').textContent === oldTotals,
+    'v61: ... with every field and total as saved (' + oldTotals + ')');
+  // same for an old Vinyl / Roland job (stickers + canvas)
+  const X4 = openWin(); await sleep(40); X4.w.switchTabByName('vinyl');
+  ['stk', 'can'].forEach(t => { const c = X4.$('r-' + t + '-on'); if (!c.checked) { c.checked = true; X4.w.rToggle(t); } if (!X4.w.eval(t === 'stk' ? 'rStkRows.length' : 'rCanRows.length')) X4.w.rAddRow(t); });
+  const s4 = X4.w.eval('rStkRows[0]'), c4 = X4.w.eval('rCanRows[0]');
+  X4.set(s4 + '-w', 3); X4.set(s4 + '-h', 3); X4.set(s4 + '-q', 50); X4.set(c4 + '-w', 16); X4.set(c4 + '-h', 20); X4.set(c4 + '-q', 2); X4.w.rCalc();
+  [['#r-stk-section table', s4], ['#r-can-section table', c4]].forEach(a => {
+    const t = X4.w.document.querySelector(a[0]), th = X4.w.document.createElement('th'), td = X4.w.document.createElement('td');
+    th.textContent = 'Passes'; t.tHead.rows[0].cells[3].after(th); td.id = a[1] + '-ps'; td.textContent = '1 pass'; X4.$(a[1] + '-q').closest('td').after(td);
+  });
+  X4.w.rCalc();
+  const oldV = X4.$('r-tt-quote').textContent + '|' + X4.$('r-tt-cost').textContent;
+  X4.set('cb-name', 'Old Vinyl Co'); X4.set('cb-title', 'stickers + canvas'); X4.w.saveEstimate(); await sleep(20);
+  const X5 = openWin({ 'coba-jobs-v1': X4.w.localStorage.getItem('coba-jobs-v1') }); await sleep(40);
+  const vc = X5.w.eval('jobsData.customers[0]');
+  X5.w.loadEstimate(vc.id, vc.estimates[0].id, false); X5.w.cobaConfirmAnswer(true);
+  ok(!X5.$(s4 + '-ps') && !X5.$(c4 + '-ps') && !heads(X5, '#r-stk-section table').some(h => /pass/i.test(h)) && !heads(X5, '#r-can-section table').some(h => /pass/i.test(h)) &&
+    cols(X5, '#r-stk-section table').h === cols(X5, '#r-stk-section table').r && cols(X5, '#r-can-section table').h === cols(X5, '#r-can-section table').r,
+    'v61: an old Vinyl / Roland job reopens without Passes in Stickers or Canvas, still lined up');
+  ok(X5.$('r-tt-quote').textContent + '|' + X5.$('r-tt-cost').textContent === oldV && X5.$(s4 + '-q').value === '50' && X5.$(c4 + '-w').value === '16', 'v61: ... at the same quote and cost (' + oldV + ')');
+
+  [A, B, R, K, F, P, Q, G, H, E, J, K2, K3, T, T2, T3, T4, T5, X, X2, X3, X4, X5].forEach((x, i) => ok(x.errs.length === 0, 'page errors in window ' + i + ': ' + x.errs.slice(0, 3).join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.log('FAIL: test crashed: ' + (e && e.stack || e)); process.exit(1); });

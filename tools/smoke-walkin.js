@@ -53,6 +53,11 @@ const typeQty = (X, id, q) => { X.set(id + '-q', q); X.w.wQty(id); };
   ok(pb.length === 12, '12 copy buttons (3 sizes x B&W/colour x 1/2-sided): ' + pb.length);
   ok(pb.slice(0, 4).join(' ') === '$1.20 $2.40 $2.70 $5.40', 'letter row: ' + pb.slice(0, 4).join(' '));
   ok(pb.slice(8, 12).join(' ') === '$2.40 $4.80 $4.50 $9.00', '11x17 row: ' + pb.slice(8, 12).join(' '));
+  // v61: the Tabloid row also covers 12x18 and 13x19, at the same prices
+  const rowHeads = Array.from(A.w.document.querySelectorAll('#w-copy-body th.w-row')).map(th => th.textContent.replace(/\s+/g, ' ').trim());
+  ok(rowHeads.join(' | ') === 'Letter 8.5x11 | Legal 8.5x14 | Tabloid 11x17 / 12x18 / 13x19', 'v61: the Tabloid row says 11x17 / 12x18 / 13x19: ' + rowHeads.join(' | '));
+  ok(A.w.wItem('col-tab-2').name === 'Colour 11x17 / 12x18 / 13x19, 2-sided' && A.w.wUnit('col-tab-2', 1) === 9 && A.w.wUnit('bw-tab-1', 1) === 2.4,
+    'v61: a tabloid sale line reads "' + A.w.wItem('col-tab-2').name + '", same price as before');
   ok(A.w.document.querySelectorAll('#w-btns-photo .w-ibtn').length === 6 && A.w.document.querySelectorAll('#w-btns-other .w-ibtn').length === 3, 'photo / poster and other buttons');
   ok(A.w.document.querySelectorAll('#w-src-body tbody tr').length === A.w.eval('W_SRC.length'), 'sources table has a row per price');
   ok(/51\+ \$0\.90/.test(A.$('w-breaks').textContent), 'quantity breaks shown under the copy table');

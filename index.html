@@ -602,15 +602,13 @@
             </div>
           </div>
           <div class="scroll-x">
-            <table style="min-width:760px;margin-bottom:6px">
+            <table style="min-width:640px;margin-bottom:6px">
               <thead><tr>
-                <th class="lh" style="width:18%">Item description</th>
+                <th class="lh" style="width:25%">Item description</th>
                 <th class="lh" style="width:8%">W (in)</th>
                 <th class="lh" style="width:8%">H (in)</th>
                 <th class="lh" style="width:7%">Qty</th>
-                <th class="lh" style="width:9%">Per pass</th>
-                <th class="lh" style="width:8%">Passes</th>
-                <th class="lh" style="width:10%">Film used</th>
+                                <th class="lh" style="width:10%">Film used</th>
                 <th class="lh" style="width:9%">Waste %</th>
                 <th class="lh" style="width:10%">Your cost</th>
                 <th class="lh" style="width:10%">Retail total</th>
@@ -621,8 +619,6 @@
               <tfoot>
                 <tr style="background:#fff7ed">
                   <td colspan="4" style="text-align:right;font-size:12px;color:#9a3412;font-weight:600">Totals</td>
-                  <td class="lam-res" id="lam-tot-ppass">—</td>
-                  <td class="lam-res" id="lam-tot-passes">—</td>
                   <td class="lam-res" id="lam-tot-sqft">—</td>
                   <td class="lam-res" id="lam-tot-waste">—</td>
                   <td class="lam-res" id="lam-tot-cost">$0.00</td>
@@ -635,7 +631,7 @@
           </div>
           <button class="btn-add no-print" onclick="lamAddRow()" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa">+ Add laminated item</button>
           <div style="background:#fff;border:1px solid #fed7aa;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#9a3412;line-height:1.7">
-            <strong>Gang-running:</strong> The app fits as many items side-by-side as possible per pass (e.g. 3× 5×7" fit across 25"). <strong>Film per pass</strong> = 25" × (feed dimension + <span id="lam-margin-disp">2</span>" + <span id="lam-margin-disp2">2</span>" margins). Cost split equally across all items in that pass. Max item width = 24" (laminator throat). Cost = $0.19/sq ft materials only — use $0.29/sq ft if ordering standalone with $40 shipping.
+            <strong>Gang-running:</strong> The app fits as many items side by side across the film as it can (e.g. 3× 5×7" fit across 25"). Each row of items uses 25" × (feed dimension + <span id="lam-margin-disp">2</span>" + <span id="lam-margin-disp2">2</span>" margins) of film, split equally across the items in it. Max item width = 24" (laminator throat). Cost = $0.19/sq ft materials only — use $0.29/sq ft if ordering standalone with $40 shipping.
           </div>
         </div>
       </div>
@@ -1172,14 +1168,13 @@
         </div>
         <div id="r-stk-section" style="display:none">
           <div class="scroll-x">
-            <table style="min-width:600px;margin-bottom:6px">
+            <table style="min-width:540px;margin-bottom:6px">
               <thead><tr>
-                <th class="dh" style="width:22%">Label / description</th>
+                <th class="dh" style="width:31%">Label / description</th>
                 <th class="dh" style="width:9%">W (in)</th>
                 <th class="dh" style="width:9%">H (in)</th>
                 <th class="dh" style="width:8%">Qty</th>
-                <th class="dh" style="width:9%">Passes</th>
-                <th class="dh" style="width:12%">Material sqft</th>
+                                <th class="dh" style="width:12%">Material sqft</th>
                 <th class="dh" style="width:11%">Your cost</th>
                 <th class="dh" style="width:11%">Retail total</th>
                 <th class="dh" style="width:9%">/ sticker</th>
@@ -1307,25 +1302,24 @@
         </div>
         <div id="r-can-section" style="display:none">
           <div class="scroll-x">
-            <table style="min-width:620px;margin-bottom:6px">
+            <table style="min-width:560px;margin-bottom:6px">
               <thead><tr>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:20%">Artwork / description</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:9%">W (in)</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:9%">H (in)</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:7%">Qty</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:8%">Passes</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:11%">Material sqft</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:10%">Your cost</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:12%">Retail total</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:10%">/ piece</th>
-                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px" style="width:4%"></th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:28%">Artwork / description</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:9%">W (in)</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:9%">H (in)</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:7%">Qty</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:11%">Material sqft</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:10%">Your cost</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:12%">Retail total</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:10%">/ piece</th>
+                <th style="background:#fde68a;color:#92400e;font-weight:600;text-align:center;font-size:12px;padding:7px 8px;width:4%"></th>
               </tr></thead>
               <tbody id="r-can-body"></tbody>
             </table>
           </div>
           <button class="btn-add no-print" onclick="rAddRow('can')" style="background:#fef3c7;color:#92400e;border-color:#fde68a">+ Add canvas print</button>
           <div style="background:#fff;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#92400e;line-height:1.7">
-            <strong>Gang-running on 54" roll:</strong> fits as many canvases side-by-side per pass as possible. Cost = Vision Canvas $0.75/sqft + Roland ink $0.50/sqft = $1.25/sqft. Minimum $25/print for small sizes. Retail at $15/sqft (adjustable in settings).
+            <strong>Gang-running on 54" roll:</strong> fits as many canvases side by side across the roll as possible. Cost = Vision Canvas $0.75/sqft + Roland ink $0.50/sqft = $1.25/sqft. Minimum $25/print for small sizes. Retail at $15/sqft (adjustable in settings).
           </div>
           <div class="info-bar" style="margin-top:8px;border-color:#fde68a">
             <div class="info-item">Material used: <strong id="r-can-sqft">0 sq ft</strong></div>
@@ -1742,7 +1736,7 @@
           </div>
           <button class="btn-add no-print" onclick="eAddArt()" style="background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff">+ Add artwork</button>
           <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#7e22ce;line-height:1.7">
-            <strong>Pricing logic:</strong> Cost based on actual 36" roll material used (gang-runs same image to share passes). Retail = $14/sqft on print area, with minimums: <strong>≤ 12×18" → $25/print · ≤ 18×24" → $35/print</strong> · larger prints at $14/sqft. Hover the / piece cell to see which applies.<br>
+            <strong>Pricing logic:</strong> Cost based on actual 36" roll material used (gang-runs the same image side by side to share the roll). Retail = $14/sqft on print area, with minimums: <strong>≤ 12×18" → $25/print · ≤ 18×24" → $35/print</strong> · larger prints at $14/sqft. Hover the / piece cell to see which applies.<br>
             <strong>Posterjack reference (Hahnemuehle rag):</strong> 8×10" $12 · 11×14" $23 · 12×18" $33 · 16×24" $50 · 18×24" $56 · 24×36" $100 · 36×48" $187
           </div>
           <div class="info-bar" style="margin-top:8px">
@@ -1788,15 +1782,13 @@
             </div>
           </div>
           <div class="scroll-x">
-            <table style="min-width:760px;margin-bottom:6px">
+            <table style="min-width:640px;margin-bottom:6px">
               <thead><tr>
-                <th class="lh" style="width:18%">Item description</th>
+                <th class="lh" style="width:25%">Item description</th>
                 <th class="lh" style="width:8%">W (in)</th>
                 <th class="lh" style="width:8%">H (in)</th>
                 <th class="lh" style="width:7%">Qty</th>
-                <th class="lh" style="width:9%">Per pass</th>
-                <th class="lh" style="width:8%">Passes</th>
-                <th class="lh" style="width:10%">Film used</th>
+                                <th class="lh" style="width:10%">Film used</th>
                 <th class="lh" style="width:9%">Waste %</th>
                 <th class="lh" style="width:10%">Your cost</th>
                 <th class="lh" style="width:10%">Retail total</th>
@@ -1807,8 +1799,6 @@
               <tfoot>
                 <tr style="background:#fff7ed">
                   <td colspan="4" style="text-align:right;font-size:12px;color:#9a3412;font-weight:600">Totals</td>
-                  <td class="lam-res" id="e-lam-tot-ppass">—</td>
-                  <td class="lam-res" id="e-lam-tot-passes">—</td>
                   <td class="lam-res" id="e-lam-tot-sqft">—</td>
                   <td class="lam-res" id="e-lam-tot-waste">—</td>
                   <td class="lam-res" id="e-lam-tot-cost">$0.00</td>
@@ -1821,7 +1811,7 @@
           </div>
           <button class="btn-add no-print" onclick="eLamAddRow()" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa">+ Add laminated item</button>
           <div style="background:#fff;border:1px solid #fed7aa;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:#9a3412;line-height:1.7">
-            <strong>Gang-running:</strong> fits items side-by-side per pass. Cost = $0.19/sq ft materials only — use $0.29/sq ft if ordering standalone with $40 shipping. Trimming goes into labour below.
+            <strong>Gang-running:</strong> fits items side by side across the film. Cost = $0.19/sq ft materials only — use $0.29/sq ft if ordering standalone with $40 shipping. Trimming goes into labour below.
           </div>
         </div>
       </div>
@@ -2451,7 +2441,16 @@ function snapRestore(tab, snap){
     if('c' in f){ el.checked = !!f.c; } else { el.value = f.v; }
   });
   if(tab==='paper'){ pPanelRepair(); pRefEnsure(); pEnvEnsure(); }
+  passesStrip(panel);   // v61
   (SNAP_CALCS[tab]||[]).forEach(fn=>{ try{ window[fn] ? window[fn]() : eval(fn+'()'); }catch(e){ console.error(fn, e); } });
+}
+// v61: the Passes / Per pass columns are gone from Paper and Epson lamination, Stickers and Canvas Prints (Chris: no
+// reason to show the passes). A job saved before v61 reopens with its old table, so the same cells come out of it here.
+// Display only: no field lives in them, so the field-by-position restore above is not affected.
+function passesStrip(panel){
+  if(!panel) return;
+  panel.querySelectorAll('th').forEach(th=>{ const t = th.textContent.trim().toLowerCase(); if(t === 'passes' || t === 'per pass') th.remove(); });
+  panel.querySelectorAll('td[id]').forEach(td=>{ if(/^(lam|el|s|c)\d+-ps$|^(lam|el)\d+-pp$|^(e-)?lam-tot-(ppass|passes)$/.test(td.id)) td.remove(); });
 }
 // v31: Paper jobs saved before v31 were captured from a broken layout (a stray </div> left the market check, tiers
 // and notes outside .panel-body and the action bar outside the panel). Moving the nodes keeps their values and order.
@@ -3882,7 +3881,7 @@ const W_HST_DEFAULT = '822863999RT0001';   // v45: Coba Studios' GST/HST number,
 // details saved on a device that are just the old built-in ones (v44 top lines, v45 HST number) count
 // as unchanged, so that device prints the invoice's lines too; anything Chris typed himself is kept
 const W_BIZ_V44 = ['Coba Studios', 'Brockville, ON', 'cobastudios.com'].join(W_NL), W_HST_V45 = '822863999 RT0001';
-const W_SIZES = [ ['let', 'Letter', '8.5x11'], ['leg', 'Legal', '8.5x14'], ['tab', 'Tabloid', '11x17'] ];
+const W_SIZES = [ ['let', 'Letter', '8.5x11'], ['leg', 'Legal', '8.5x14'], ['tab', 'Tabloid', '11x17 / 12x18 / 13x19'] ];   // v61: 12x18 and 13x19 at the tabloid price
 const W_BASE_BREAKS = {   // [from quantity, market-based $ a sheet printed 1-sided]
   'bw-let':  [[1, 0.40], [51, 0.30], [201, 0.20], [501, 0.15], [1001, 0.10]],
   'bw-leg':  [[1, 0.50], [51, 0.40], [201, 0.30], [501, 0.20], [1001, 0.15]],
@@ -4866,8 +4865,6 @@ function lamAddRow(){
     <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="lamCalc()"></td>
     <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="lamCalc()"></td>
     <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="lamCalc()"></td>
-    <td class="lam-res" id="${id}-pp">—</td>
-    <td class="lam-res" id="${id}-ps">—</td>
     <td class="lam-res" id="${id}-sf">—</td>
     <td class="lam-res" id="${id}-ws">—</td>
     <td class="lam-res" id="${id}-co">—</td>
@@ -4892,16 +4889,15 @@ function lamCalc(){
   const maxW   = 24; // physical laminator throat
   ['lam-margin-disp','lam-margin-disp2'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent=margin; });
 
-  let totFilmSqFt=0, totCost=0, totRetail=0, totPieces=0, totPasses=0;
+  let totFilmSqFt=0, totCost=0, totRetail=0, totPieces=0;
 
   lamRows.forEach(id=>{
     const w=parseFloat(document.getElementById(id+'-w').value)||0;
     const h=parseFloat(document.getElementById(id+'-h').value)||0;
     const q=parseFloat(document.getElementById(id+'-q').value)||0;
-    const ppEl=document.getElementById(id+'-pp'), psEl=document.getElementById(id+'-ps');
     const sfEl=document.getElementById(id+'-sf'), wsEl=document.getElementById(id+'-ws');
     const coEl=document.getElementById(id+'-co'), rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
-    const allEls=[ppEl,psEl,sfEl,wsEl,coEl,rtEl,peEl];
+    const allEls=[sfEl,wsEl,coEl,rtEl,peEl];
 
     if(w>0 && h>0 && q>0){
       if(Math.min(w,h) > maxW){ allEls.forEach(e=>{ if(e){ e.textContent='⚠ too wide'; e.style.color='#dc2626'; } }); return; }
@@ -4927,23 +4923,19 @@ function lamCalc(){
       const retail             = cost * (1 + markup/100);
       const perPiece           = retail / q;
 
-      if(ppEl) ppEl.textContent = itemsPerPass+(itemsPerPass>1?' items':' item');
-      if(psEl) psEl.textContent = passes+(passes>1?' passes':' pass');
       if(sfEl) sfEl.textContent = totalFilm_sqft.toFixed(3)+' sq ft';
       if(wsEl) wsEl.textContent = wastePercent.toFixed(1)+'%';
       if(coEl) coEl.textContent = '$'+cost.toFixed(2);
       if(rtEl) rtEl.textContent = '$'+retail.toFixed(2);
       if(peEl) peEl.textContent = '$'+perPiece.toFixed(2);
 
-      totFilmSqFt+=totalFilm_sqft; totCost+=cost; totRetail+=retail; totPieces+=q; totPasses+=passes;
+      totFilmSqFt+=totalFilm_sqft; totCost+=cost; totRetail+=retail; totPieces+=q;
     } else {
       allEls.forEach(e=>{ if(e){ e.textContent='—'; e.style.color=''; } });
     }
   });
 
   const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
-  set('lam-tot-ppass',  '—');
-  set('lam-tot-passes', totPasses>0 ? totPasses+' passes' : '—');
   set('lam-tot-sqft',   totFilmSqFt>0 ? totFilmSqFt.toFixed(3)+' sq ft' : '—');
   set('lam-tot-waste',  '—');
   set('lam-tot-cost',   '$'+totCost.toFixed(2));
@@ -5104,7 +5096,6 @@ function rAddRow(type){
       <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="rCalc()"></td>
       <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="rCalc()"></td>
       <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>
-      <td class="res dim" id="${id}-ps">—</td>
       <td class="res" id="${id}-sf">—</td>
       <td class="res dim" id="${id}-co">—</td>
       <td class="res" id="${id}-rt">—</td>
@@ -5115,7 +5106,6 @@ function rAddRow(type){
       <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
       <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.5" oninput="rCalc()"></td>
       <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="rCalc()"></td>
-      <td class="res dim" id="${id}-ps">—</td>
       <td class="res" id="${id}-sf">—</td>
       <td class="res dim" id="${id}-co">—</td>
       <td class="res" id="${id}-rt">—</td>
@@ -5477,20 +5467,19 @@ function rCalc(){
 
     rStkRows.forEach(id=>{
       const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
-      const psEl=document.getElementById(id+'-ps');
       const sfEl=document.getElementById(id+'-sf'), coEl=document.getElementById(id+'-co');
       const rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
-      const all=[psEl,sfEl,coEl,rtEl,peEl];
+      const all=[sfEl,coEl,rtEl,peEl];
       if(w>0&&h>0&&q>0){
         const bigger=Math.max(w,h), smaller=Math.min(w,h);
         const across=bigger<=rollW?bigger:smaller;
         const feed=bigger<=rollW?smaller:bigger;
         const ipp=Math.max(1,Math.floor(rollW/across));
-        let passes=Math.ceil(q/ipp);
+        const passes=Math.ceil(q/ipp);
         let filmSqFt=passes*(rollW*(feed+regOverhead))/144;
         const oldCost=filmSqFt*matCost;   // the film math every sticker quote used before v53
         let cost=oldCost, wr=null;
-        if(wc){ wr=rWasteCost(w, h, q, wc); passes=wr.L.passes; filmSqFt=wr.vinSf; cost=wr.cost; stkPrint+=wr.printSf; }
+        if(wc){ wr=rWasteCost(w, h, q, wc); filmSqFt=wr.vinSf; cost=wr.cost; stkPrint+=wr.printSf; }
         const tier=getStickerTier(q);
         const retailCalc=oldCost*tier.markup;   // v53: the classic markup stays on the basis it was tuned on, so classic prices don't move
         const retailFloor=q*tier.minEach;
@@ -5504,8 +5493,7 @@ function rCalc(){
           stkMktRows.push(Object.assign({ name: nEl ? nEl.value.trim() : '', w, h, q }, mkt));
         }
         const per=q>0?retail/q:0;
-        if(psEl){ psEl.textContent=passes+(passes>1?' passes':' pass'); psEl.title=wr && wr.L.panels>1 ? 'Wider than the roll: each piece is printed in '+wr.L.panels+' panels' : ''; }
-        if(sfEl){ sfEl.textContent=rsfmt(filmSqFt); if(wr) sfEl.title='Vinyl: '+wc.Wv+' in roll x '+wr.L.runIn.toFixed(1)+' in run'+(lamOn?', laminate '+wc.Wl+' in wide':'')+'; ink on '+rsfmt(wr.printSf)+' printed'; }
+        if(sfEl){ sfEl.textContent=rsfmt(filmSqFt); if(wr) sfEl.title='Vinyl: '+wc.Wv+' in roll x '+wr.L.runIn.toFixed(1)+' in run'+(lamOn?', laminate '+wc.Wl+' in wide':'')+'; ink on '+rsfmt(wr.printSf)+' printed'+(wr.L.panels>1?'; wider than the roll: each piece is printed in '+wr.L.panels+' panels':''); }
         if(coEl) coEl.textContent=rfmt(cost);
         if(rtEl){ if(mkt){ rtEl.innerHTML='<span class="stk-dot '+mkt.status+'"></span>'+rfmt(retail); rtEl.title=mkt.title; } else { rtEl.textContent=rfmt(retail); rtEl.title=mkLabel; } }
         if(peEl){ peEl.textContent=rfmt(per); peEl.title=mkt ? mkt.title : mkLabel; }
@@ -5611,7 +5599,7 @@ function rCalc(){
     const canRate   = rGetV('r-can-rate') || 15;
     rCanRows.forEach(id=>{
       const w=rGetV(id+'-w'), h=rGetV(id+'-h'), q=rGetV(id+'-q');
-      const psEl=document.getElementById(id+'-ps'), sfEl=document.getElementById(id+'-sf');
+      const sfEl=document.getElementById(id+'-sf');
       const coEl=document.getElementById(id+'-co'), rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
       if(w>0&&h>0&&q>0){
         const bigger=Math.max(w,h), smaller=Math.min(w,h);
@@ -5625,13 +5613,12 @@ function rCalc(){
         const retailPer=Math.max(printArea*canRate, 25);
         const retail=retailPer*q;
         const per=retail/q;
-        if(psEl) psEl.textContent=passes+(passes>1?' passes':' pass');
         if(sfEl) sfEl.textContent=rsfmt(filmSqFt);
         if(coEl) coEl.textContent=rfmt(cost);
         if(rtEl) rtEl.textContent=rfmt(retail);
         if(peEl){ peEl.textContent=rfmt(per); peEl.title=printArea*canRate<25?'$25 minimum':'$'+canRate+'/sqft'; }
         canArea+=filmSqFt; canCost+=cost; canRetail+=retail; canPieces+=q;
-      } else { [psEl,sfEl,coEl,rtEl,peEl].forEach(e=>{if(e) e.textContent='—';}); }
+      } else { [sfEl,coEl,rtEl,peEl].forEach(e=>{if(e) e.textContent='—';}); }
     });
     const setC=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
     setC('r-can-sqft',   canArea>0?rsfmt(canArea):'0 sq ft');
@@ -6454,8 +6441,6 @@ function eLamAddRow(){
     <td class="inp"><input type="number" id="${id}-w" placeholder="0" min="0" step="0.25" oninput="eLamCalc()"></td>
     <td class="inp"><input type="number" id="${id}-h" placeholder="0" min="0" step="0.25" oninput="eLamCalc()"></td>
     <td class="inp"><input type="number" id="${id}-q" placeholder="0" min="0" step="1" oninput="eLamCalc()"></td>
-    <td class="lam-res" id="${id}-pp">—</td>
-    <td class="lam-res" id="${id}-ps">—</td>
     <td class="lam-res" id="${id}-sf">—</td>
     <td class="lam-res" id="${id}-ws">—</td>
     <td class="lam-res" id="${id}-co">—</td>
@@ -6476,15 +6461,14 @@ function eLamCalc(){
   const costSF = parseFloat(document.getElementById('e-lam-cost-sqft').value)  || 0;
   const markup = parseFloat(document.getElementById('e-lam-markup').value)     || 0;
   const maxW   = 24;
-  let totFilm=0, totCost=0, totRetail=0, totPieces=0, totPasses=0;
+  let totFilm=0, totCost=0, totRetail=0, totPieces=0;
   eLamRows.forEach(id=>{
     const w=parseFloat(document.getElementById(id+'-w').value)||0;
     const h=parseFloat(document.getElementById(id+'-h').value)||0;
     const q=parseFloat(document.getElementById(id+'-q').value)||0;
-    const ppEl=document.getElementById(id+'-pp'), psEl=document.getElementById(id+'-ps');
     const sfEl=document.getElementById(id+'-sf'), wsEl=document.getElementById(id+'-ws');
     const coEl=document.getElementById(id+'-co'), rtEl=document.getElementById(id+'-rt'), peEl=document.getElementById(id+'-pe');
-    const all=[ppEl,psEl,sfEl,wsEl,coEl,rtEl,peEl];
+    const all=[sfEl,wsEl,coEl,rtEl,peEl];
     if(w>0&&h>0&&q>0){
       if(Math.min(w,h)>maxW){ all.forEach(e=>{if(e){e.textContent='too wide';e.style.color='#dc2626';}}); return; }
       all.forEach(e=>{if(e) e.style.color='';});
@@ -6500,19 +6484,15 @@ function eLamCalc(){
       const cost=filmSqFt*costSF;
       const retail=cost*(1+markup/100);
       const per=retail/q;
-      if(ppEl) ppEl.textContent=ipp+(ipp>1?' items':' item');
-      if(psEl) psEl.textContent=passes+(passes>1?' passes':' pass');
       if(sfEl) sfEl.textContent=filmSqFt.toFixed(3)+' sq ft';
       if(wsEl) wsEl.textContent=waste.toFixed(1)+'%';
       if(coEl) coEl.textContent='$'+cost.toFixed(2);
       if(rtEl) rtEl.textContent='$'+retail.toFixed(2);
       if(peEl) peEl.textContent='$'+per.toFixed(2);
-      totFilm+=filmSqFt; totCost+=cost; totRetail+=retail; totPieces+=q; totPasses+=passes;
+      totFilm+=filmSqFt; totCost+=cost; totRetail+=retail; totPieces+=q;
     } else { all.forEach(e=>{if(e){e.textContent='—';e.style.color='';}}); }
   });
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  set('e-lam-tot-ppass','—');
-  set('e-lam-tot-passes',totPasses>0?totPasses+' passes':'—');
   set('e-lam-tot-sqft',totFilm>0?totFilm.toFixed(3)+' sq ft':'—');
   set('e-lam-tot-waste','—');
   set('e-lam-tot-cost','$'+totCost.toFixed(2));
